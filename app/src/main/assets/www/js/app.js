@@ -133,12 +133,43 @@
   const sidebarScroll = $('#sidebarScroll');
   const sidebar = $('#sidebar');
 
+  const SIDE_LINKS = [
+    { href: '#/tools', ic: 'gear', t: 'Инструменты', sub: 'мастер, калькуляторы, квиз' },
+    { href: '#/backup', ic: 'down', t: 'Мои данные', sub: 'резервная копия и перенос' },
+    { href: '#/about', ic: 'info', t: 'О программе', sub: 'build ' + (window.APP_VERSION || 'dev') }
+  ];
+
+  function markSideLink() {
+    const id = (location.hash || '#/').slice(2).split('/')[0];
+    Array.prototype.forEach.call(document.querySelectorAll('.side-link'), function (a) {
+      a.classList.toggle('on', a.getAttribute('href') === '#/' + id);
+    });
+  }
+
   function buildSidebar() {
     const frag = document.createDocumentFragment();
     const title = document.createElement('div');
     title.className = 'side-title';
     title.textContent = 'Меню Winbox 4 и задачи';
     frag.appendChild(title);
+
+    const links = document.createElement('div');
+    links.className = 'side-links';
+    SIDE_LINKS.forEach(function (x) {
+      const a = document.createElement('a');
+      a.className = 'side-link';
+      a.href = x.href;
+      a.innerHTML = '<span class="sl-ico">' + svg(x.ic, 16) + '</span>' +
+        '<span class="sl-tx"><b>' + x.t + '</b><span>' + x.sub + '</span></span>' +
+        '<span class="sl-chev"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      a.addEventListener('click', closeSidebar);
+      links.appendChild(a);
+    });
+    frag.appendChild(links);
+
+    const divider = document.createElement('div');
+    divider.className = 'side-div';
+    frag.appendChild(divider);
 
     const favBox = document.createElement('div');
     favBox.className = 'fav-box';
@@ -179,12 +210,8 @@
     refreshProgress();
 
     const foot = $('#sidebarFoot');
-    foot.innerHTML = '<a href="#/tools" style="color:inherit">Инструменты</a>' +
-      '<a href="#/about" style="color:inherit;margin-left:10px">О программе</a>' +
-      '<span>build ' + (window.APP_VERSION || 'dev') + '</span>';
-    Array.prototype.forEach.call(foot.querySelectorAll('a'), function (a) {
-      a.addEventListener('click', closeSidebar);
-    });
+    if (foot) foot.innerHTML = '';
+    markSideLink();
   }
 
   function buildFavBox() {
@@ -2514,6 +2541,7 @@
     /* отладочный доступ для автопроверок (не влияет на работу приложения) */
   window.AppDebug = { stepSceneFor: stepSceneFor, stems: stems, autoFocus: autoFocus };
 
+  window.addEventListener('hashchange', markSideLink);
   window.addEventListener('hashchange', route);
     route();
   }

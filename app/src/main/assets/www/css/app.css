@@ -851,3 +851,23 @@ html[data-theme="light"] .hero{background:radial-gradient(1200px 300px at 20% -1
 .qz-modes{display:flex;gap:8px;flex-wrap:wrap}
 .qz-modes .btn{flex:1 1 30%;margin:0;min-width:120px}
 .qz-top .lnk{border:0;background:none;color:var(--accent);font:inherit;cursor:pointer;padding:0}
+
+/* =============== основные пункты бокового меню =============== */
+.side-links{margin:0 0 4px}
+.side-link{
+  display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:11px;
+  text-decoration:none;color:var(--txt);border:1px solid transparent;
+}
+.side-link:hover{background:var(--panel-2)}
+.side-link.on{background:var(--accent-soft);border-color:rgba(88,166,255,.35)}
+.side-link.on .sl-ico{color:var(--accent)}
+.sl-ico{
+  flex:0 0 auto;width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+  background:var(--panel-2);color:var(--txt-dim);border:1px solid var(--line);
+}
+.sl-tx{display:flex;flex-direction:column;min-width:0;flex:1 1 auto}
+.sl-tx b{font-size:calc(14px * var(--fsm, 1));font-weight:600;line-height:1.25}
+.sl-tx span{font-size:calc(11.5px * var(--fsm, 1));color:var(--txt-mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sl-chev{flex:0 0 auto;color:var(--txt-mute);display:flex}
+.side-div{height:1px;background:var(--line);margin:8px 12px 10px}
+.sidebar-foot:empty{display:none}
