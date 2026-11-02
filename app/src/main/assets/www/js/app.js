@@ -518,7 +518,10 @@
   }
 
   /* ---------- скачивание и установка силами приложения ---------- */
+  let pendingUpdate = null;   // {url, ver, waiting}
+
   function startDownload(url, ver) {
+    pendingUpdate = { url: url, ver: ver, waiting: false };
     const box = $('#updBox');
     if (!box) return;
     box.className = 'upd new';
@@ -555,6 +558,7 @@
       return;
     }
     if (state === 'done') {
+      pendingUpdate = null;
       box.className = 'upd ok';
       box.innerHTML = '<b class="ver">Файл готов</b><br>' +
         'Подтвердите установку в системном окне «Обновить приложение?».<br>' +
@@ -564,18 +568,28 @@
       return;
     }
     if (state === 'permission') {
+      if (pendingUpdate) pendingUpdate.waiting = true;
       box.className = 'upd err';
       box.innerHTML = '<b>Нужно разрешение</b><br>' + esc(message || '') +
-        '<div class="upd-actions"><button class="btn primary" id="permBtn">Открыть настройки</button></div>';
+        '<div style="font-size:12.5px;margin-top:6px">Включите «Разрешить установку приложений» ' +
+        'для этого приложения и вернитесь назад — загрузка продолжится сама.</div>' +
+        '<div class="upd-actions">' +
+        '<button class="btn primary" id="permBtn">Открыть настройки</button>' +
+        '<button class="btn" id="retryBtn">Продолжить</button></div>';
       const b = $('#permBtn');
       if (b) b.addEventListener('click', function () {
         if (window.AndroidBridge && window.AndroidBridge.openInstallSettings) {
           window.AndroidBridge.openInstallSettings();
         }
       });
+      const rb = $('#retryBtn');
+      if (rb) rb.addEventListener('click', function () {
+        if (pendingUpdate) startDownload(pendingUpdate.url, pendingUpdate.ver);
+      });
       return;
     }
     if (state === 'error') {
+      pendingUpdate = null;
       box.className = 'upd err';
       box.innerHTML = 'Не удалось скачать обновление: <b>' + esc(message || 'нет сети') + '</b>' +
         '<div class="upd-actions"><a class="btn" href="' + RELEASES_URL + '">Скачать вручную ↗</a></div>';
@@ -773,6 +787,19 @@
     });
     document.addEventListener('keydown', function (e) {
       if (e.key === 'Escape') { $('#searchLayer').hidden = true; closeSidebar(); }
+    });
+
+    // вернулись из настроек после выдачи разрешения — продолжаем загрузку сами
+    document.addEventListener('visibilitychange', function () {
+      if (document.visibilityState !== 'visible') return;
+      if (!pendingUpdate || !pendingUpdate.waiting) return;
+      if (!(window.AndroidBridge && window.AndroidBridge.canInstallPackages)) return;
+      try {
+        if (window.AndroidBridge.canInstallPackages()) {
+          const p = pendingUpdate;
+          startDownload(p.url, p.ver);
+        }
+      } catch (e) { }
     });
 
     document.documentElement.setAttribute('data-theme', store.get('theme') || 'dark');
