@@ -1,5 +1,5 @@
 /* =========================================================================
-   app.js — навигация, отрисовка статей, поиск, темы
+   app.js — навигация, статьи, поиск, размер шрифта, проверка обновлений
    ========================================================================= */
 (function () {
   'use strict';
@@ -10,8 +10,13 @@
   /* безопасное хранилище: localStorage может быть недоступен для file:// */
   const store = {
     get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
-    set: function (k, v) { try { window.localStorage.setItem(k, v); } catch (e) { } }
+    set: function (k, v) { try { window.localStorage.setItem(k, v); } catch (e) { } },
+    del: function (k) { try { window.localStorage.removeItem(k); } catch (e) { } }
   };
+
+  const REPO = 'zigorminsk-debug/mikrotik-gide';
+  const API_LATEST = 'https://api.github.com/repos/' + REPO + '/releases/latest';
+  const RELEASES_URL = 'https://github.com/' + REPO + '/releases';
 
   /* ---------------- иконки ---------------- */
   const ICONS = {
@@ -22,7 +27,10 @@
     svc: '<path d="M12 3l7 4v6c0 4-3 6.5-7 8-4-1.5-7-4-7-8V7z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M9 12l2 2 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
     system: '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
     task: '<path d="M6 4h9l4 4v12H6z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M9 11h7M9 14.5h7M9 17.5h4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 0 4 23" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M4 5.5v13" stroke="currentColor" stroke-width="1.6"/>'
+    book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H19v18H6.5A2.5 2.5 0 0 0 4 23" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M4 5.5v13" stroke="currentColor" stroke-width="1.6"/>',
+    down: '<path d="M12 4v10m0 0l4-4m-4 4l-4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 18v1.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V18" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+    info: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M12 11v5M12 8.2v.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+    gear: '<circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>'
   };
   function svg(name, size) {
     const p = ICONS[name] || ICONS.book;
@@ -41,6 +49,32 @@
   FLAT.forEach(function (a) { BY_ID[a.id] = a; });
 
   const LVL = { 1: 'База', 2: 'Средний', 3: 'Продвинутый' };
+
+  /* ---------------- размер шрифта ---------------- */
+  const FS_STEPS = [0.9, 1, 1.08, 1.18, 1.3];
+  let fsIdx = 1;
+  (function initFs() {
+    const saved = parseInt(store.get('fs') || '1', 10);
+    fsIdx = isNaN(saved) ? 1 : Math.min(FS_STEPS.length - 1, Math.max(0, saved));
+    document.documentElement.setAttribute('data-fs', String(fsIdx));
+  })();
+
+  function applyFs(next) {
+    fsIdx = Math.min(FS_STEPS.length - 1, Math.max(0, next));
+    document.documentElement.setAttribute('data-fs', String(fsIdx));
+    store.set('fs', String(fsIdx));
+    syncFsUi();
+  }
+  function syncFsUi() {
+    const pct = Math.round(FS_STEPS[fsIdx] * 100) + '%';
+    ['#fsPct', '#fsPctTop'].forEach(function (sel) {
+      const n = $(sel); if (n) n.textContent = pct;
+    });
+    const dn = $('#fontDown'); if (dn) dn.disabled = fsIdx === 0;
+    const up = $('#fontUp'); if (up) up.disabled = fsIdx === FS_STEPS.length - 1;
+    const dn2 = $('#fsDown2'); if (dn2) dn2.disabled = fsIdx === 0;
+    const up2 = $('#fsUp2'); if (up2) up2.disabled = fsIdx === FS_STEPS.length - 1;
+  }
 
   /* ---------------- сайдбар ---------------- */
   const sidebarScroll = $('#sidebarScroll');
@@ -61,10 +95,8 @@
       const head = document.createElement('button');
       head.className = 'grp-head';
       head.innerHTML = '<span class="grp-ico">' + svg(g.ic, 15) + '</span><span>' + g.name +
-        '</span><span class="chev">' + '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
-      head.addEventListener('click', function () {
-        wrap.classList.toggle('open');
-      });
+        '</span><span class="chev"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+      head.addEventListener('click', function () { wrap.classList.toggle('open'); });
       wrap.appendChild(head);
 
       const items = document.createElement('div');
@@ -84,19 +116,21 @@
     });
     sidebarScroll.innerHTML = '';
     sidebarScroll.appendChild(frag);
-    $('#sidebarFoot').innerHTML =
-      '<span>Winbox 4 · RouterOS 7</span><span>build ' + (window.APP_VERSION || 'dev') + '</span>';
+
+    const foot = $('#sidebarFoot');
+    foot.innerHTML = '<a href="#/about" style="color:inherit">О программе</a>' +
+      '<span>build ' + (window.APP_VERSION || 'dev') + '</span>';
+    foot.querySelector('a').addEventListener('click', closeSidebar);
   }
 
   function markActive(id) {
     sidebarScroll.querySelectorAll('.item').forEach(function (a) {
-      a.classList.toggle('active', a.dataset.id === id);
-      if (a.dataset.id === id) {
+      const on = a.dataset.id === id;
+      a.classList.toggle('active', on);
+      if (on) {
         const grp = a.closest('.grp');
         if (grp) grp.classList.add('open');
-        if (a.scrollIntoView) {
-          try { a.scrollIntoView({ block: 'nearest' }); } catch (e) { }
-        }
+        if (a.scrollIntoView) { try { a.scrollIntoView({ block: 'nearest' }); } catch (e) { } }
       }
     });
   }
@@ -118,11 +152,15 @@
       (title ? '<h3 class="card-h">' + svg(iconName || 'book', 15) + title + '</h3>' : '') +
       inner + '</section>';
   }
+  function warnIcon() {
+    return '<svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 4l8.5 15h-17z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M12 10v4M12 16.6v.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  }
 
   /* ---------------- главная ---------------- */
   function homeView() {
     const total = FLAT.length;
     const tasks = (GROUPS.filter(function (g) { return g.id === 'tasks'; })[0] || { items: [] }).items.length;
+    const scenesCount = FLAT.reduce(function (n, a) { return n + ((a.scenes || []).length); }, 0);
     const quick = ['start-first-login', 'start-base-setup', 'ip-firewall-filter', 'ip-firewall-nat',
       'ip-dhcp-server', 'start-backup', 'vpn-wireguard', 'task-lan-internet'];
 
@@ -131,10 +169,10 @@
       '<h1>Учебник MikroTik<br>по меню Winbox 4</h1>' +
       '<p>Разбор каждого пункта и подпункта меню: назначение, где применяется, пошаговая настройка ' +
       'с окнами Winbox 4 и стрелками «куда нажимать». Плюс раздел готовых решений для продакшена — ' +
-      'от базовой настройки до VLAN, VPN, балансировки и BGP.</p>' +
+      'от базовой настройки до VLAN, VPN, балансировки, QoS и BGP.</p>' +
       '<div class="stats">' +
-      '<div class="st"><b>' + total + '</b><span>пунктов</span></div>' +
-      '<div class="st"><b>' + GROUPS.length + '</b><span>разделов</span></div>' +
+      '<div class="st"><b>' + total + '</b><span>статей</span></div>' +
+      '<div class="st"><b>' + scenesCount + '</b><span>схем</span></div>' +
       '<div class="st"><b>' + tasks + '</b><span>задач PROD</span></div>' +
       '<div class="st"><b>' + (window.APP_VERSION || 'dev') + '</b><span>сборка</span></div>' +
       '</div></div>';
@@ -148,8 +186,14 @@
     });
     html += '</div>';
 
+    html += card('Приложение', 'gear',
+      '<a class="list-row" href="#/settings"><span class="n">' + svg('gear', 13) + '</span>' +
+      '<b>Настройки и проверка обновлений</b><span>v' + (window.APP_VERSION || '') + '</span></a>' +
+      '<a class="list-row" href="#/about"><span class="n">' + svg('info', 13) + '</span>' +
+      '<b>О программе и история релизов</b><span>что изменилось</span></a>');
+
     GROUPS.forEach(function (g) {
-      html += '<div class="sec-h"><h2>' + esc(g.name) + '</h2><span>' + (g.items || []).length + ' пунктов</span></div>';
+      html += '<div class="sec-h"><h2>' + esc(g.name) + '</h2><span>' + (g.items || []).length + ' статей</span></div>';
       (g.items || []).forEach(function (a, i) {
         html += '<a class="list-row" href="#/' + a.id + '">' +
           '<span class="n">' + (i + 1) + '</span>' +
@@ -159,10 +203,9 @@
     });
 
     html += '<div class="card" style="margin-top:18px"><h3 class="card-h">' + svg('book', 15) + 'Про этот учебник</h3>' +
-      '<p>Все окна Winbox 4 в учебнике — векторные копии интерфейса RouterOS 7, собранные по реальной ' +
-      'структуре меню: те же вкладки, колонки, кнопки и поля. Они масштабируются под экран телефона, ' +
-      'поэтому подписи остаются читаемыми. Красная рамка и стрелка с номером показывают, куда нажимать, ' +
-      'а список под «скриншотом» — что именно сделать.</p>' +
+      '<p>Окна Winbox 4 — векторные копии интерфейса RouterOS 7: те же вкладки, колонки, кнопки и поля. ' +
+      'Они масштабируются под экран телефона, а кнопка «⤢ крупнее» открывает схему на весь экран. ' +
+      'Красная рамка и стрелка с номером показывают, куда нажимать.</p>' +
       '<p>Команды в терминале можно копировать: нажмите «копировать» и вставьте в Winbox → New Terminal ' +
       'или в SSH-сессию.</p></div>';
 
@@ -186,9 +229,7 @@
     (a.tags || []).forEach(function (t) { html += '<span class="badge">' + esc(t) + '</span>'; });
     html += '</div>';
 
-    if (a.purpose) {
-      html += card('Назначение', 'book', '<p class="lead">' + inline(a.purpose) + '</p>');
-    }
+    if (a.purpose) html += card('Назначение', 'book', '<p class="lead">' + inline(a.purpose) + '</p>');
     if (a.usage && a.usage.length) {
       html += card('Где применяется', 'iface', '<ul class="clean">' +
         a.usage.map(function (u) { return '<li>' + inline(u) + '</li>'; }).join('') + '</ul>');
@@ -206,8 +247,10 @@
     }
 
     if (a.scenes && a.scenes.length) {
-      html += '<section class="card" id="scenesCard"><h3 class="card-h">' + svg('iface', 15) +
-        'Winbox 4: куда нажимать</h3><div id="scenesHost"></div></section>';
+      html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) +
+        'Winbox 4: куда нажимать</h3>' +
+        '<div class="scene-cap" style="margin:-4px 0 10px">Тап по схеме или кнопка «⤢ крупнее» открывает её на весь экран</div>' +
+        '<div id="scenesHost"></div></section>';
     }
 
     if (a.check && a.check.length) {
@@ -233,16 +276,238 @@
     return html;
   }
 
-  function warnIcon() {
-    return '<svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 4l8.5 15h-17z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M12 10v4M12 16.6v.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
+  /* ---------------- настройки ---------------- */
+  function settingsView() {
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><span>Настройки</span></div>';
+    html += '<h1 class="art-title">Настройки</h1>';
+
+    html += '<div class="set-card">' +
+      '<div class="set-row">' +
+      '<div class="grow"><div class="lbl">Размер шрифта</div>' +
+      '<div class="hint">Влияет на весь текст учебника. Схемы Winbox 4 масштабируются отдельно — кнопкой «⤢ крупнее».</div></div>' +
+      '<div class="seg"><button id="fsDown2" aria-label="Меньше">A−</button>' +
+      '<span class="val" id="fsPct">100%</span>' +
+      '<button id="fsUp2" aria-label="Больше">A+</button></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+      '<div class="grow"><div class="lbl">Тёмная тема</div><div class="hint">Оформление приложения; схемы Winbox всегда светлые</div></div>' +
+      '<div class="switch' + (document.documentElement.getAttribute('data-theme') === 'dark' ? ' on' : '') + '" id="themeSwitch" role="switch" aria-label="Тёмная тема"></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+      '<div class="grow"><div class="lbl">Текущая версия</div><div class="hint">Номер сборки присваивается автоматически в GitHub Actions</div></div>' +
+      '<div class="badge v7">v' + (window.APP_VERSION || 'dev') + '</div>' +
+      '</div>' +
+      '</div>';
+
+    html += '<div class="set-card">' +
+      '<h3 class="card-h">' + svg('down', 15) + 'Обновление приложения</h3>' +
+      '<div class="upd" id="updBox">Нажмите «Проверить обновления» — приложение запросит последний релиз на GitHub.</div>' +
+      '<div style="margin-top:10px"><button class="btn primary block" id="checkUpdBtn">' + svg('down', 15) + 'Проверить обновления</button></div>' +
+      '<div class="hint" style="margin-top:8px">Приложение проверяет страницу релизов ' + esc(REPO) + ' и сравнивает версии. Скачивание APK — по кнопке, в браузере.</div>' +
+      '</div>';
+
+    html += '<div class="set-card">' +
+      '<div class="set-row"><div class="grow"><div class="lbl">Сбросить настройки приложения</div>' +
+      '<div class="hint">Размер шрифта и тема вернутся к значениям по умолчанию</div></div>' +
+      '<button class="btn primary" id="resetBtn">Сбросить</button></div>' +
+      '</div>';
+
+    html += '<a class="list-row" href="#/about"><span class="n">' + svg('info', 13) + '</span>' +
+      '<b>О программе и история релизов</b><span>→</span></a>';
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------------- о программе ---------------- */
+  function changelogHtml() {
+    const list = window.CHANGELOG || [];
+    const cur = window.APP_VERSION || 'dev';
+    let out = '<ul class="chg">';
+    list.forEach(function (e, i) {
+      const ver = (e.v === 'auto') ? cur : e.v;
+      const isCur = (e.v === 'auto') || (ver === cur);
+      out += '<li class="chg-item' + (isCur ? ' cur' : '') + '">' +
+        '<div class="chg-head"><span class="chg-ver">v' + esc(ver) + '</span>' +
+        (isCur ? '<span class="tag-cur">ваша версия</span>' : '') +
+        '<span class="chg-date">' + esc(e.date || '') + '</span></div>' +
+        '<div class="chg-title">' + esc(e.title || '') + '</div>' +
+        '<ul>' + (e.items || []).map(function (it) { return '<li>' + esc(it) + '</li>'; }).join('') + '</ul>' +
+        '</li>';
+    });
+    out += '</ul>';
+    return out;
+  }
+
+  function aboutView() {
+    const scenesCount = FLAT.reduce(function (n, a) { return n + ((a.scenes || []).length); }, 0);
+    const tasks = (GROUPS.filter(function (g) { return g.id === 'tasks'; })[0] || { items: [] }).items.length;
+    let ua = navigator.userAgent || '';
+    ua = ua.replace(/^.*?\((.*?)\).*$/, '$1');
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><span>О программе</span></div>';
+
+    html += '<div class="about-hero">' +
+      '<span class="ic"><svg viewBox="0 0 24 24" width="26" height="26"><path d="M3 15h18v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="currentColor"/><path d="M11 15V9.5h2V15z" fill="currentColor"/><path d="M7 9a7 7 0 0 1 10 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg></span>' +
+      '<div><h2>MikroTik · Учебник Winbox 4</h2>' +
+      '<p>версия ' + esc(window.APP_VERSION || 'dev') + (window.APP_BUILD_DATE ? ' · сборка ' + esc(window.APP_BUILD_DATE) : '') + '</p></div></div>';
+
+    html += card('Что это за приложение', 'info',
+      '<p>Карманный справочник по настройке роутеров MikroTik: структура меню Winbox 4, назначение каждого ' +
+      'пункта, пошаговые инструкции со схемами окон и стрелками, проверка командой в терминале и разбор ' +
+      'типичных ошибок. Отдельный раздел — готовые решения для продакшена.</p>' +
+      '<div class="hero" style="margin:12px 0 0;padding:12px 14px">' +
+      '<div class="stats" style="margin:0">' +
+      '<div class="st"><b>' + GROUPS.length + '</b><span>разделов</span></div>' +
+      '<div class="st"><b>' + FLAT.length + '</b><span>статей</span></div>' +
+      '<div class="st"><b>' + scenesCount + '</b><span>схем</span></div>' +
+      '<div class="st"><b>' + tasks + '</b><span>задач PROD</span></div>' +
+      '</div></div>');
+
+    html += '<div class="set-card"><h3 class="card-h">' + svg('down', 15) + 'Обновления</h3>' +
+      '<div class="upd" id="updBox">Проверьте, нет ли новой сборки — обновления ставятся поверх текущей версии.</div>' +
+      '<div class="upd-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
+      '<button class="btn primary" id="checkUpdBtn">' + svg('down', 15) + 'Проверить обновления</button>' +
+      '<a class="btn" href="' + RELEASES_URL + '">Все релизы ↗</a></div></div>';
+
+    html += '<div class="set-card"><h3 class="card-h">' + svg('book', 15) + 'История релизов</h3>' + changelogHtml() + '</div>';
+
+    html += '<div class="set-card"><h3 class="card-h">' + svg('system', 15) + 'Технические данные</h3>' +
+      '<dl class="kv">' +
+      '<dt>Версия</dt><dd>' + esc(window.APP_VERSION || 'dev') + '</dd>' +
+      '<dt>versionCode</dt><dd>' + esc(window.APP_VERSION_CODE || '—') + '</dd>' +
+      '<dt>Дата сборки</dt><dd>' + esc(window.APP_BUILD_DATE || '—') + '</dd>' +
+      '<dt>Источник</dt><dd>' + esc(REPO) + '</dd>' +
+      '<dt>Платформа</dt><dd>' + esc(ua.slice(0, 90)) + '</dd>' +
+      '</dl></div>';
+
+    html += card('Ссылки', 'book', '<div class="badges" style="margin:0">' +
+      '<a class="badge" href="' + RELEASES_URL + '">Релизы и APK ↗</a>' +
+      '<a class="badge" href="https://github.com/' + REPO + '">Исходный код ↗</a>' +
+      '<a class="badge" href="https://help.mikrotik.com/docs/">Документация RouterOS ↗</a>' +
+      '<a class="badge" href="https://mikrotik.com/download">Winbox ↗</a></div>');
+
+    html += '<p style="color:var(--txt-mute);font-size:12px;margin-top:16px">' +
+      'MikroTik и RouterOS — товарные знаки MikroTik SIA. Приложение неофициальное, учебное.</p>';
+    html += '</div>';
+    return html;
+  }
+
+  /* ---------------- проверка обновлений ---------------- */
+  function parseVer(s) {
+    const m = String(s || '').match(/(\d+\.\d+\.\d+)/);
+    return m ? m[1] : null;
+  }
+  function cmpVer(a, b) {
+    const pa = String(a).split('.').map(Number);
+    const pb = String(b).split('.').map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+      const x = pa[i] || 0, y = pb[i] || 0;
+      if (x > y) return 1;
+      if (x < y) return -1;
+    }
+    return 0;
+  }
+
+  function fetchLatest() {
+    return new Promise(function (resolve, reject) {
+      if (window.AndroidBridge && window.AndroidBridge.getLatestRelease) {
+        const timer = setTimeout(function () {
+          reject(new Error('Сеть не ответила за 20 секунд'));
+        }, 20000);
+        window.__updateCallback = function (json) {
+          clearTimeout(timer);
+          try {
+            const data = JSON.parse(json);
+            if (data && data.error) reject(new Error(data.error));
+            else resolve(data);
+          } catch (e) {
+            reject(new Error('Некорректный ответ сервера'));
+          }
+        };
+        try {
+          window.AndroidBridge.getLatestRelease();
+        } catch (e) {
+          clearTimeout(timer);
+          reject(e);
+        }
+      } else {
+        // браузерное превью: обычный fetch с таймаутом
+        const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        const timer = setTimeout(function () {
+          if (ctrl) ctrl.abort();
+          reject(new Error('Сеть не ответила за 15 секунд'));
+        }, 15000);
+        fetch(API_LATEST, {
+          headers: { 'Accept': 'application/vnd.github+json' },
+          signal: ctrl ? ctrl.signal : undefined
+        })
+          .then(function (r) {
+            clearTimeout(timer);
+            if (!r.ok) throw new Error('GitHub ответил ' + r.status);
+            return r.json();
+          })
+          .then(resolve)
+          .catch(function (e) {
+            clearTimeout(timer);
+            reject(e);
+          });
+      }
+    });
+  }
+
+  function renderUpdateResult(rel) {
+    const box = $('#updBox');
+    if (!box) return;
+    const cur = window.APP_VERSION || '0.0.0';
+    const latest = parseVer(rel.name) || parseVer(rel.tag_name) || cur;
+    const apk = (rel.assets || []).filter(function (a) {
+      return /\.apk$/i.test(a.name || '');
+    })[0];
+    const newer = cmpVer(latest, cur) > 0;
+
+    if (newer) {
+      box.className = 'upd new';
+      box.innerHTML = 'Доступна новая версия: <b class="ver">v' + esc(latest) + '</b><br>' +
+        'У вас установлена <span class="ver">v' + esc(cur) + '</span>.<br>' +
+        '<span style="font-size:12.5px">' + esc(rel.name || '') + '</span>' +
+        '<div class="upd-actions">' +
+        (apk ? '<a class="btn primary" href="' + esc(apk.browser_download_url) + '">Скачать APK ' + esc(latest) + '</a>' : '') +
+        '<a class="btn" href="' + esc(rel.html_url) + '">Страница релиза ↗</a>' +
+        '</div>' +
+        '<div style="font-size:12px;margin-top:8px;opacity:.85">Новая версия подписана тем же ключом — установится поверх, данные и настройки сохранятся.</div>';
+    } else {
+      box.className = 'upd ok';
+      box.innerHTML = 'У вас последняя версия — <b class="ver">v' + esc(cur) + '</b>.<br>' +
+        '<span style="font-size:12.5px">Последний релиз: ' + esc(rel.name || rel.tag_name || '') + '</span>';
+    }
+    store.set('updChecked', String(Date.now()));
+  }
+
+  function renderUpdateError(err) {
+    const box = $('#updBox');
+    if (!box) return;
+    box.className = 'upd err';
+    box.innerHTML = 'Не удалось проверить обновления: <b>' + esc(err && err.message ? err.message : 'нет сети') + '</b>.<br>' +
+      '<span style="font-size:12.5px">Проверьте подключение к интернету или откройте страницу релизов вручную.</span>' +
+      '<div class="upd-actions"><a class="btn" href="' + RELEASES_URL + '">Открыть релизы ↗</a></div>';
+  }
+
+  function checkUpdates() {
+    const box = $('#updBox');
+    if (box) {
+      box.className = 'upd';
+      box.innerHTML = 'Проверяем последнюю версию на GitHub…';
+    }
+    fetchLatest().then(renderUpdateResult).catch(renderUpdateError);
   }
 
   /* ---------------- рендер после вставки ---------------- */
   function hydrate(a) {
     const scenesHost = $('#scenesHost');
-    if (scenesHost && a.scenes) {
-      Scene.mount(scenesHost, a.scenes);
-    }
+    if (scenesHost && a.scenes) Scene.mount(scenesHost, a.scenes);
+
     const checkHost = $('#checkHost');
     if (checkHost && a.check) {
       const specs = a.check.map(function (c) {
@@ -250,6 +515,38 @@
       });
       Scene.mount(checkHost, specs);
     }
+  }
+
+  function bindSettings() {
+    const dn = $('#fsDown2'), up = $('#fsUp2');
+    if (dn) dn.addEventListener('click', function () { applyFs(fsIdx - 1); });
+    if (up) up.addEventListener('click', function () { applyFs(fsIdx + 1); });
+
+    const sw = $('#themeSwitch');
+    if (sw) sw.addEventListener('click', function () {
+      const cur = document.documentElement.getAttribute('data-theme');
+      const nx = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nx);
+      store.set('theme', nx);
+      sw.classList.toggle('on', nx === 'dark');
+    });
+
+    const chk = $('#checkUpdBtn');
+    if (chk) chk.addEventListener('click', checkUpdates);
+
+    const rst = $('#resetBtn');
+    if (rst) rst.addEventListener('click', function () {
+      store.del('fs'); store.del('theme');
+      fsIdx = 1;
+      document.documentElement.setAttribute('data-fs', '1');
+      document.documentElement.setAttribute('data-theme', 'dark');
+      syncFsUi();
+      if (sw) sw.classList.add('on');
+      rst.textContent = 'Сброшено';
+      setTimeout(function () { rst.textContent = 'Сбросить'; }, 1500);
+    });
+
+    syncFsUi();
   }
 
   /* ---------------- поиск ---------------- */
@@ -290,16 +587,32 @@
 
   /* ---------------- роутер ---------------- */
   const content = $('#content');
-  let scrollPos = 0;
 
   function route() {
     const hash = location.hash.replace(/^#\/?/, '');
     const id = hash.split('?')[0];
+
     if (!id) {
       content.innerHTML = homeView();
       content.scrollTop = 0;
       markActive(null);
       document.title = 'MikroTik · Учебник Winbox 4';
+      return;
+    }
+    if (id === 'settings') {
+      content.innerHTML = settingsView();
+      content.scrollTop = 0;
+      markActive(null);
+      bindSettings();
+      document.title = 'Настройки · MikroTik';
+      return;
+    }
+    if (id === 'about') {
+      content.innerHTML = aboutView();
+      content.scrollTop = 0;
+      markActive(null);
+      bindSettings();
+      document.title = 'О программе · MikroTik';
       return;
     }
     const a = BY_ID[id];
@@ -318,7 +631,7 @@
   document.addEventListener('click', function (e) {
     const btn = e.target.closest && e.target.closest('.copy');
     if (!btn) return;
-    const pre = btn.closest('.term').querySelector('pre');
+    const pre = btn.closest('.term, .wb-term').querySelector('pre');
     const text = pre ? pre.innerText : '';
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text);
@@ -341,9 +654,12 @@
     });
     $('#scrim').addEventListener('click', closeSidebar);
 
+    $('#fontDown').addEventListener('click', function () { applyFs(fsIdx - 1); });
+    $('#fontUp').addEventListener('click', function () { applyFs(fsIdx + 1); });
+    $('#settingsBtn').addEventListener('click', function () { location.hash = '#/settings'; });
+
     $('#searchBtn').addEventListener('click', function () {
-      const layer = $('#searchLayer');
-      layer.hidden = false;
+      $('#searchLayer').hidden = false;
       doSearch('');
       setTimeout(function () { $('#searchInput').focus(); }, 60);
     });
@@ -363,12 +679,7 @@
     });
 
     document.documentElement.setAttribute('data-theme', store.get('theme') || 'dark');
-    $('#themeBtn').addEventListener('click', function () {
-      const cur = document.documentElement.getAttribute('data-theme');
-      const nx = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', nx);
-      store.set('theme', nx);
-    });
+    syncFsUi();
 
     window.addEventListener('hashchange', route);
     route();

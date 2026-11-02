@@ -335,7 +335,8 @@
     scale.appendChild(root);
     host.appendChild(scale);
     block.appendChild(host);
-    block.appendChild(el('div', 'scene-hint', '⇄ Окно шире экрана — прокрутите вбок или сожмите двумя пальцами'));
+    block.appendChild(el('div', 'scene-hint', '⇄ Окно шире экрана — прокрутите вбок или нажмите «⤢ крупнее»'));
+    addZoom(block, host, spec);
     if (spec.notes && spec.notes.length) {
       const ul = el('ul', 'notes');
       spec.notes.forEach(function (t, i) {
@@ -359,7 +360,8 @@
     scale.appendChild(terminal(spec));
     host.appendChild(scale);
     block.appendChild(host);
-    block.appendChild(el('div', 'scene-hint', '⇄ Команды можно скопировать кнопкой в правом верхнем углу окна'));
+    block.appendChild(el('div', 'scene-hint', '⇄ Тап по окну открывает его крупно; команды копируются кнопкой справа вверху'));
+    addZoom(block, host, spec);
     if (spec.notes && spec.notes.length) {
       const ul = el('ul', 'notes');
       spec.notes.forEach(function (t, i) {
@@ -369,6 +371,102 @@
     }
     block._fit = function () { fit(host); };
     return block;
+  }
+
+  /* ---------- полноэкранный просмотр схемы ---------- */
+  function addZoom(block, host, spec) {
+    const btn = el('button', 'scene-zoom', '⤢ крупнее');
+    btn.type = 'button';
+    host.appendChild(btn);
+    btn.addEventListener('click', function (e) {
+      e.stopPropagation();
+      openZoom(block, spec);
+    });
+    host.addEventListener('click', function () {
+      openZoom(block, spec);
+    });
+  }
+
+  function openZoom(block, spec) {
+    const host = block.querySelector('.scene-host');
+    const src = host && host.querySelector('.scene-scale');
+    if (!src) return;
+
+    const clone = src.cloneNode(true);
+    clone.style.transform = 'scale(1)';
+
+    const layer = el('div', 'zoom-layer');
+    const head = el('div', 'zoom-head');
+    const title = (spec && (spec.cap || spec.win)) || 'Схема Winbox 4';
+    head.innerHTML = '<span class="title">' + esc(title) + '</span>';
+
+    const ctl = el('div', 'zoom-ctl');
+    const bMinus = el('button', null, '−');
+    const pct = el('span', 'pct', '100%');
+    const bPlus = el('button', null, '+');
+    const bFit = el('button', null, '⇔');
+    bMinus.type = bPlus.type = bFit.type = 'button';
+    bMinus.setAttribute('aria-label', 'Уменьшить');
+    bPlus.setAttribute('aria-label', 'Увеличить');
+    bFit.setAttribute('aria-label', 'По ширине экрана');
+    ctl.appendChild(bMinus); ctl.appendChild(pct); ctl.appendChild(bPlus); ctl.appendChild(bFit);
+
+    const bClose = el('button', 'icon-btn', '✕');
+    bClose.type = 'button';
+    bClose.setAttribute('aria-label', 'Закрыть');
+
+    head.appendChild(ctl);
+    head.appendChild(bClose);
+
+    const body = el('div', 'zoom-body');
+    const inner = el('div', 'zoom-inner');
+    inner.appendChild(clone);
+    body.appendChild(inner);
+
+    const tip = el('div', 'zoom-tip', 'Прокрутите схему вбок · кнопки − / + меняют масштаб · ⇔ вписывает по ширине');
+    layer.appendChild(head);
+    layer.appendChild(body);
+    layer.appendChild(tip);
+    document.body.appendChild(layer);
+    document.body.style.overflow = 'hidden';
+
+    const base = clone.querySelector('.wb, .wb-term');
+    const natural = (base && base.offsetWidth) || 1000;
+    const naturalH = (base && base.offsetHeight) || 420;
+    let k = 1;
+
+    function apply() {
+      clone.style.transform = 'scale(' + k + ')';
+      inner.style.width = Math.round(natural * k) + 'px';
+      inner.style.height = Math.round(naturalH * k) + 'px';
+      pct.textContent = Math.round(k * 100) + '%';
+      bMinus.disabled = k <= 0.45;
+      bPlus.disabled = k >= 2.2;
+    }
+    function step(d) {
+      k = Math.min(2.2, Math.max(0.45, Math.round((k + d) * 100) / 100));
+      apply();
+    }
+    bMinus.addEventListener('click', function () { step(-0.15); });
+    bPlus.addEventListener('click', function () { step(0.15); });
+    bFit.addEventListener('click', function () {
+      const avail = body.clientWidth - 16;
+      k = Math.min(2.2, Math.max(0.3, Math.round((avail / natural) * 100) / 100));
+      apply();
+    });
+
+    function close() {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = '';
+      layer.remove();
+    }
+    function onKey(e) { if (e.key === 'Escape') close(); }
+    bClose.addEventListener('click', close);
+    document.addEventListener('keydown', onKey);
+    // начальный масштаб: не мельче 100%, но и не больше ширины экрана
+    const avail0 = body.clientWidth - 16;
+    k = avail0 > natural ? 1 : Math.max(0.5, Math.round((avail0 / natural) * 100) / 100);
+    apply();
   }
 
   function mount(container, specs) {
