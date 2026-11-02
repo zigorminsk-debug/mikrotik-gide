@@ -61,7 +61,7 @@
       const head = document.createElement('button');
       head.className = 'grp-head';
       head.innerHTML = '<span class="grp-ico">' + svg(g.ic, 15) + '</span><span>' + g.name +
-        '</span><span class="chev">' + svg('book', 0) + '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+        '</span><span class="chev">' + '<svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
       head.addEventListener('click', function () {
         wrap.classList.toggle('open');
       });
