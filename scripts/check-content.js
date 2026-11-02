@@ -12,8 +12,20 @@
 const path = require('path');
 const fs = require('fs');
 
-const DATA_DIR = path.resolve(__dirname, '../app/src/main/assets/www/js/data');
-const files = fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.js')).sort();
+const WWW = path.resolve(__dirname, '../app/src/main/assets/www');
+const DATA_DIR = path.join(WWW, 'js/data');
+
+// порядок загрузки берём из index.html — он же используется в приложении
+const html = fs.readFileSync(path.join(WWW, 'index.html'), 'utf8');
+const files = [];
+const re = /<script\s+src="js\/data\/([^"]+)"/g;
+let m;
+while ((m = re.exec(html)) !== null) files.push(m[1]);
+
+if (!files.length) {
+  console.error('Не найдены файлы данных в index.html');
+  process.exit(1);
+}
 
 global.window = {};
 files.forEach(f => require(path.join(DATA_DIR, f)));
