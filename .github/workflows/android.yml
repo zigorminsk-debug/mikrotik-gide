@@ -12,6 +12,7 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: apk-${{ github.ref }}
@@ -108,11 +109,20 @@ jobs:
 
       - name: Лог сборки (при ошибке)
         if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: build.log
-          if-no-files-found: warn
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Диагностика: складываем хвост лога в issue, чтобы его можно было прочитать
+          [ -f build.log ] || echo "build.log отсутствует" > build.log
+          TITLE="build-failure-$(date -u +%Y%m%d-%H%M%S)"
+          {
+            echo "Сборка: ${GITHUB_RUN_NUMBER}"
+            echo
+            echo '```'
+            tail -c 55000 build.log | sed 's/```/` ` `/g'
+            echo '```'
+          } > /tmp/issue-body.md
+          gh issue create --title "$TITLE" --body-file /tmp/issue-body.md || true
 
       - name: Проверка подписи
         run: |
