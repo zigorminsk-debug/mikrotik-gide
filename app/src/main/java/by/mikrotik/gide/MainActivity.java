@@ -2,11 +2,14 @@ package by.mikrotik.gide;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.Window;
@@ -20,9 +23,15 @@ import android.webkit.WebViewClient;
 import org.json.JSONObject;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import android.widget.Toast;
 
 /**
  * Единственная Activity приложения.
@@ -110,6 +119,22 @@ public class MainActivity extends Activity {
     }
 
     /** Мост для JS: проверка обновлений и открытие ссылок. */
+    private static String sanitizeFileName(String raw) {
+        String base = raw == null ? "file.txt" : raw.trim();
+        if (base.isEmpty()) base = "file.txt";
+        base = base.replace('\\', '_').replace('/', '_').replace(":", "_");
+        if (base.length() > 80) base = base.substring(base.length() - 80);
+        return base;
+    }
+
+    private static String mimeOf(String name) {
+        String n = name.toLowerCase();
+        if (n.endsWith(".json")) return "application/json";
+        if (n.endsWith(".csv")) return "text/csv";
+        if (n.endsWith(".rsc") || n.endsWith(".txt")) return "text/plain";
+        return "application/octet-stream";
+    }
+
     private class Bridge {
 
         /** Последний релиз с GitHub. Ответ придёт в window.__updateCallback(jsonString). */
@@ -201,6 +226,64 @@ public class MainActivity extends Activity {
                     }
                 }
             });
+        }
+
+        /**
+         * Сохранить текст в «Загрузки» (конфиг .rsc, CSV, резервная копия JSON).
+         * На Android 10+ — через MediaStore, на более старых — в папку приложения.
+         */
+        @JavascriptInterface
+        public void saveText(final String rawName, final String text) {
+            if (text == null) return;
+            final String name = sanitizeFileName(rawName);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    String where = null;
+                    try {
+                        byte[] bytes = text.getBytes(StandardCharsets.UTF_8);
+                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                            ContentValues cv = new ContentValues();
+                            cv.put(MediaStore.MediaColumns.DISPLAY_NAME, name);
+                            cv.put(MediaStore.MediaColumns.MIME_TYPE, mimeOf(name));
+                            cv.put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS + "/MikroTik");
+                            Uri uri = getContentResolver().insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, cv);
+                            if (uri != null) {
+                                OutputStream os = getContentResolver().openOutputStream(uri);
+                                if (os != null) {
+                                    os.write(bytes);
+                                    os.close();
+                                    where = "Download/MikroTik/" + name;
+                                }
+                            }
+                        } else {
+                            File dir = getExternalFilesDir(Environment.DIRECTORY_DOWNLOADS);
+                            if (dir != null) {
+                                if (!dir.exists()) dir.mkdirs();
+                                File f = new File(dir, name);
+                                FileOutputStream fos = new FileOutputStream(f);
+                                fos.write(bytes);
+                                fos.close();
+                                where = f.getAbsolutePath();
+                            }
+                        }
+                    } catch (Exception e) {
+                        where = null;
+                    }
+                    final String path = where;
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            try {
+                                Toast.makeText(MainActivity.this,
+                                        path == null ? "Не удалось сохранить файл" : "Сохранено: " + path,
+                                        Toast.LENGTH_LONG).show();
+                            } catch (Exception ignored) {
+                            }
+                        }
+                    });
+                }
+            }).start();
         }
 
         /**

@@ -102,6 +102,8 @@ QUIZ.forEach((q, i) => {
   if (!q.q || !Array.isArray(q.a) || q.a.length < 2) { errors.push(`quiz[${i}]: нет вопроса или вариантов`); quizBad++; return; }
   if (typeof q.c !== 'number' || q.c < 0 || q.c >= q.a.length) { errors.push(`quiz[${i}]: неверный индекс ответа`); quizBad++; }
   if (!q.e) { errors.push(`quiz[${i}]: нет пояснения`); quizBad++; }
+  if (new Set(q.a.map(x => String(x).trim())).size !== q.a.length) { errors.push(`quiz[${i}]: повторяющиеся варианты ответа`); quizBad++; }
+  if (!q.r) { errors.push(`quiz[${i}]: нет ссылки на статью для разбора`); quizBad++; }
   if (q.r && !ids.has(q.r)) { errors.push(`quiz[${i}]: ссылка на несуществующую статью ${q.r}`); quizBad++; }
 });
 

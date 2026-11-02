@@ -827,3 +827,27 @@ html[data-theme="light"] .hero{background:radial-gradient(1200px 300px at 20% -1
   box-shadow:0 10px 30px rgba(0,0,0,.45);
 }
 .toast.on{opacity:1;transform:translate(-50%,0)}
+
+/* =============== мастер: шаблоны, пробросы, VLSM =============== */
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px}
+.chip{
+  border:1px solid var(--line);background:var(--panel-2);color:var(--txt-dim);
+  border-radius:999px;padding:7px 13px;font-size:calc(12.5px * var(--fsm, 1));cursor:pointer;
+}
+.chip.on{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+.fwd-row,.vlsm-row{display:grid;gap:6px;margin-bottom:8px;align-items:center}
+.fwd-row{grid-template-columns:74px 1fr 1.3fr 1fr 1.2fr 34px}
+.vlsm-row{grid-template-columns:1.6fr 1fr 34px}
+@media (max-width:560px){
+  .fwd-row{grid-template-columns:1fr 1fr}
+  .fwd-row .f-del{justify-self:end}
+}
+.fwd-row .f-del,.vlsm-row .v-del{padding:8px 0;font-size:calc(13px * var(--fsm, 1))}
+.issue{font-size:calc(13px * var(--fsm, 1));margin:0 0 6px}
+.issue.err{color:var(--red)}
+.issue.warn{color:var(--amber)}
+[data-theme="light"] .issue.err{color:#b42318}
+[data-theme="light"] .issue.warn{color:#b54708}
+.qz-modes{display:flex;gap:8px;flex-wrap:wrap}
+.qz-modes .btn{flex:1 1 30%;margin:0;min-width:120px}
+.qz-top .lnk{border:0;background:none;color:var(--accent);font:inherit;cursor:pointer;padding:0}

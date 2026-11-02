@@ -115,7 +115,72 @@
     return 0;
   }
 
+  /* для плана считаем классические доступные хосты (2^N - 2) */
+  function prefixForHostsPlan(n) {
+    const need = Math.max(1, Math.floor(n));
+    for (let p = 30; p >= 0; p--) {
+      if (Math.pow(2, 32 - p) - 2 >= need) return p;
+    }
+    return 0;
+  }
+
+  /* VLSM: распределяем подсети по размеру (большие — первыми) */
+  function plan(baseCidr, rows) {
+    const base = parse(baseCidr);
+    if (!base) return { ok: false, error: 'Не разобрал базовую сеть', entries: [], leftover: null };
+    const baseInf = info(base.ip, base.prefix);
+    const baseStart = baseInf.networkInt;
+    const baseEnd = baseStart + Math.pow(2, 32 - base.prefix) - 1;
+    const list = (rows || []).map(function (r, i) {
+      return { name: String(r.name || ('подсеть ' + (i + 1))), hosts: Math.max(1, parseInt(r.hosts, 10) || 0) };
+    }).sort(function (a, b) { return b.hosts - a.hosts; });
+
+    const entries = [];
+    let cur = baseStart;
+    for (let i = 0; i < list.length; i++) {
+      const r = list[i];
+      const p = prefixForHostsPlan(r.hosts);
+      if (p < base.prefix) {
+        return {
+          ok: false,
+          error: '«' + r.name + '» требует ' + r.hosts + ' хостов — это больше, чем вся сеть ' + baseInf.cidr,
+          entries: entries,
+          leftover: null
+        };
+      }
+      const size = Math.pow(2, 32 - p);
+      const aligned = Math.ceil(cur / size) * size;
+      if (aligned + size - 1 > baseEnd) {
+        return {
+          ok: false,
+          error: 'Не хватает адресов: «' + r.name + '» (' + r.hosts + ' хостов) не помещается в ' + baseInf.cidr,
+          entries: entries,
+          leftover: null
+        };
+      }
+      const inf = info(aligned, p);
+      entries.push({
+        name: r.name, hosts: r.hosts, cidr: inf.cidr, mask: inf.mask,
+        first: inf.first, last: inf.last, broadcast: inf.broadcast,
+        capacity: inf.hosts, waste: inf.hosts - r.hosts
+      });
+      cur = aligned + size;
+    }
+    let leftover = null;
+    if (cur <= baseEnd) {
+      const rest = baseEnd - cur + 1;
+      let lp = 32;
+      for (let p = 0; p <= 32; p++) {
+        const size = Math.pow(2, 32 - p);
+        if (size <= rest && cur % size === 0) { lp = p; break; }
+      }
+      leftover = { cidr: intToIp(cur) + '/' + lp, size: rest, start: intToIp(cur) };
+    }
+    return { ok: true, base: baseInf.cidr, entries: entries, leftover: leftover };
+  }
+
   window.NetCalc = {
+    plan: plan,
     ipToInt: ipToInt,
     intToIp: intToIp,
     maskInt: maskInt,

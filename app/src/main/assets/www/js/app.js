@@ -795,7 +795,9 @@
       '<button class="btn primary" id="resetBtn">Сбросить</button></div>' +
       '</div>';
 
-    html += '<a class="list-row" href="#/about"><span class="n">' + svg('info', 13) + '</span>' +
+    html += '<a class="list-row" href="#/backup"><span class="n">' + svg('down', 13) + '</span>' +
+      '<b>Данные и резервная копия</b><span>заметки, прогресс, чек-листы</span></a>' +
+      '<a class="list-row" href="#/about"><span class="n">' + svg('info', 13) + '</span>' +
       '<b>О программе и история релизов</b><span>→</span></a>';
     html += '</div>';
     return html;
@@ -1334,10 +1336,12 @@
     html += '<h1 class="art-title">Инструменты</h1>';
     html += '<div class="hint" style="margin:-6px 0 14px">Всё считается на устройстве и работает без интернета.</div>';
     html += '<div class="tools-grid">' +
-      toolCard('#/wizard', 'Мастер конфигурации', 'Ответьте на вопросы — получите готовый конфиг RouterOS', 'gear') +
+      toolCard('#/wizard', 'Мастер конфигурации', 'WAN, LAN, IPv6, Wi-Fi, VPN, пробросы — готовый конфиг', 'gear') +
       toolCard('#/subnet', 'Калькулятор подсетей', 'Маска, диапазон, broadcast, деление на подсети', 'ip') +
+      toolCard('#/vlsm', 'VLSM-планировщик', 'План адресации по числу хостов + CSV', 'iface') +
       toolCard('#/diff', 'Сравнить конфиги', 'Два экспорта — что изменилось', 'task') +
       toolCard('#/quiz', 'Самопроверка', '10 вопросов по RouterOS с разбором ошибок', 'book') +
+      toolCard('#/backup', 'Данные и резервная копия', 'Заметки, прогресс, чек-листы — экспорт и импорт', 'down') +
       '</div>';
     html += '<div class="hint">Ещё: под каждой статьёй — «Режим на объекте»: чек-лист с галочками и таймером.</div>';
     html += '</div>';
@@ -1349,24 +1353,28 @@
     identity: 'office-gw', wan: 'dhcp', wanPort: 'ether1', wanIp: '203.0.113.20', wanPrefix: 24,
     wanGw: '203.0.113.1', pppoeUser: 'login', pppoePass: 'password', lanIp: '192.168.88.1',
     lanPrefix: 24, lanPorts: 'ether2-ether5', dhcp: true, dns: '1.1.1.1,8.8.8.8', guest: true,
-    guestPort: 'ether5', guestIp: '192.168.20.1', wg: true, wgPort: 13231, protect: true
+    guestPort: 'ether5', guestIp: '192.168.20.1', guestPrefix: 24, wifi: false, wifiSsid: 'Office',
+    wifiPass: 'WiFi-Pass-2026', wifiGuestSsid: 'Office-Guest', wifiGuestPass: 'Guest-Pass-2026',
+    ipv6: 'off', ipv6Prefix: '2001:db8:1::/64', wg: true, wgIp: '10.10.10.1', wgPort: 13231,
+    l2tp: false, l2tpPsk: 'IPsec-PSK-2026', l2tpPool: '10.20.20.10-10.20.20.99',
+    pppoeServer: false, pppoeServerPort: 'ether5', pppoePool: '10.30.30.10-10.30.30.99',
+    pppoeServerUser: '', pppoeServerPass: '', forwards: [], nat: true, protect: true,
+    autobackup: false, tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org'
   };
 
   function wizSaved() {
-    try {
-      const v = JSON.parse(store.get('wiz') || '{}');
-      const out = {};
-      for (const k in WIZ_DEF) out[k] = (v && v[k] != null) ? v[k] : WIZ_DEF[k];
-      return out;
-    } catch (e) {
-      const out = {};
-      for (const k in WIZ_DEF) out[k] = WIZ_DEF[k];
-      return out;
-    }
+    let v = {};
+    try { v = JSON.parse(store.get('wiz') || '{}') || {}; } catch (e) { v = {}; }
+    const out = {};
+    for (const k in WIZ_DEF) out[k] = (v[k] != null) ? v[k] : WIZ_DEF[k];
+    if (!Array.isArray(out.forwards)) out.forwards = [];
+    return out;
   }
 
-  function wizField(id, label, value, hint) {
-    return '<label class="wz-row"><span class="wz-l">' + esc(label) + '</span>' +
+  function wizStore(o) { store.set('wiz', JSON.stringify(o)); }
+
+  function wizField(id, label, value, hint, wide) {
+    return '<label class="wz-row' + (wide ? ' wide' : '') + '"><span class="wz-l">' + esc(label) + '</span>' +
       '<input class="inp" id="' + id + '" value="' + esc(value) + '">' +
       (hint ? '<span class="wz-h">' + esc(hint) + '</span>' : '') + '</label>';
   }
@@ -1377,25 +1385,53 @@
       (hint ? '<span class="wz-h">' + esc(hint) + '</span>' : '') + '</div>';
   }
 
+  function wizSelect(id, label, value, options, hint) {
+    return '<label class="wz-row"><span class="wz-l">' + esc(label) + '</span>' +
+      '<select class="inp" id="' + id + '">' + options.map(function (o) {
+        return '<option value="' + esc(o.v) + '"' + (String(value) === String(o.v) ? ' selected' : '') + '>' + esc(o.t) + '</option>';
+      }).join('') + '</select>' + (hint ? '<span class="wz-h">' + esc(hint) + '</span>' : '') + '</label>';
+  }
+
+  function fwdRow(f, i) {
+    f = f || {};
+    const proto = (f.proto || 'tcp').toLowerCase();
+    return '<div class="fwd-row" data-fi="' + i + '">' +
+      '<select class="inp f-proto"><option value="tcp"' + (proto === 'tcp' ? ' selected' : '') + '>tcp</option>' +
+      '<option value="udp"' + (proto === 'udp' ? ' selected' : '') + '>udp</option></select>' +
+      '<input class="inp f-ext mono" value="' + esc(f.extPort || '') + '" placeholder="внеш. порт">' +
+      '<input class="inp f-ip mono" value="' + esc(f.toIp || '') + '" placeholder="внутр. IP">' +
+      '<input class="inp f-to mono" value="' + esc(f.toPort || '') + '" placeholder="внутр. порт">' +
+      '<input class="inp f-cmt" value="' + esc(f.comment || '') + '" placeholder="подпись">' +
+      '<button class="btn f-del" type="button" aria-label="Удалить">✕</button></div>';
+  }
+
   function wizardView() {
     const o = wizSaved();
+    const presets = (window.ConfigWizard && window.ConfigWizard.presets) ? window.ConfigWizard.presets() : [];
     const isStatic = o.wan === 'static';
     const isPppoe = o.wan === 'pppoe';
+
     let html = '<div class="wrap">';
     html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Мастер конфигурации</span></div>';
     html += '<h1 class="art-title">Мастер конфигурации</h1>';
-    html += '<div class="hint" style="margin:-6px 0 12px">Заполните поля — мастер соберёт конфиг RouterOS 7, который можно скопировать целиком в New Terminal.</div>';
+    html += '<div class="hint" style="margin:-6px 0 10px">Ответьте на вопросы — мастер соберёт конфиг RouterOS 7, который можно вставить целиком в New Terminal.</div>';
+
+    if (presets.length) {
+      html += '<div class="chips">' + presets.map(function (p) {
+        return '<button class="chip' + (o.preset === p.id ? ' on' : '') + '" data-preset="' + p.id + '">' + esc(p.name) + '</button>';
+      }).join('') + '</div>';
+    }
 
     html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Роутер и WAN</h3>' +
       wizField('w-identity', 'Имя роутера', o.identity) +
-      '<label class="wz-row"><span class="wz-l">WAN</span><select class="inp" id="w-wan">' +
-      ['dhcp', 'static', 'pppoe'].map(function (v) {
-        const t = v === 'dhcp' ? 'DHCP от провайдера' : v === 'static' ? 'Статический IP' : 'PPPoE';
-        return '<option value="' + v + '"' + (o.wan === v ? ' selected' : '') + '>' + t + '</option>';
-      }).join('') + '</select></label>' +
-      wizField('w-wanPort', 'Порт WAN', o.wanPort, 'ether1') +
+      wizSelect('w-wan', 'Подключение к провайдеру', o.wan, [
+        { v: 'dhcp', t: 'DHCP (автоматически)' },
+        { v: 'static', t: 'Статический IP' },
+        { v: 'pppoe', t: 'PPPoE (логин и пароль)' }
+      ]) +
+      wizField('w-wanPort', 'Порт WAN', o.wanPort, 'обычно ether1') +
       '<div class="wz-group' + (isStatic ? '' : ' off') + '" data-g="static">' +
-      wizField('w-wanIp', 'IP WAN', o.wanIp) +
+      wizField('w-wanIp', 'IP-адрес WAN', o.wanIp) +
       wizField('w-wanPrefix', 'Префикс WAN', o.wanPrefix) +
       wizField('w-wanGw', 'Шлюз провайдера', o.wanGw) +
       '</div>' +
@@ -1404,28 +1440,73 @@
       wizField('w-pppoePass', 'Пароль PPPoE', o.pppoePass) +
       '</div></section>';
 
-    html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'LAN</h3>' +
+    html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'LAN, DHCP и DNS</h3>' +
       wizField('w-lanIp', 'IP роутера в LAN', o.lanIp) +
       wizField('w-lanPrefix', 'Префикс LAN', o.lanPrefix) +
       wizField('w-lanPorts', 'Порты LAN', o.lanPorts, 'диапазон: ether2-ether5') +
       wizSwitch('w-dhcp', 'DHCP-сервер и пул', o.dhcp, 'раздавать адреса автоматически') +
       wizField('w-dns', 'DNS-серверы', o.dns, 'через запятую') +
-      wizSwitch('w-protect', 'Firewall и защита', o.protect, 'рекомендуется включить') +
       '</section>';
 
-    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Гости и VPN</h3>' +
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Гости и Wi-Fi</h3>' +
       wizSwitch('w-guest', 'Гостевая сеть (VLAN 20)', o.guest, 'изолировать гостей от LAN') +
       '<div class="wz-group' + (o.guest ? '' : ' off') + '" data-g="guest">' +
       wizField('w-guestIp', 'IP гостевого шлюза', o.guestIp) +
       wizField('w-guestPort', 'Порт под гостей', o.guestPort) +
       '</div>' +
-      wizSwitch('w-wg', 'WireGuard-сервер', o.wg, 'для удалённого доступа') +
-      '<div class="wz-group' + (o.wg ? '' : ' off') + '" data-g="wg">' +
-      wizField('w-wgPort', 'Порт WireGuard', o.wgPort) +
+      wizSwitch('w-wifi', 'Wi-Fi на этом роутере', o.wifi, 'создать SSID и профиль безопасности') +
+      '<div class="wz-group' + (o.wifi ? '' : ' off') + '" data-g="wifi">' +
+      wizField('w-wifiSsid', 'Имя сети (SSID)', o.wifiSsid) +
+      wizField('w-wifiPass', 'Пароль Wi-Fi', o.wifiPass, 'минимум 8 символов') +
+      '<div class="wz-group' + (o.guest ? '' : ' off') + '" data-g="guest">' +
+      wizField('w-wifiGuestSsid', 'Гостевой SSID', o.wifiGuestSsid) +
+      wizField('w-wifiGuestPass', 'Пароль гостевого Wi-Fi', o.wifiGuestPass) +
+      '</div></div></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('ip', 15) + 'IPv6</h3>' +
+      wizSelect('w-ipv6', 'IPv6', o.ipv6, [
+        { v: 'off', t: 'Не нужен' },
+        { v: 'pd', t: 'Префикс от провайдера (DHCPv6-PD)' },
+        { v: 'static', t: 'Свой префикс /64' }
+      ]) +
+      '<div class="wz-group' + (o.ipv6 === 'static' ? '' : ' off') + '" data-g="ipv6s">' +
+      wizField('w-ipv6Prefix', 'Префикс IPv6', o.ipv6Prefix, 'например 2001:db8:1::/64') +
       '</div></section>';
 
-    html += '<div class="wz-actions"><button class="btn primary block" id="wizGo">Собрать конфиг</button></div>';
-    html += '<div id="wizOut"></div>';
+    html += '<section class="card"><h3 class="card-h">' + svg('down', 15) + 'VPN и серверы</h3>' +
+      wizSwitch('w-wg', 'WireGuard-сервер', o.wg, 'удалённый доступ сотрудников') +
+      '<div class="wz-group' + (o.wg ? '' : ' off') + '" data-g="wg">' +
+      wizField('w-wgIp', 'Адрес WireGuard', o.wgIp) +
+      wizField('w-wgPort', 'Порт WireGuard', o.wgPort) +
+      '</div>' +
+      wizSwitch('w-l2tp', 'L2TP/IPsec-сервер', o.l2tp, 'совместим с телефонами без клиента') +
+      '<div class="wz-group' + (o.l2tp ? '' : ' off') + '" data-g="l2tp">' +
+      wizField('w-l2tpPsk', 'IPsec PSK', o.l2tpPsk) +
+      wizField('w-l2tpPool', 'Пул адресов для VPN', o.l2tpPool) +
+      '</div>' +
+      wizSwitch('w-pppoeServer', 'PPPoE-сервер для абонентов', o.pppoeServer, 'мини-ISP') +
+      '<div class="wz-group' + (o.pppoeServer ? '' : ' off') + '" data-g="pppoeSrv">' +
+      wizField('w-pppoeServerPort', 'Порт/интерфейс абонентов', o.pppoeServerPort) +
+      wizField('w-pppoePool', 'Пул абонентов', o.pppoePool) +
+      wizField('w-pppoeServerUser', 'Логин абонента', o.pppoeServerUser, 'можно оставить пустым') +
+      wizField('w-pppoeServerPass', 'Пароль абонента', o.pppoeServerPass) +
+      '</div></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'Проброс портов (NAT)</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Проброс нужен камерам, NAS, RDP, веб-серверу. Hairpin-NAT добавится автоматически.</div>' +
+      '<div id="wizFwd">' + (o.forwards || []).map(fwdRow).join('') + '</div>' +
+      '<button class="btn" id="fwdAdd" type="button">+ Добавить правило</button></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Дополнительно</h3>' +
+      wizSwitch('w-protect', 'Firewall и защита', o.protect, 'рекомендуется включить') +
+      wizSwitch('w-nat', 'NAT (masquerade)', o.nat, 'интернет для LAN') +
+      wizSwitch('w-autobackup', 'Автобэкап конфига', o.autobackup, 'скрипт + планировщик на 03:30') +
+      '</section>';
+
+    html += '<div class="wz-actions"><button class="btn primary" id="wizGo">Собрать конфиг</button>' +
+      '<button class="btn" id="wizCheck">Проверить поля</button>' +
+      '<button class="btn" id="wizReset">Сбросить</button></div>';
+    html += '<div id="wizIssues"></div><div id="wizOut"></div>';
     html += '</div>';
     return html;
   }
@@ -1439,67 +1520,218 @@
       const el = document.getElementById(id);
       return !!(el && el.classList.contains('on'));
     };
+    const forwards = [];
+    document.querySelectorAll('#wizFwd .fwd-row').forEach(function (row) {
+      const get = function (cls) { const el = row.querySelector(cls); return el ? el.value.trim() : ''; };
+      const f = {
+        proto: get('.f-proto') || 'tcp',
+        extPort: get('.f-ext'),
+        toIp: get('.f-ip'),
+        toPort: get('.f-to'),
+        comment: get('.f-cmt')
+      };
+      if (f.extPort || f.toIp || f.toPort) forwards.push(f);
+    });
     return {
       identity: g('w-identity', 'office-gw'),
       wan: g('w-wan', 'dhcp'),
       wanPort: g('w-wanPort', 'ether1'),
       wanIp: g('w-wanIp', ''), wanPrefix: g('w-wanPrefix', 24), wanGw: g('w-wanGw', ''),
       pppoeUser: g('w-pppoeUser', ''), pppoePass: g('w-pppoePass', ''),
-      lanIp: g('w-lanIp', '192.168.88.1'), lanPrefix: g('w-lanPrefix', 24), lanPorts: g('w-lanPorts', 'ether2-ether5'),
+      lanIp: g('w-lanIp', '192.168.88.1'), lanPrefix: g('w-lanPrefix', 24),
+      lanPorts: g('w-lanPorts', 'ether2-ether5'),
       dhcp: on('w-dhcp'), dns: g('w-dns', '1.1.1.1,8.8.8.8'),
       guest: on('w-guest'), guestIp: g('w-guestIp', '192.168.20.1'), guestPort: g('w-guestPort', 'ether5'),
-      wg: on('w-wg'), wgPort: g('w-wgPort', 13231),
-      protect: on('w-protect')
+      guestPrefix: 24,
+      wifi: on('w-wifi'), wifiSsid: g('w-wifiSsid', ''), wifiPass: g('w-wifiPass', ''),
+      wifiGuestSsid: g('w-wifiGuestSsid', ''), wifiGuestPass: g('w-wifiGuestPass', ''),
+      ipv6: g('w-ipv6', 'off'), ipv6Prefix: g('w-ipv6Prefix', ''),
+      wg: on('w-wg'), wgIp: g('w-wgIp', '10.10.10.1'), wgPort: g('w-wgPort', 13231),
+      l2tp: on('w-l2tp'), l2tpPsk: g('w-l2tpPsk', ''), l2tpPool: g('w-l2tpPool', ''),
+      pppoeServer: on('w-pppoeServer'), pppoeServerPort: g('w-pppoeServerPort', 'ether5'),
+      pppoePool: g('w-pppoePool', ''), pppoeServerUser: g('w-pppoeServerUser', ''),
+      pppoeServerPass: g('w-pppoeServerPass', ''),
+      forwards: forwards,
+      nat: on('w-nat'), protect: on('w-protect'), autobackup: on('w-autobackup'),
+      tz: wizSaved().tz || 'Europe/Minsk', ntp: wizSaved().ntp || 'by.pool.ntp.org',
+      preset: wizSaved().preset || ''
     };
   }
+
+  function wizIssuesHtml(issues) {
+    if (!issues || !issues.length) {
+      return '<div class="qz-fb ok" style="margin:10px 0"><b>Проверка пройдена.</b> Все обязательные поля заполнены корректно.</div>';
+    }
+    const errs = issues.filter(function (x) { return x.level === 'error'; });
+    const warns = issues.filter(function (x) { return x.level === 'warn'; });
+    let h = '<section class="card" style="margin-top:12px"><h3 class="card-h">' + svg('svc', 15) + 'Проверка полей</h3><ul class="clean">';
+    errs.forEach(function (x) { h += '<li class="issue err">✕ ' + esc(x.msg) + '</li>'; });
+    warns.forEach(function (x) { h += '<li class="issue warn">! ' + esc(x.msg) + '</li>'; });
+    h += '</ul></section>';
+    return h;
+  }
+
+  function wizRenderOutput(res, opts) {
+    const out = document.getElementById('wizOut');
+    const iss = document.getElementById('wizIssues');
+    if (!out) return;
+    if (iss) iss.innerHTML = '';
+    const c = res.counts || {};
+    let h = '<section class="card" style="margin-top:14px"><h3 class="card-h">' + svg('task', 15) + 'Готовый конфиг</h3>' +
+      '<div class="hint" style="margin:-4px 0 10px">' + esc(res.title || '') + ' · строк: ' + (res.lines || 0) +
+      ' · пробросов: ' + (c.forwards || 0) + ' · VPN-сервисов: ' + (c.vpn || 0) + '</div>';
+    if (res.errors && res.errors.length) {
+      h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div><b>Есть ошибки в полях:</b><br>' +
+        res.errors.map(esc).join('<br>') + '</div></div>';
+    }
+    if (res.warnings && res.warnings.length) {
+      h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div>' + res.warnings.map(esc).join('<br>') + '</div></div>';
+    }
+    h += '<div class="cfg"><div class="cfg-h"><span>' + esc(res.title || 'RouterOS 7') + '</span>' +
+      '<span class="cfg-btns"><button class="copy">копировать</button>' +
+      '<button class="share" data-share="cfg">поделиться</button>' +
+      '<button class="share" id="wizSave">файл</button></span></div>' +
+      '<pre>' + esc(res.text || '') + '</pre></div>' +
+      '<div class="hint" style="margin-top:10px">Вставьте в Winbox → New Terminal. Перед вставкой сохраните текущий конфиг: <code class="inl">/export file=before-change</code>.</div>' +
+      '</section>';
+    out.innerHTML = h;
+    const sv = document.getElementById('wizSave');
+    if (sv) sv.addEventListener('click', function () {
+      const name = 'routeros-' + cleanName(opts.identity) + '.rsc';
+      const saved = saveTextFile(name, res.text);
+      if (saved === 'blob') toast('Файл сохранён: ' + name);
+      else if (!saved) shareText(res.text, 'Конфиг RouterOS');
+    });
+    if (out.scrollIntoView) { try { out.scrollIntoView({ block: 'start' }); } catch (e) { } }
+  }
+
+  function cleanName(s) {
+    return String(s || 'config').replace(/[^a-zA-Z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'config';
+  }
+
+  function saveTextFile(name, text) {
+    if (window.AndroidBridge && typeof window.AndroidBridge.saveText === 'function') {
+      try {
+        window.AndroidBridge.saveText(name, text);
+        return 'bridge';
+      } catch (e) { }
+    }
+    try {
+      const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = name;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 1500);
+      return 'blob';
+    } catch (e) { return false; }
+  }
+
+  let wizTick = null;
 
   function bindWizard() {
     const go = document.getElementById('wizGo');
     if (!go) return;
-    const sel = document.getElementById('w-wan');
+
+    const root = go.closest('.wrap');
+    if (root) {
+      root.addEventListener('input', function () {
+        clearTimeout(wizTick);
+        wizTick = setTimeout(function () { wizStore(wizCollect()); }, 400);
+      });
+    }
+
     const sync = function () {
-      const v = sel.value;
+      const on = function (id) {
+        const el = document.getElementById(id);
+        return !!(el && el.classList.contains('on'));
+      };
+      const sel = document.getElementById('w-wan');
+      const ipv6 = document.getElementById('w-ipv6');
       document.querySelectorAll('.wz-group').forEach(function (g) {
-        const isStatic = g.getAttribute('data-g') === 'static';
-        const isP = g.getAttribute('data-g') === 'pppoe';
-        const isG = g.getAttribute('data-g') === 'guest';
-        const isW = g.getAttribute('data-g') === 'wg';
-        if (isStatic) g.classList.toggle('off', v !== 'static');
-        if (isP) g.classList.toggle('off', v !== 'pppoe');
-        if (isG) g.classList.toggle('off', !document.getElementById('w-guest').classList.contains('on'));
-        if (isW) g.classList.toggle('off', !document.getElementById('w-wg').classList.contains('on'));
+        const key = g.getAttribute('data-g');
+        let show = false;
+        if (key === 'static') show = sel && sel.value === 'static';
+        if (key === 'pppoe') show = sel && sel.value === 'pppoe';
+        if (key === 'guest') show = on('w-guest');
+        if (key === 'wifi') show = on('w-wifi');
+        if (key === 'ipv6s') show = ipv6 && ipv6.value === 'static';
+        if (key === 'wg') show = on('w-wg');
+        if (key === 'l2tp') show = on('w-l2tp');
+        if (key === 'pppoeSrv') show = on('w-pppoeServer');
+        g.classList.toggle('off', !show);
       });
     };
-    sel.addEventListener('change', sync);
-    ['w-guest', 'w-wg'].forEach(function (id) {
-      const sw = document.getElementById(id);
-      if (sw) sw.addEventListener('click', function () {
+
+    document.querySelectorAll('.wz-row .switch').forEach(function (sw) {
+      sw.addEventListener('click', function () {
         sw.classList.toggle('on');
         sync();
+        wizStore(wizCollect());
       });
     });
-    document.querySelectorAll('.wz-row .switch').forEach(function (sw) {
-      sw.addEventListener('click', function () { sw.classList.toggle('on'); });
+    ['w-wan', 'w-ipv6'].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', function () { sync(); wizStore(wizCollect()); });
+    });
+    document.querySelectorAll('#wizFwd .fwd-row').forEach(function (row) {
+      const del = row.querySelector('.f-del');
+      if (del) del.addEventListener('click', function () {
+        row.parentNode.removeChild(row);
+        wizStore(wizCollect());
+      });
+    });
+
+    const add = document.getElementById('fwdAdd');
+    if (add) add.addEventListener('click', function () {
+      const host = document.getElementById('wizFwd');
+      const i = host.querySelectorAll('.fwd-row').length;
+      host.insertAdjacentHTML('beforeend', fwdRow({ proto: 'tcp', extPort: '', toIp: '', toPort: '', comment: '' }, i));
+      const row = host.lastElementChild;
+      const del = row.querySelector('.f-del');
+      if (del) del.addEventListener('click', function () { row.parentNode.removeChild(row); });
+      const first = row.querySelector('.f-ext');
+      if (first) first.focus();
+    });
+
+    document.querySelectorAll('[data-preset]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const id = b.getAttribute('data-preset');
+        const next = window.ConfigWizard ? window.ConfigWizard.applyPreset(wizCollect(), id) : wizCollect();
+        wizStore(next);
+        route();
+        toast('Шаблон: ' + b.textContent);
+      });
+    });
+
+    const check = document.getElementById('wizCheck');
+    if (check) check.addEventListener('click', function () {
+      const opts = wizCollect();
+      wizStore(opts);
+      const issues = window.ConfigWizard ? window.ConfigWizard.validate(opts) : [];
+      const box = document.getElementById('wizIssues');
+      if (box) box.innerHTML = wizIssuesHtml(issues);
+      const out = document.getElementById('wizOut');
+      if (out) out.innerHTML = '';
+    });
+
+    const reset = document.getElementById('wizReset');
+    if (reset) reset.addEventListener('click', function () {
+      store.del('wiz');
+      route();
+      toast('Ответы сброшены');
     });
 
     go.addEventListener('click', function () {
       const opts = wizCollect();
-      store.set('wiz', JSON.stringify(opts));
+      wizStore(opts);
       const res = window.ConfigWizard ? window.ConfigWizard.generate(opts) : { text: '', warnings: ['Генератор не загружен'], lines: 0 };
-      const out = document.getElementById('wizOut');
-      let h = '<section class="card" style="margin-top:14px"><h3 class="card-h">' + svg('task', 15) + 'Готовый конфиг</h3>' +
-        '<div class="hint" style="margin:-4px 0 10px">' + esc(res.title || '') + ' · строк: ' + (res.lines || 0) + '</div>';
-      if (res.warnings && res.warnings.length) {
-        h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div>' + res.warnings.map(esc).join('<br>') + '</div></div>';
-      }
-      h += '<div class="cfg"><div class="cfg-h"><span>' + esc(res.title || 'RouterOS 7') + '</span>' +
-        '<span class="cfg-btns"><button class="copy">копировать</button><button class="share" data-share="cfg">поделиться</button></span></div>' +
-        '<pre>' + esc(res.text || '') + '</pre></div>' +
-        '<div class="hint" style="margin-top:10px">Вставьте в Winbox → New Terminal. Перед вставкой сохраните текущий конфиг: <code class="inl">/export file=before-change</code>.</div>' +
-        '</section>';
-      out.innerHTML = h;
-      if (out.scrollIntoView) { try { out.scrollIntoView({ block: 'start' }); } catch (e) { } }
+      wizRenderOutput(res, opts);
     });
+
+    sync();
   }
 
   /* ================= калькулятор подсетей ================= */
@@ -1573,6 +1805,224 @@
     if (go) go.addEventListener('click', snRender);
     inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') snRender(); });
     snRender();
+  }
+
+  /* ================= VLSM-планировщик ================= */
+  function vlsmSaved() {
+    let v = null;
+    try { v = JSON.parse(store.get('vlsm') || 'null'); } catch (e) { v = null; }
+    if (!v || !Array.isArray(v.rows)) {
+      v = {
+        base: '10.0.0.0/24',
+        rows: [
+          { name: 'Камеры', hosts: 50 },
+          { name: 'Телефония', hosts: 20 },
+          { name: 'Управление', hosts: 10 },
+          { name: 'Гости', hosts: 60 }
+        ]
+      };
+    }
+    return v;
+  }
+
+  function vlsmStore(v) { store.set('vlsm', JSON.stringify(v)); }
+
+  function vlsmRow(r, i) {
+    return '<div class="vlsm-row" data-vi="' + i + '">' +
+      '<input class="inp v-name" value="' + esc(r && r.name || '') + '" placeholder="Название">' +
+      '<input class="inp v-hosts mono" value="' + esc(r && r.hosts != null ? r.hosts : '') + '" placeholder="Хостов">' +
+      '<button class="btn v-del" type="button" aria-label="Удалить">✕</button></div>';
+  }
+
+  function vlsmView() {
+    const v = vlsmSaved();
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>VLSM-планировщик</span></div>';
+    html += '<h1 class="art-title">VLSM-планировщик</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Введите базовую сеть и сколько хостов нужно в каждом сегменте — планировщик разложит подсети без пересечений, от больших к малым.</div>';
+    html += '<section class="card"><label class="wz-row"><span class="wz-l">Базовая сеть</span>' +
+      '<input class="inp mono" id="vBase" value="' + esc(v.base) + '" placeholder="10.0.0.0/16"></label>' +
+      '<div id="vRows">' + v.rows.map(vlsmRow).join('') + '</div>' +
+      '<button class="btn" id="vAdd" type="button">+ Добавить сегмент</button></section>';
+    html += '<div class="wz-actions"><button class="btn primary" id="vGo">Распределить</button>' +
+      '<button class="btn" id="vCsv">Экспорт CSV</button></div>';
+    html += '<div id="vOut"></div></div>';
+    return html;
+  }
+
+  function vlsmCollect() {
+    const rows = [];
+    document.querySelectorAll('#vRows .vlsm-row').forEach(function (r) {
+      const name = r.querySelector('.v-name').value.trim();
+      const hosts = r.querySelector('.v-hosts').value.trim();
+      if (name || hosts) rows.push({ name: name || 'сегмент', hosts: parseInt(hosts, 10) || 0 });
+    });
+    return { base: (document.getElementById('vBase') || {}).value || '', rows: rows };
+  }
+
+  function vlsmRender() {
+    const out = document.getElementById('vOut');
+    if (!out) return;
+    const input = vlsmCollect();
+    vlsmStore(input);
+    if (!window.NetCalc) { out.innerHTML = '<div class="empty">Модуль расчёта не загружен</div>'; return; }
+    if (!input.rows.length) { out.innerHTML = '<div class="card"><div class="empty">Добавьте хотя бы один сегмент</div></div>'; return; }
+    const res = window.NetCalc.plan(input.base, input.rows);
+    if (!res.ok) {
+      out.innerHTML = '<div class="card"><div class="warn"><span class="wi">' + warnIcon() + '</span><div><b>Не получилось.</b> ' +
+        esc(res.error) + '</div></div></div>';
+      return;
+    }
+    let h = '<section class="card"><h3 class="card-h">' + svg('ip', 15) + 'План адресации</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Базовая сеть ' + esc(res.base) + ' · сегментов ' + res.entries.length + '</div>' +
+      '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Сегмент</th><th>Подсеть</th><th>Маска</th><th>Диапазон</th><th>Хостов</th><th>Запас</th></tr></thead><tbody>' +
+      res.entries.map(function (e, i) {
+        return '<tr><td>' + (i + 1) + '</td><td>' + esc(e.name) + '</td><td class="mono">' + esc(e.cidr) +
+          '</td><td class="mono">' + esc(e.mask) + '</td><td class="mono">' + esc(e.first + '–' + e.last) +
+          '</td><td>' + e.capacity + '</td><td>' + (e.waste >= 0 ? '+' + e.waste : e.waste) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      (res.leftover ? '<div class="hint">Свободно после плана: <b>' + res.leftover.size + '</b> адресов, начиная с <b class="mono">' +
+        esc(res.leftover.start) + '</b> (ближайший блок — <span class="mono">' + esc(res.leftover.cidr) + '</span>)</div>' : '') +
+      '</section>';
+    out.innerHTML = h;
+  }
+
+  let vlsmTick = null;
+
+  function bindVlsm() {
+    const go = document.getElementById('vGo');
+    if (!go) return;
+
+    const root = go.closest('.wrap');
+    if (root) {
+      root.addEventListener('input', function () {
+        clearTimeout(vlsmTick);
+        vlsmTick = setTimeout(function () {
+          vlsmStore(vlsmCollect());
+          vlsmRender();
+        }, 500);
+      });
+    }
+    go.addEventListener('click', vlsmRender);
+    document.getElementById('vAdd').addEventListener('click', function () {
+      const host = document.getElementById('vRows');
+      const i = host.querySelectorAll('.vlsm-row').length;
+      host.insertAdjacentHTML('beforeend', vlsmRow({ name: '', hosts: '' }, i));
+      const row = host.lastElementChild;
+      row.querySelector('.v-del').addEventListener('click', function () { row.parentNode.removeChild(row); });
+      row.querySelector('.v-name').focus();
+    });
+    document.querySelectorAll('#vRows .v-del').forEach(function (b) {
+      b.addEventListener('click', function () { b.closest('.vlsm-row').parentNode.removeChild(b.closest('.vlsm-row')); });
+    });
+    document.getElementById('vCsv').addEventListener('click', function () {
+      const input = vlsmCollect();
+      const res = window.NetCalc.plan(input.base, input.rows);
+      if (!res.ok) { toast('Сначала исправьте план'); return; }
+      const lines = ['Сегмент,Хостов,Подсеть,Маска,Первый адрес,Последний адрес,Broadcast'];
+      res.entries.forEach(function (e) {
+        lines.push([e.name, e.hosts, e.cidr, e.mask, e.first, e.last, e.broadcast].join(','));
+      });
+      const csv = lines.join('\n');
+      const name = 'vlsm-' + String(input.base).replace(/[^0-9.]+/g, '-') + '.csv';
+      const saved = saveTextFile(name, csv);
+      if (saved === 'blob') toast('CSV сохранён: ' + name);
+      else if (!saved) shareText(csv, 'План адресации');
+    });
+    vlsmRender();
+  }
+
+  /* ================= резервная копия данных ================= */
+  const BACKUP_KEYS = ['fav', 'read', 'notes', 'last', 'snq', 'wiz', 'vlsm', 'diffA', 'diffB', 'diffIgnore', 'shots', 'theme', 'fs'];
+
+  function backupCollect() {
+    const data = {};
+    BACKUP_KEYS.forEach(function (k) {
+      const v = store.get(k);
+      if (v != null) data[k] = v;
+    });
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.indexOf('run:') === 0) data[k] = localStorage.getItem(k);
+      }
+    } catch (e) { }
+    return {
+      app: 'mikrotik-gide',
+      version: window.APP_VERSION || 'dev',
+      exported: new Date().toISOString(),
+      data: data
+    };
+  }
+
+  function backupView() {
+    let dump = '';
+    try { dump = JSON.stringify(backupCollect(), null, 1); } catch (e) { dump = '{}'; }
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Данные и резервная копия</span></div>';
+    html += '<h1 class="art-title">Данные и резервная копия</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Избранное, прогресс, заметки, ответы мастера и черновики хранятся только на устройстве. Здесь их можно сохранить в файл или перенести на другой телефон.</div>';
+    html += '<section class="card"><h3 class="card-h">' + svg('down', 15) + 'Экспорт</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">JSON с вашими данными: заметки, избранное, прогресс, чек-листы.</div>' +
+      '<textarea class="inp mono diff-in" id="bOut" rows="6" readonly>' + esc(dump) + '</textarea>' +
+      '<div class="wz-actions"><button class="btn" id="bCopy">Копировать</button>' +
+      '<button class="btn" id="bShare">Поделиться</button>' +
+      '<button class="btn" id="bFile">Сохранить файл</button></div></section>';
+    html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Импорт</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Вставьте JSON из резервной копии и нажмите «Восстановить». Текущие данные заменятся.</div>' +
+      '<textarea class="inp mono diff-in" id="bIn" rows="6" placeholder="{ &quot;app&quot;: &quot;mikrotik-gide&quot;, … }"></textarea>' +
+      '<div class="wz-actions"><button class="btn primary" id="bRestore">Восстановить</button>' +
+      '<button class="btn" id="bWipe">Удалить все данные</button></div>' +
+      '<div id="bMsg"></div></section>';
+    html += '</div>';
+    return html;
+  }
+
+  function bindBackup() {
+    const copy = document.getElementById('bCopy');
+    if (!copy) return;
+    copy.addEventListener('click', function () {
+      copyText(document.getElementById('bOut').value);
+      toast('Скопировано');
+    });
+    document.getElementById('bShare').addEventListener('click', function () {
+      shareText(document.getElementById('bOut').value, 'Резервная копия MikroTik-учебника');
+    });
+    document.getElementById('bFile').addEventListener('click', function () {
+      const name = 'mikrotik-gide-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      const saved = saveTextFile(name, document.getElementById('bOut').value);
+      if (saved === 'blob') toast('Сохранено: ' + name);
+      else if (!saved) toast('Сохранение недоступно — используйте «Поделиться»');
+    });
+    document.getElementById('bRestore').addEventListener('click', function () {
+      const msg = document.getElementById('bMsg');
+      let obj = null;
+      try { obj = JSON.parse(document.getElementById('bIn').value); } catch (e) { obj = null; }
+      if (!obj || !obj.data || typeof obj.data !== 'object') {
+        msg.innerHTML = '<div class="warn"><span class="wi">' + warnIcon() + '</span><div>Это не похоже на резервную копию приложения.</div></div>';
+        return;
+      }
+      let n = 0;
+      Object.keys(obj.data).forEach(function (k) {
+        if (BACKUP_KEYS.indexOf(k) >= 0 || k.indexOf('run:') === 0) {
+          store.set(k, String(obj.data[k]));
+          n++;
+        }
+      });
+      msg.innerHTML = '<div class="qz-fb ok"><b>Восстановлено ключей: ' + n + '.</b> Перезапустите приложение, чтобы применить всё.</div>';
+      toast('Данные восстановлены');
+    });
+    document.getElementById('bWipe').addEventListener('click', function () {
+      BACKUP_KEYS.forEach(function (k) { store.del(k); });
+      try {
+        for (let i = localStorage.length - 1; i >= 0; i--) {
+          const k = localStorage.key(i);
+          if (k && k.indexOf('run:') === 0) localStorage.removeItem(k);
+        }
+      } catch (e) { }
+      toast('Данные удалены');
+      route();
+    });
   }
 
   /* ================= сравнение конфигов ================= */
@@ -1654,10 +2104,20 @@
     return arr;
   }
 
-  function quizStart() {
+  function quizShuffleOptions(q) {
+    const idx = q.a.map(function (_, i) { return i; });
+    shuffle(idx);
+    const opts = idx.map(function (i) { return q.a[i]; });
+    const c = idx.indexOf(q.c);
+    return { q: q.q, a: opts, c: c, e: q.e, r: q.r };
+  }
+
+  function quizStart(count) {
     const pool = (window.QUIZ || []).slice();
     shuffle(pool);
-    QZ = { list: pool.slice(0, 10), i: 0, ans: [], picked: null, done: false };
+    const n = count || 10;
+    const list = (n >= pool.length ? pool : pool.slice(0, n)).map(quizShuffleOptions);
+    QZ = { list: list, i: 0, ans: [], picked: null, done: false };
   }
 
   function quizScore() {
@@ -1673,8 +2133,12 @@
 
     if (!QZ) {
       const total = (window.QUIZ || []).length;
-      html += '<section class="card"><div class="hint">10 случайных вопросов из ' + total + '. После каждого ответа — пояснение и ссылка на статью. Результат можно отправить себе или коллеге.</div>' +
-        '<div class="wz-actions"><button class="btn primary block" id="qzStart">Начать тест</button></div></section></div>';
+      html += '<section class="card"><div class="hint">' + total + ' вопросов по RouterOS. После каждого ответа — пояснение и ссылка на статью. Варианты ответов перемешиваются, результат можно отправить себе или коллеге.</div>' +
+        '<div class="wz-actions qz-modes">' +
+        '<button class="btn primary" data-qn="10">10 вопросов</button>' +
+        '<button class="btn" data-qn="25">25 вопросов</button>' +
+        '<button class="btn" data-qn="' + total + '">Все ' + total + '</button>' +
+        '</div></section></div>';
       return html;
     }
 
@@ -1682,7 +2146,7 @@
       const cur = QZ.list[QZ.i];
       const picked = QZ.picked;
       html += '<div class="qz-top"><span>Вопрос ' + (QZ.i + 1) + ' из ' + QZ.list.length + '</span>' +
-        '<span>Верно: ' + quizScore() + '</span></div>' +
+        '<span>Верно: ' + quizScore() + ' · <button class="lnk" id="qzModes">сменить набор</button></span></div>' +
         '<div class="upd-bar"><i style="width:' + Math.round((QZ.i / QZ.list.length) * 100) + '%"></i></div>';
       html += '<section class="card qz-card"><h3 class="qz-q">' + esc(cur.q) + '</h3><div class="qz-opts">' +
         cur.a.map(function (t, i) {
@@ -1726,6 +2190,16 @@
   }
 
   function bindQuiz() {
+    document.querySelectorAll('[data-qn]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        quizStart(parseInt(b.getAttribute('data-qn'), 10) || 10);
+        route();
+      });
+    });
+    const legacy = document.getElementById('qzStart');
+    if (legacy) legacy.addEventListener('click', function () { quizStart(10); route(); });
+    const modes = document.getElementById('qzModes');
+    if (modes) modes.addEventListener('click', function () { QZ = null; route(); });
     const st = document.getElementById('qzStart');
     if (st) st.addEventListener('click', function () { quizStart(); rerender(); });
     const rs = document.getElementById('qzRestart');
@@ -1895,16 +2369,18 @@
       document.title = 'О программе · MikroTik';
       return;
     }
-    const TOOL_TITLES = { tools: 'Инструменты', wizard: 'Мастер конфигурации', subnet: 'Калькулятор подсетей', diff: 'Сравнить конфиги', quiz: 'Самопроверка' };
+    const TOOL_TITLES = {
+      tools: 'Инструменты', wizard: 'Мастер конфигурации', subnet: 'Калькулятор подсетей',
+      vlsm: 'VLSM-планировщик', diff: 'Сравнить конфиги', quiz: 'Самопроверка',
+      backup: 'Данные и резервная копия'
+    };
     if (TOOL_TITLES[id]) {
-      content.innerHTML = id === 'tools' ? toolsView() : id === 'wizard' ? wizardView()
-        : id === 'subnet' ? subnetView() : id === 'diff' ? diffView() : quizView();
+      const VIEWS = { tools: toolsView, wizard: wizardView, subnet: subnetView, vlsm: vlsmView, diff: diffView, quiz: quizView, backup: backupView };
+      content.innerHTML = VIEWS[id]();
       content.scrollTop = 0;
       markActive(null);
-      if (id === 'wizard') bindWizard();
-      if (id === 'subnet') bindSubnet();
-      if (id === 'diff') bindDiff();
-      if (id === 'quiz') bindQuiz();
+      const BINDS = { wizard: bindWizard, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz, backup: bindBackup };
+      if (BINDS[id]) BINDS[id]();
       document.title = TOOL_TITLES[id] + ' · MikroTik';
       return;
     }
