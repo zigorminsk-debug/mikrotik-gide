@@ -28,7 +28,7 @@ window.DATA.push({
         {
           path: 'IP → Firewall → Filter Rules', win: 'Firewall', tab: 'Filter Rules',
           tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
-          cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 68 }, { t: 'Action', w: 72 }, { t: 'Connection State', w: 118 }, { t: 'In. Interface List', w: 116 }, { t: 'Comment', w: 230 }],
+          cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 68 }, { t: 'Action', w: 124 }, { t: 'Connection State', w: 118 }, { t: 'In. Interface List', w: 116 }, { t: 'Comment', w: 230 }],
           rows: [
             ['0', 'input', { v: 'accept', c: 'ok' }, 'established,related', '', 'established'],
             ['1', 'input', 'drop', 'invalid', '', 'invalid'],

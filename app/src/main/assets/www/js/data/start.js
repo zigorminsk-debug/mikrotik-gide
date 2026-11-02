@@ -404,7 +404,7 @@ window.DATA.push({
         { t: 'Откат', d: 'Если изменение уже сохранено — восстановите Backup, сделанный до него, либо вручную отмените правило.' }
       ],
       scenes: [{
-        path: 'Log', win: 'Log', tabs: ['Log'], cols: [{ t: 'Time', w: 92 }, { t: 'Topics', w: 130 }, { t: 'Message', w: 460 }],
+        path: 'Log', win: 'Log', tabs: ['Log'], cols: [{ t: 'Time', w: 92 }, { t: 'Topics', w: 130 }, { t: 'Message', w: 520 }],
         rows: [
           ['09:41:12', 'firewall,info', { v: 'input: in:WAN out:(unknown 0), src:203.0.113.44 dst:100.71.14.9, proto TCP (SYN), len:60', m: 1 }],
           ['09:42:03', 'system,info', 'user admin logged in from 192.168.88.24 via winbox'],

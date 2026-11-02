@@ -76,7 +76,7 @@
     ],
     scenes: [{
       path: 'Bridge → Filters', win: 'Bridge Filters', tools: [{ t: '+', id: 'add', m: 1 }],
-      cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 80 }, { t: 'In. Bridge Port', w: 130 }, { t: 'IP Protocol', w: 100 }, { t: 'Src. Port', w: 90 }, { t: 'Action', w: 80 }, { t: 'Comment', w: 150 }],
+      cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 80 }, { t: 'In. Bridge Port', w: 140 }, { t: 'IP Protocol', w: 100 }, { t: 'Src. Port', w: 90 }, { t: 'Action', w: 80 }, { t: 'Comment', w: 190 }],
       rows: [
         ['0', { v: 'forward', m: 2 }, { v: 'ether3, ether4, ether5', m: 3 }, { v: 'udp', m: 4 }, { v: '67', m: 5 }, { v: 'drop', c: 'no', m: 6 }, 'чужой DHCP-сервер'],
         ['1', 'forward', 'ether3', 'udp', '68', 'drop', 'чужой DHCP-клиент (опционально)']

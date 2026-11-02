@@ -54,7 +54,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Routes', win: 'Route List', tabs: ['Routes', 'Nexthops', 'Rules', 'Tables'],
-        cols: [{ t: 'A', w: 26 }, { t: 'Dst. Address', w: 132 }, { t: 'Gateway', w: 140 }, { t: 'Distance', w: 70 }, { t: 'Pref. Source', w: 110 }, { t: 'Comment', w: 150 }],
+        cols: [{ t: 'A', w: 32 }, { t: 'Dst. Address', w: 132 }, { t: 'Gateway', w: 140 }, { t: 'Distance', w: 70 }, { t: 'Pref. Source', w: 110 }, { t: 'Comment', w: 150 }],
         rows: [
           [{ v: 'AS', c: 'ok' }, { v: '0.0.0.0/0', m: 1 }, { v: '203.0.113.1 reachable', m: 2 }, { v: '1', m: 3 }, '203.0.113.10', 'основной канал'],
           ['AS', '0.0.0.0/0', 'lte1 reachable', '10', '', 'резерв'],
@@ -260,7 +260,7 @@ window.DATA.push({
           path: 'IP → Firewall → Filter Rules', win: 'Firewall', tab: 'Filter Rules',
           tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
           tools: [{ t: '+', id: 'add', m: 1 }, { t: '−' }, { t: '✓' }, { t: '✕' }, { t: '⇅' }, { t: '⌕' }],
-          cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 70 }, { t: 'Action', w: 66 }, { t: 'Connection State', w: 120 },
+          cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 70 }, { t: 'Action', w: 124 }, { t: 'Connection State', w: 120 },
             { t: 'In. Interface List', w: 118 }, { t: 'Bytes', w: 78 }, { t: 'Comment', w: 200 }],
           rows: [
             ['0', 'input', { v: 'accept', c: 'ok' }, 'established,related', '', '12.4 GiB', 'defconf: accept established'],

@@ -86,7 +86,7 @@
     const head = el('div', 'wb-tr wb-th');
     cols.forEach(function (c, i) {
       const d = el('div', null, esc(c.t));
-      d.style.flex = c.w ? '0 0 ' + c.w + 'px' : '1 1 0';
+      d.style.flex = c.w ? '1 1 ' + c.w + 'px' : '1 1 0';
       d.style.minWidth = c.w ? c.w + 'px' : '48px';
       d.id = 'th-' + i;
       head.appendChild(d);
@@ -94,13 +94,13 @@
     wrap.appendChild(head);
 
     (spec.rows || []).forEach(function (row, r) {
-      const tr = el('div', 'wb-tr' + (spec.sel === r ? ' sel' : ''));
+      const tr = el('div', 'wb-tr wb-td' + (spec.sel === r ? ' sel' : ''));
       tr.id = 'row-' + r;
       cols.forEach(function (c, i) {
         const cell = row[i] == null ? '' : row[i];
         const o = (typeof cell === 'object') ? cell : { v: cell };
         const d = el('div', null);
-        d.style.flex = c.w ? '0 0 ' + c.w + 'px' : '1 1 0';
+        d.style.flex = c.w ? '1 1 ' + c.w + 'px' : '1 1 0';
         d.style.minWidth = c.w ? c.w + 'px' : '48px';
         d.innerHTML = '<div class="' + (o.c || '') + '">' + esc(o.v) + '</div>';
         d.id = 'cell-' + r + '-' + i;
@@ -181,69 +181,110 @@
     return t;
   }
 
-  /* ---------- аннотации ---------- */
+  /* ---------- аннотации ----------
+     Правило: номер-бейдж ставится на сам элемент (в его правый верхний угол),
+     чтобы стрелка не тянулась через всю таблицу и не перечёркивала текст.
+     Стрелка рисуется только для мелких элементов (кнопки, вкладки, чекбоксы):
+     бейдж выносится над ними, стрелка бьёт в центр.                    */
   function annotate(root, notes) {
     const svgNS = 'http://www.w3.org/2000/svg';
+
+    Array.prototype.forEach.call(root.querySelectorAll('.wb-annot, .wb-num'), function (n) {
+      n.parentNode.removeChild(n);
+    });
+
+    const W = root.offsetWidth || 1000;
+    const H = root.offsetHeight || 400;
+    const rb = root.getBoundingClientRect();
+    // если макет уже отмасштабирован transform'ом — переводим px в «натуральные»
+    const sc = (W && rb.width ? rb.width / W : 1) || 1;
+
     const svg = document.createElementNS(svgNS, 'svg');
     svg.setAttribute('class', 'wb-annot');
-    const W = root.offsetWidth, H = root.offsetHeight;
     svg.setAttribute('width', W);
     svg.setAttribute('height', H);
     svg.setAttribute('viewBox', '0 0 ' + W + ' ' + H);
-    const rootBox = root.getBoundingClientRect();
 
-    const marks = root.querySelectorAll('[data-m]');
     const targets = {};
-    marks.forEach(function (m) {
+    Array.prototype.forEach.call(root.querySelectorAll('[data-m]'), function (m) {
       const n = m.getAttribute('data-m');
       if (!targets[n]) targets[n] = m;
     });
+
+    const R = 9;          // радиус бейджа
+    const taken = [];     // занятые позиции — чтобы номера не наезжали друг на друга
 
     notes.forEach(function (text, idx) {
       const n = idx + 1;
       const t = targets[n];
       if (!t) return;
+
       const r = t.getBoundingClientRect();
-      const tx = r.left - rootBox.left + r.width / 2;
-      const ty = r.top - rootBox.top + r.height / 2;
+      const x = (r.left - rb.left) / sc;
+      const y = (r.top - rb.top) / sc;
+      const w = r.width / sc;
+      const h = r.height / sc;
 
-      // выбираем сторону с максимумом свободного места
-      const space = { left: tx, right: W - tx, top: ty, bottom: H - ty };
-      let dir = 'left';
-      Object.keys(space).forEach(function (k) { if (space[k] > space[dir]) dir = k; });
-      let bx = tx, by = ty;
-      if (dir === 'left') bx = Math.max(16, tx - Math.min(140, r.width / 2 + 60));
-      if (dir === 'right') bx = Math.min(W - 16, tx + Math.min(140, r.width / 2 + 60));
-      if (dir === 'top') by = Math.max(16, ty - Math.min(110, r.height / 2 + 46));
-      if (dir === 'bottom') by = Math.min(H - 16, ty + Math.min(110, r.height / 2 + 46));
+      const small = !(w >= 56 && h >= 18);   // кнопки/чекбоксы — мелкие, ячейки и поля — крупные
+      let cx, cy;
 
-      const mx = (bx + tx) / 2, my = (by + ty) / 2;
-      const off = 26;
-      const cx = dir === 'left' || dir === 'right' ? mx : bx + (dir === 'top' ? off : -off) * 0.35;
-      const cy = dir === 'top' || dir === 'bottom' ? my : by + (dir === 'left' ? off : -off) * 0.35;
+      if (!small) {
+        // крупный элемент (ячейка таблицы, поле формы): бейдж в правом верхнем углу
+        cx = x + w - R - 2;
+        cy = y + R + 2;
+      } else {
+        // мелкий: бейдж над элементом, стрелка вниз
+        cx = x + w / 2;
+        cy = y - R - 5;
+        if (cy < R + 3) cy = y + h + R + 5;
+      }
 
-      const path = document.createElementNS(svgNS, 'path');
-      path.setAttribute('d', 'M' + bx + ',' + by + ' Q' + cx + ',' + cy + ' ' + tx + ',' + ty);
-      svg.appendChild(path);
+      cx = Math.min(W - R - 3, Math.max(R + 3, cx));
+      cy = Math.min(H - R - 3, Math.max(R + 3, cy));
 
-      // наконечник стрелки
-      const ang = Math.atan2(ty - cy, tx - cx);
-      const ah = 9;
-      const p1 = [tx - ah * Math.cos(ang - 0.45), ty - ah * Math.sin(ang - 0.45)];
-      const p2 = [tx - ah * Math.cos(ang + 0.45), ty - ah * Math.sin(ang + 0.45)];
-      const head = document.createElementNS(svgNS, 'path');
-      head.setAttribute('d', 'M' + tx + ',' + ty + ' L' + p1[0] + ',' + p1[1] + ' L' + p2[0] + ',' + p2[1] + ' Z');
-      head.setAttribute('fill', '#e11d48');
-      head.setAttribute('stroke', 'none');
-      svg.appendChild(head);
+      if (!small) {
+        // крупная цель: бейдж гарантированно внутри своего элемента,
+        // чтобы он не мог наехать на текст соседней ячейки
+        cx = Math.min(x + w - R - 2, Math.max(x + R + 2, cx));
+        cy = Math.min(y + h - R - 2, Math.max(y + R + 2, cy));
+      }
 
-      // номер
+      let guard = 0;
+      while (guard++ < 10 && taken.some(function (p) {
+        return Math.abs(p[0] - cx) < 2 * R - 2 && Math.abs(p[1] - cy) < 2 * R - 2;
+      })) {
+        cy += 2 * R + 3;
+        if (cy > H - R - 3) { cy = R + 3; cx += 2 * R + 3; }
+      }
+      taken.push([cx, cy]);
+
+      if (small) {
+        const tx = x + w / 2;
+        const ty = y + h / 2;
+        const a = Math.atan2(ty - cy, tx - cx);
+        const sx = cx + Math.cos(a) * (R + 1);
+        const sy = cy + Math.sin(a) * (R + 1);
+        const path = document.createElementNS(svgNS, 'path');
+        path.setAttribute('d', 'M' + sx.toFixed(1) + ',' + sy.toFixed(1) +
+          'L' + tx.toFixed(1) + ',' + ty.toFixed(1));
+        svg.appendChild(path);
+        const ah = 8;
+        const head = document.createElementNS(svgNS, 'path');
+        head.setAttribute('d', 'M' + tx.toFixed(1) + ',' + ty.toFixed(1) +
+          'L' + (tx - ah * Math.cos(a - 0.42)).toFixed(1) + ',' + (ty - ah * Math.sin(a - 0.42)).toFixed(1) +
+          'L' + (tx - ah * Math.cos(a + 0.42)).toFixed(1) + ',' + (ty - ah * Math.sin(a + 0.42)).toFixed(1) + 'Z');
+        head.setAttribute('fill', '#e11d48');
+        head.setAttribute('stroke', 'none');
+        svg.appendChild(head);
+      }
+
       const badge = el('div', 'wb-num', String(n));
-      badge.style.left = (bx - 10) + 'px';
-      badge.style.top = (by - 10) + 'px';
+      badge.style.left = (cx - R) + 'px';
+      badge.style.top = (cy - R) + 'px';
       root.appendChild(badge);
     });
-    root.appendChild(svg);
+
+    root.insertBefore(svg, root.firstChild);
   }
 
   /* ---------- масштабирование под ширину ---------- */
@@ -344,6 +385,7 @@
       });
       block.appendChild(ul);
     }
+    block._host = host;
     block._fit = function () { fit(host); };
     return block;
   }
@@ -369,6 +411,7 @@
       });
       block.appendChild(ul);
     }
+    block._host = host;
     block._fit = function () { fit(host); };
     return block;
   }
@@ -433,39 +476,55 @@
     const base = clone.querySelector('.wb, .wb-term');
     const natural = (base && base.offsetWidth) || 1000;
     const naturalH = (base && base.offsetHeight) || 420;
-    let k = 1;
+    const MAXK = 2.6;
+
+    // минимальный масштаб = «схема ровно по ширине экрана»,
+    // поэтому вокруг картинки никогда не появляются белые поля
+    function fitK() {
+      const avail = (body.clientWidth || window.innerWidth) - 12;
+      return Math.min(MAXK, Math.max(0.25, Math.round((avail / natural) * 1000) / 1000));
+    }
+
+    let k = fitK();
 
     function apply() {
       clone.style.transform = 'scale(' + k + ')';
-      inner.style.width = Math.round(natural * k) + 'px';
-      inner.style.height = Math.round(naturalH * k) + 'px';
+      inner.style.width = Math.ceil(natural * k) + 'px';
+      inner.style.height = Math.ceil(naturalH * k) + 'px';
       pct.textContent = Math.round(k * 100) + '%';
-      bMinus.disabled = k <= 0.45;
-      bPlus.disabled = k >= 2.2;
+      const f = fitK();
+      bMinus.disabled = k <= f + 0.001;
+      bPlus.disabled = k >= MAXK - 0.001;
+      bFit.classList.toggle('on', Math.abs(k - f) < 0.006);
     }
+
     function step(d) {
-      k = Math.min(2.2, Math.max(0.45, Math.round((k + d) * 100) / 100));
+      const f = fitK();
+      k = Math.min(MAXK, Math.max(f, Math.round((k + d) * 100) / 100));
       apply();
     }
+
     bMinus.addEventListener('click', function () { step(-0.15); });
     bPlus.addEventListener('click', function () { step(0.15); });
-    bFit.addEventListener('click', function () {
-      const avail = body.clientWidth - 16;
-      k = Math.min(2.2, Math.max(0.3, Math.round((avail / natural) * 100) / 100));
-      apply();
-    });
+    bFit.addEventListener('click', function () { k = fitK(); apply(); });
 
     function close() {
       document.removeEventListener('keydown', onKey);
+      window.removeEventListener('resize', onResize);
+      window.removeEventListener('orientationchange', onResize);
       document.body.style.overflow = '';
       layer.remove();
     }
     function onKey(e) { if (e.key === 'Escape') close(); }
+    function onResize() {
+      const f = fitK();
+      if (k < f) { k = f; }           // после поворота экрана снова вписываем
+      apply();
+    }
     bClose.addEventListener('click', close);
     document.addEventListener('keydown', onKey);
-    // начальный масштаб: не мельче 100%, но и не больше ширины экрана
-    const avail0 = body.clientWidth - 16;
-    k = avail0 > natural ? 1 : Math.max(0.5, Math.round((avail0 / natural) * 100) / 100);
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
     apply();
   }
 
@@ -479,17 +538,30 @@
     // аннотации считаем после вставки в DOM (нужна реальная геометрия)
     requestAnimationFrame(function () {
       blocks.forEach(function (b) {
+        if (b._fit) b._fit();            // сначала масштаб, потом геометрия стрелок
         const root = b.querySelector('.wb');
         if (root && b.querySelectorAll('[data-m]').length) {
           const notes = collectNotes(b);
-          if (notes.length) annotate(root, notes);
+          if (notes.length) {
+            b._annotate = function () { annotate(root, notes); };
+            b._annotate();
+          }
         }
-        if (b._fit) b._fit();
       });
     });
-    window.addEventListener('resize', function () {
-      blocks.forEach(function (b) { if (b._fit) b._fit(); });
-    });
+
+    let rt = null;
+    function onResize() {
+      clearTimeout(rt);
+      rt = setTimeout(function () {
+        blocks.forEach(function (b) {
+          if (b._fit) b._fit();
+          if (b._annotate) b._annotate();
+        });
+      }, 120);
+    }
+    window.addEventListener('resize', onResize);
+    window.addEventListener('orientationchange', onResize);
     return blocks;
   }
 
