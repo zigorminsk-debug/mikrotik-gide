@@ -45,8 +45,8 @@ public class MainActivity extends Activity {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
         s.setAllowContentAccess(true);
-        s.setSupportZoom(false);
-        s.setBuiltInZoomControls(false);
+        s.setSupportZoom(true);
+        s.setBuiltInZoomControls(true);
         s.setDisplayZoomControls(false);
         s.setTextZoom(100);
         s.setCacheMode(WebSettings.LOAD_NO_CACHE);

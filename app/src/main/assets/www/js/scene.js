@@ -162,7 +162,8 @@
     const t = el('div', 'wb-term');
     const h = el('div', 'wb-term-h');
     h.innerHTML = '<span class="dots"><i></i><i></i><i></i></span><span>' +
-      esc(spec.win || 'New Terminal') + '</span><span style="margin-left:auto">' + esc(spec.path || '') + '</span>';
+      esc(spec.win || 'New Terminal') + '</span><span style="margin-left:auto">' + esc(spec.path || '') +
+      '</span><button class="copy">копировать</button>';
     t.appendChild(h);
     const pre = document.createElement('pre');
     const html = (spec.lines || []).map(function (ln) {

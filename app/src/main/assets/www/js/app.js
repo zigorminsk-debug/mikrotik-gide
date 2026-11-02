@@ -221,7 +221,7 @@
     if (a.links && a.links.length) {
       html += card('Первоисточники', 'book', '<div class="badges" style="margin:0">' +
         a.links.map(function (l) {
-          return '<a class="badge" href="' + esc(l.u) + '" target="_blank" rel="noopener">' + esc(l.t) + ' ↗</a>';
+          return '<a class="badge" href="' + esc(l.u) + '">' + esc(l.t) + ' ↗</a>';
         }).join('') + '</div>');
     }
 
