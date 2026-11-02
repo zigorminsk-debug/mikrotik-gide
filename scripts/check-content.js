@@ -95,6 +95,56 @@ DATA.forEach(g => {
   });
 });
 
+// вопросы самопроверки
+const QUIZ = global.window.QUIZ || [];
+let quizBad = 0;
+QUIZ.forEach((q, i) => {
+  if (!q.q || !Array.isArray(q.a) || q.a.length < 2) { errors.push(`quiz[${i}]: нет вопроса или вариантов`); quizBad++; return; }
+  if (typeof q.c !== 'number' || q.c < 0 || q.c >= q.a.length) { errors.push(`quiz[${i}]: неверный индекс ответа`); quizBad++; }
+  if (!q.e) { errors.push(`quiz[${i}]: нет пояснения`); quizBad++; }
+  if (q.r && !ids.has(q.r)) { errors.push(`quiz[${i}]: ссылка на несуществующую статью ${q.r}`); quizBad++; }
+});
+
+// контент-пак (публикуется отдельно от APK)
+let packArticles = 0, packScenes = 0;
+const packPath = path.resolve(__dirname, '../content-pack/pack.json');
+if (fs.existsSync(packPath)) {
+  let pack = null;
+  try {
+    pack = JSON.parse(fs.readFileSync(packPath, 'utf8'));
+  } catch (e) {
+    errors.push('content-pack/pack.json: невалидный JSON');
+  }
+  if (pack) {
+    if (!pack.version) errors.push('контент-пак: нет version');
+    const packIds = new Set();
+    (pack.groups || []).forEach(g => {
+      if (!g.id || !g.name) errors.push('контент-пак: группа без id/name');
+      (g.items || []).forEach(a => {
+        packArticles++;
+        if (!a.id) { errors.push('контент-пак: статья без id'); return; }
+        if (ids.has(a.id)) errors.push(`контент-пак: id ${a.id} конфликтует с основным контентом`);
+        if (packIds.has(a.id)) errors.push(`контент-пак: дублирующийся id ${a.id}`);
+        packIds.add(a.id);
+        if (!a.t || !a.purpose) errors.push(`контент-пак ${a.id}: нет заголовка/назначения`);
+        if (!Array.isArray(a.steps) || !a.steps.length) errors.push(`контент-пак ${a.id}: нет шагов`);
+        (a.scenes || []).forEach((sc, si) => {
+          packScenes++;
+          const marks = new Set();
+          const scan = v => { if (v && typeof v === 'object' && v.m) marks.add(v.m); };
+          (sc.rows || []).forEach(r => r.forEach(scan));
+          ((sc.form && sc.form.fields) || []).forEach(scan);
+          (sc.tools || []).forEach(scan);
+          if (sc.tabMarkN) marks.add(sc.tabMarkN);
+          const max = Math.max(0, ...marks);
+          const n = (sc.notes || []).length;
+          if (n !== max) errors.push(`контент-пак ${a.id}[${si}]: заметок ${n}, размечено ${max}`);
+        });
+      });
+    });
+  }
+}
+
 // внутренние ссылки
 DATA.forEach(g => (g.items || []).forEach(a => {
   (a.links || []).forEach(l => {
@@ -107,6 +157,8 @@ DATA.forEach(g => (g.items || []).forEach(a => {
 
 console.log(`Разделов: ${DATA.length}, статей: ${articles}, схем: ${scenes}, подсказок со стрелками: ${notes}`);
 console.log(`Шагов с собственным окном: ${mappedSteps} из ${totalSteps} (остальным окно подбирается автоматически)`);
+console.log(`Вопросов самопроверки: ${QUIZ.length}` + (QUIZ.length ? ` (ошибок: ${quizBad})` : ''));
+if (packArticles) console.log(`Контент-пак: статей ${packArticles}, схем ${packScenes}`);
 
 if (errors.length) {
   console.error('\nОШИБКИ (' + errors.length + '):');

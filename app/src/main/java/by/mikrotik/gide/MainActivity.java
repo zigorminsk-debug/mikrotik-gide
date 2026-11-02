@@ -185,6 +185,43 @@ public class MainActivity extends Activity {
             return true;
         }
 
+        /** Поделиться текстом через системное меню «Поделиться». */
+        @JavascriptInterface
+        public void share(final String text) {
+            if (text == null || text.trim().isEmpty()) return;
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Intent i = new Intent(Intent.ACTION_SEND);
+                        i.setType("text/plain");
+                        i.putExtra(Intent.EXTRA_TEXT, text);
+                        startActivity(Intent.createChooser(i, "Поделиться"));
+                    } catch (Exception ignored) {
+                    }
+                }
+            });
+        }
+
+        /**
+         * Скачать текст по https (контент-пак, доп. статьи).
+         * Ответ придёт в window.__fetchText(tag, ok, body).
+         */
+        @JavascriptInterface
+        public void fetchText(final String url, final String tag) {
+            if (url == null || !(url.startsWith("https://") || url.startsWith("http://"))) {
+                postText(tag, false, "bad url");
+                return;
+            }
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    final String body = httpGetRaw(url);
+                    postText(tag, body != null, body == null ? "network error" : body);
+                }
+            }).start();
+        }
+
         @JavascriptInterface
         public void openUrl(String url) {
             if (url != null && (url.startsWith("https://") || url.startsWith("http://"))) {
@@ -203,6 +240,46 @@ public class MainActivity extends Activity {
             } catch (Exception e) {
                 return "{}";
             }
+        }
+    }
+
+    /** Сообщение в JS: window.__fetchText(tag, ok, body). */
+    private void postText(final String tag, final boolean ok, final String body) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (web == null) return;
+                String js = "window.__fetchText && window.__fetchText("
+                        + JSONObject.quote(tag) + "," + (ok ? "true" : "false") + ","
+                        + JSONObject.quote(body) + ");";
+                web.evaluateJavascript(js, null);
+            }
+        });
+    }
+
+    /** GET без обёртки в JSON: null при ошибке. */
+    private String httpGetRaw(String urlStr) {
+        HttpURLConnection conn = null;
+        try {
+            URL url = new URL(urlStr);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("GET");
+            conn.setConnectTimeout(10000);
+            conn.setReadTimeout(20000);
+            conn.setInstanceFollowRedirects(true);
+            conn.setRequestProperty("User-Agent", "mikrotik-gide-android");
+            int code = conn.getResponseCode();
+            if (code < 200 || code >= 300) return null;
+            StringBuilder sb = new StringBuilder();
+            BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream(), "UTF-8"));
+            String line;
+            while ((line = br.readLine()) != null) sb.append(line).append('\n');
+            br.close();
+            return sb.toString();
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (conn != null) conn.disconnect();
         }
     }
 

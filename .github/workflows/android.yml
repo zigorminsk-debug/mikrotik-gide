@@ -47,6 +47,9 @@ jobs:
           echo "OK: все файлы учебника синтаксически корректны"
           node scripts/check-content.js
 
+      - name: Контент-пак (обновление статей без APK)
+        run: node scripts/build-pack.js
+
       - name: JDK 17
         uses: actions/setup-java@v4
         with:
@@ -176,7 +179,12 @@ jobs:
 
             APK подписан постоянным ключом проекта — устанавливается поверх предыдущих версий.
             Файл в релизе — чистый `.apk` (без архива).
-          files: ${{ steps.apk.outputs.file }}
+
+            `content-pack.json` — дополнительный контент: приложение скачивает его
+            из последнего релиза и добавляет статьи без переустановки.
+          files: |
+            ${{ steps.apk.outputs.file }}
+            content-pack.json
           fail_on_unmatched_files: true
           draft: false
           prerelease: false

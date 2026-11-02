@@ -19,3 +19,6 @@ captures/
 Thumbs.db
 *.swp
 node_modules/
+
+# артефакт сборки контент-пака
+content-pack.json

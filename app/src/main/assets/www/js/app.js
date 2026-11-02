@@ -179,9 +179,12 @@
     refreshProgress();
 
     const foot = $('#sidebarFoot');
-    foot.innerHTML = '<a href="#/about" style="color:inherit">О программе</a>' +
+    foot.innerHTML = '<a href="#/tools" style="color:inherit">Инструменты</a>' +
+      '<a href="#/about" style="color:inherit;margin-left:10px">О программе</a>' +
       '<span>build ' + (window.APP_VERSION || 'dev') + '</span>';
-    foot.querySelector('a').addEventListener('click', closeSidebar);
+    Array.prototype.forEach.call(foot.querySelectorAll('a'), function (a) {
+      a.addEventListener('click', closeSidebar);
+    });
   }
 
   function buildFavBox() {
@@ -324,6 +327,14 @@
       '<a class="list-row" href="#/about"><span class="n">' + svg('info', 13) + '</span>' +
       '<b>О программе и история релизов</b><span>что изменилось</span></a>');
 
+    html += card('Инструменты', 'gear',
+      '<div class="tools-grid small">' +
+      toolCard('#/wizard', 'Мастер конфигурации', 'готовый .rsc по ответам', 'gear') +
+      toolCard('#/subnet', 'Калькулятор подсетей', 'маска, диапазон, деление', 'ip') +
+      toolCard('#/diff', 'Сравнить конфиги', 'что изменилось между экспортами', 'task') +
+      toolCard('#/quiz', 'Самопроверка', '10 вопросов с разбором', 'book') +
+      '</div>');
+
     GROUPS.forEach(function (g) {
       html += '<div class="sec-h"><h2>' + esc(g.name) + '</h2><span>' + (g.items || []).length + ' статей</span></div>';
       (g.items || []).forEach(function (a, i) {
@@ -361,6 +372,11 @@
     html += '<span class="badge v7">RouterOS 7 / Winbox 4</span>';
     (a.tags || []).forEach(function (t) { html += '<span class="badge">' + esc(t) + '</span>'; });
     html += '</div>';
+
+    html += '<div class="art-actions">' +
+      '<button class="btn" id="shareArt">Поделиться</button>' +
+      ((a.steps && a.steps.length) ? '<a class="btn" href="#/run/' + a.id + '">Режим на объекте</a>' : '') +
+      '</div>';
 
     if (a.purpose) html += card('Назначение', 'book', '<p class="lead">' + inline(a.purpose) + '</p>');
     if (a.usage && a.usage.length) {
@@ -413,7 +429,8 @@
       html += '<section class="card"><h3 class="card-h">' + svg('task', 15) +
         'Готовый конфиг — можно копировать целиком</h3>' +
         '<div class="cfg"><div class="cfg-h"><span>' + esc(a.configTitle || 'RouterOS 7 · терминал') +
-        '</span><button class="copy">копировать</button></div><pre>' + esc(text) + '</pre></div></section>';
+        '</span><span class="cfg-btns"><button class="copy">копировать</button>' +
+        '<button class="share" data-share="cfg">поделиться</button></span></div><pre>' + esc(text) + '</pre></div></section>';
     }
 
     if (a.scenes && a.scenes.length) {
@@ -437,6 +454,13 @@
           return '<a class="badge" href="' + esc(l.u) + '">' + esc(l.t) + ' ↗</a>';
         }).join('') + '</div>');
     }
+
+    const myNote = notesGet(a.id);
+    html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Мои заметки</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Сохраняются только на этом устройстве — удобно для пометок по объекту.</div>' +
+      '<textarea class="note-box" id="noteBox" rows="4" placeholder="Например: у клиента WAN на ether1, PPPoE-логин в паспорте, VLAN 30 — камеры…"></textarea>' +
+      '<div class="note-foot"><span class="note-state" id="noteState">' + (myNote ? 'сохранено' : 'пусто') + '</span>' +
+      '<button class="btn" id="noteClear">Очистить</button></div></section>';
 
     const rel = related(a);
     if (rel.length) {
@@ -687,6 +711,22 @@
 
   function shotsEnabled() { return store.get('shots') !== '0'; }
 
+  /* ---------------- заметки ---------------- */
+  function notesAll() {
+    try {
+      const v = JSON.parse(store.get('notes') || '{}');
+      return v && typeof v === 'object' ? v : {};
+    } catch (e) { return {}; }
+  }
+  function notesGet(id) { return notesAll()[id] || ''; }
+  function notesSet(id, text) {
+    const all = notesAll();
+    if (text && text.trim()) all[id] = text;
+    else delete all[id];
+    store.set('notes', JSON.stringify(all));
+  }
+  function notesCount() { return Object.keys(notesAll()).length; }
+
   /* ---------------- продолжить чтение ---------------- */
   function lastRead() {
     try {
@@ -728,6 +768,19 @@
       '<div class="upd" id="updBox">Нажмите «Проверить обновления» — приложение запросит последний релиз на GitHub.</div>' +
       '<div style="margin-top:10px"><button class="btn primary block" id="checkUpdBtn">' + svg('down', 15) + 'Проверить обновления</button></div>' +
       '<div class="hint" style="margin-top:8px">Приложение проверяет страницу релизов ' + esc(REPO) + ' и сравнивает версии. Скачивание APK — по кнопке, в браузере.</div>' +
+      '</div>';
+
+    const pk = window.Pack || { loaded: false, count: 0, version: '' };
+    html += '<div class="set-card">' +
+      '<h3 class="card-h">' + svg('down', 15) + 'Дополнительный контент</h3>' +
+      '<div class="upd" id="packBox">' + (pk.loaded
+        ? 'Загружено статей: <b>' + pk.count + '</b> · версия ' + esc(pk.version)
+        : 'Дополнительные статьи не загружены') + '</div>' +
+      '<div class="row-btns" style="margin-top:10px">' +
+      '<button class="btn" id="packCheck">Проверить обновления контента</button>' +
+      (pk.loaded ? '<button class="btn" id="packClear">Удалить</button>' : '') +
+      '</div>' +
+      '<div class="hint" style="margin-top:8px">Новые статьи и схемы приходят отдельно от APK — переустанавливать приложение не нужно.</div>' +
       '</div>';
 
     html += '<div class="set-card">' +
@@ -837,6 +890,69 @@
       if (x < y) return -1;
     }
     return 0;
+  }
+
+  /* ---------------- дополнительный контент (контент-пак) ---------------- */
+  const PACK_URL = 'https://github.com/zigorminsk-debug/mikrotik-gide/releases/latest/download/content-pack.json';
+  let packCb = null, packTimer = null;
+
+  window.__fetchText = function (tag, ok, body) {
+    if (tag !== 'pack') return;
+    clearTimeout(packTimer);
+    const cb = packCb;
+    packCb = null;
+    if (cb) cb(!!ok, body);
+  };
+
+  function fetchText(url, cb) {
+    if (window.AndroidBridge && window.AndroidBridge.fetchText) {
+      packCb = cb;
+      packTimer = setTimeout(function () {
+        if (packCb) { const c = packCb; packCb = null; c(false, 'Сеть не ответила за 20 секунд'); }
+      }, 20000);
+      try { window.AndroidBridge.fetchText(url, 'pack'); }
+      catch (e) { clearTimeout(packTimer); packCb = null; cb(false, String(e)); }
+      return;
+    }
+    const ctrl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+    const timer = setTimeout(function () { if (ctrl) ctrl.abort(); }, 15000);
+    fetch(url, { cache: 'no-store', signal: ctrl ? ctrl.signal : undefined })
+      .then(function (r) {
+        clearTimeout(timer);
+        if (!r.ok) throw new Error('ответ ' + r.status);
+        return r.text();
+      })
+      .then(function (txt) { cb(true, txt); })
+      .catch(function (e) { clearTimeout(timer); cb(false, String(e && e.message ? e.message : e)); });
+  }
+
+  function checkPack() {
+    const box = document.getElementById('packBox');
+    if (!box) return;
+    box.textContent = 'Проверяю дополнительный контент…';
+    fetchText(PACK_URL, function (ok, body) {
+      if (!ok) {
+        box.innerHTML = 'Не удалось проверить: ' + esc(body || 'нет сети') + '. Попробуйте позже.';
+        return;
+      }
+      let p = null;
+      try { p = JSON.parse(body); } catch (e) { p = null; }
+      if (!p || !window.Pack || !window.Pack.validate(p)) {
+        box.innerHTML = 'Ответ не похож на контент-пак. Обновите приложение до свежей версии.';
+        return;
+      }
+      const have = window.Pack.version;
+      const count = p.groups.reduce(function (n, g) { return n + (g.items || []).length; }, 0);
+      if (have && have === p.version) {
+        box.innerHTML = 'Уже установлена последняя версия контента: <b>' + esc(p.version) + '</b> · статей ' + window.Pack.count + '.';
+        return;
+      }
+      const added = window.Pack.apply(p);
+      box.innerHTML = 'Загружено статей: <b>' + (added > 0 ? added : count) + '</b> · версия ' + esc(p.version) + '. ' +
+        '<button class="btn" id="packReload" style="margin-top:8px">Перезапустить приложение</button>';
+      const rl = document.getElementById('packReload');
+      if (rl) rl.addEventListener('click', function () { location.reload(); });
+    });
   }
 
   function fetchLatest() {
@@ -1027,6 +1143,8 @@
     const scenesHost = $('#scenesHost');
     if (scenesHost && a.scenes) Scene.mount(scenesHost, a.scenes);
 
+    bindNotes(a);
+
     /* окно под каждым шагом инструкции */
     const shots = content.querySelectorAll('.step-shot');
     Array.prototype.forEach.call(shots, function (host) {
@@ -1064,6 +1182,15 @@
       const on = !shs.classList.contains('on');
       shs.classList.toggle('on', on);
       store.set('shots', on ? '1' : '0');
+      route();
+    });
+
+    const pc = $('#packCheck');
+    if (pc) pc.addEventListener('click', checkPack);
+    const pcl = $('#packClear');
+    if (pcl) pcl.addEventListener('click', function () {
+      if (window.Pack) window.Pack.clear();
+      toast('Дополнительный контент удалён — перезапустите приложение');
       route();
     });
 
@@ -1135,10 +1262,612 @@
     }).join('');
   }
 
+  /* ================= сервисные мелочи ================= */
+  let toastTimer = null;
+  function toast(msg) {
+    let el = document.getElementById('toast');
+    if (!el) { el = document.createElement('div'); el.id = 'toast'; el.className = 'toast'; document.body.appendChild(el); }
+    el.textContent = msg;
+    el.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { el.classList.remove('on'); }, 1900);
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try { navigator.clipboard.writeText(text); return; } catch (e) { }
+    }
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { }
+    document.body.removeChild(ta);
+  }
+
+  function shareText(text, title) {
+    const payload = title ? title + '\n\n' + text : text;
+    try {
+      if (window.AndroidBridge && window.AndroidBridge.share) { window.AndroidBridge.share(payload); return; }
+    } catch (e) { }
+    if (navigator.share) {
+      try { navigator.share({ title: title || 'MikroTik', text: payload }); return; } catch (e) { }
+    }
+    copyText(payload);
+    toast('Скопировано — вставьте в мессенджер');
+  }
+
+  function bindNotes(a) {
+    const box = document.getElementById('noteBox');
+    const st = document.getElementById('noteState');
+    const cl = document.getElementById('noteClear');
+    if (!box) return;
+    box.value = notesGet(a.id);
+    let tmr = null;
+    box.addEventListener('input', function () {
+      if (st) st.textContent = 'печатаете…';
+      clearTimeout(tmr);
+      tmr = setTimeout(function () {
+        notesSet(a.id, box.value);
+        if (st) st.textContent = box.value.trim() ? 'сохранено' : 'пусто';
+      }, 400);
+    });
+    if (cl) cl.addEventListener('click', function () {
+      notesSet(a.id, '');
+      box.value = '';
+      if (st) st.textContent = 'пусто';
+      toast('Заметка удалена');
+    });
+  }
+
+  /* ================= инструменты ================= */
+  function toolCard(href, title, desc, icon) {
+    return '<a class="tool-card" href="' + href + '"><span class="tc-ic">' + svg(icon || 'gear', 18) + '</span>' +
+      '<b>' + esc(title) + '</b><span>' + esc(desc) + '</span></a>';
+  }
+
+  function toolsView() {
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><span>Инструменты</span></div>';
+    html += '<h1 class="art-title">Инструменты</h1>';
+    html += '<div class="hint" style="margin:-6px 0 14px">Всё считается на устройстве и работает без интернета.</div>';
+    html += '<div class="tools-grid">' +
+      toolCard('#/wizard', 'Мастер конфигурации', 'Ответьте на вопросы — получите готовый конфиг RouterOS', 'gear') +
+      toolCard('#/subnet', 'Калькулятор подсетей', 'Маска, диапазон, broadcast, деление на подсети', 'ip') +
+      toolCard('#/diff', 'Сравнить конфиги', 'Два экспорта — что изменилось', 'task') +
+      toolCard('#/quiz', 'Самопроверка', '10 вопросов по RouterOS с разбором ошибок', 'book') +
+      '</div>';
+    html += '<div class="hint">Ещё: под каждой статьёй — «Режим на объекте»: чек-лист с галочками и таймером.</div>';
+    html += '</div>';
+    return html;
+  }
+
+  /* ================= мастер конфигурации ================= */
+  const WIZ_DEF = (window.ConfigWizard && window.ConfigWizard.defaults) || {
+    identity: 'office-gw', wan: 'dhcp', wanPort: 'ether1', wanIp: '203.0.113.20', wanPrefix: 24,
+    wanGw: '203.0.113.1', pppoeUser: 'login', pppoePass: 'password', lanIp: '192.168.88.1',
+    lanPrefix: 24, lanPorts: 'ether2-ether5', dhcp: true, dns: '1.1.1.1,8.8.8.8', guest: true,
+    guestPort: 'ether5', guestIp: '192.168.20.1', wg: true, wgPort: 13231, protect: true
+  };
+
+  function wizSaved() {
+    try {
+      const v = JSON.parse(store.get('wiz') || '{}');
+      const out = {};
+      for (const k in WIZ_DEF) out[k] = (v && v[k] != null) ? v[k] : WIZ_DEF[k];
+      return out;
+    } catch (e) {
+      const out = {};
+      for (const k in WIZ_DEF) out[k] = WIZ_DEF[k];
+      return out;
+    }
+  }
+
+  function wizField(id, label, value, hint) {
+    return '<label class="wz-row"><span class="wz-l">' + esc(label) + '</span>' +
+      '<input class="inp" id="' + id + '" value="' + esc(value) + '">' +
+      (hint ? '<span class="wz-h">' + esc(hint) + '</span>' : '') + '</label>';
+  }
+
+  function wizSwitch(id, label, on, hint) {
+    return '<div class="wz-row"><span class="wz-l">' + esc(label) + '</span>' +
+      '<div class="switch' + (on ? ' on' : '') + '" id="' + id + '" role="switch"></div>' +
+      (hint ? '<span class="wz-h">' + esc(hint) + '</span>' : '') + '</div>';
+  }
+
+  function wizardView() {
+    const o = wizSaved();
+    const isStatic = o.wan === 'static';
+    const isPppoe = o.wan === 'pppoe';
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Мастер конфигурации</span></div>';
+    html += '<h1 class="art-title">Мастер конфигурации</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Заполните поля — мастер соберёт конфиг RouterOS 7, который можно скопировать целиком в New Terminal.</div>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Роутер и WAN</h3>' +
+      wizField('w-identity', 'Имя роутера', o.identity) +
+      '<label class="wz-row"><span class="wz-l">WAN</span><select class="inp" id="w-wan">' +
+      ['dhcp', 'static', 'pppoe'].map(function (v) {
+        const t = v === 'dhcp' ? 'DHCP от провайдера' : v === 'static' ? 'Статический IP' : 'PPPoE';
+        return '<option value="' + v + '"' + (o.wan === v ? ' selected' : '') + '>' + t + '</option>';
+      }).join('') + '</select></label>' +
+      wizField('w-wanPort', 'Порт WAN', o.wanPort, 'ether1') +
+      '<div class="wz-group' + (isStatic ? '' : ' off') + '" data-g="static">' +
+      wizField('w-wanIp', 'IP WAN', o.wanIp) +
+      wizField('w-wanPrefix', 'Префикс WAN', o.wanPrefix) +
+      wizField('w-wanGw', 'Шлюз провайдера', o.wanGw) +
+      '</div>' +
+      '<div class="wz-group' + (isPppoe ? '' : ' off') + '" data-g="pppoe">' +
+      wizField('w-pppoeUser', 'Логин PPPoE', o.pppoeUser) +
+      wizField('w-pppoePass', 'Пароль PPPoE', o.pppoePass) +
+      '</div></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'LAN</h3>' +
+      wizField('w-lanIp', 'IP роутера в LAN', o.lanIp) +
+      wizField('w-lanPrefix', 'Префикс LAN', o.lanPrefix) +
+      wizField('w-lanPorts', 'Порты LAN', o.lanPorts, 'диапазон: ether2-ether5') +
+      wizSwitch('w-dhcp', 'DHCP-сервер и пул', o.dhcp, 'раздавать адреса автоматически') +
+      wizField('w-dns', 'DNS-серверы', o.dns, 'через запятую') +
+      wizSwitch('w-protect', 'Firewall и защита', o.protect, 'рекомендуется включить') +
+      '</section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Гости и VPN</h3>' +
+      wizSwitch('w-guest', 'Гостевая сеть (VLAN 20)', o.guest, 'изолировать гостей от LAN') +
+      '<div class="wz-group' + (o.guest ? '' : ' off') + '" data-g="guest">' +
+      wizField('w-guestIp', 'IP гостевого шлюза', o.guestIp) +
+      wizField('w-guestPort', 'Порт под гостей', o.guestPort) +
+      '</div>' +
+      wizSwitch('w-wg', 'WireGuard-сервер', o.wg, 'для удалённого доступа') +
+      '<div class="wz-group' + (o.wg ? '' : ' off') + '" data-g="wg">' +
+      wizField('w-wgPort', 'Порт WireGuard', o.wgPort) +
+      '</div></section>';
+
+    html += '<div class="wz-actions"><button class="btn primary block" id="wizGo">Собрать конфиг</button></div>';
+    html += '<div id="wizOut"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function wizCollect() {
+    const g = function (id, def) {
+      const el = document.getElementById(id);
+      return el ? el.value : def;
+    };
+    const on = function (id) {
+      const el = document.getElementById(id);
+      return !!(el && el.classList.contains('on'));
+    };
+    return {
+      identity: g('w-identity', 'office-gw'),
+      wan: g('w-wan', 'dhcp'),
+      wanPort: g('w-wanPort', 'ether1'),
+      wanIp: g('w-wanIp', ''), wanPrefix: g('w-wanPrefix', 24), wanGw: g('w-wanGw', ''),
+      pppoeUser: g('w-pppoeUser', ''), pppoePass: g('w-pppoePass', ''),
+      lanIp: g('w-lanIp', '192.168.88.1'), lanPrefix: g('w-lanPrefix', 24), lanPorts: g('w-lanPorts', 'ether2-ether5'),
+      dhcp: on('w-dhcp'), dns: g('w-dns', '1.1.1.1,8.8.8.8'),
+      guest: on('w-guest'), guestIp: g('w-guestIp', '192.168.20.1'), guestPort: g('w-guestPort', 'ether5'),
+      wg: on('w-wg'), wgPort: g('w-wgPort', 13231),
+      protect: on('w-protect')
+    };
+  }
+
+  function bindWizard() {
+    const go = document.getElementById('wizGo');
+    if (!go) return;
+    const sel = document.getElementById('w-wan');
+    const sync = function () {
+      const v = sel.value;
+      document.querySelectorAll('.wz-group').forEach(function (g) {
+        const isStatic = g.getAttribute('data-g') === 'static';
+        const isP = g.getAttribute('data-g') === 'pppoe';
+        const isG = g.getAttribute('data-g') === 'guest';
+        const isW = g.getAttribute('data-g') === 'wg';
+        if (isStatic) g.classList.toggle('off', v !== 'static');
+        if (isP) g.classList.toggle('off', v !== 'pppoe');
+        if (isG) g.classList.toggle('off', !document.getElementById('w-guest').classList.contains('on'));
+        if (isW) g.classList.toggle('off', !document.getElementById('w-wg').classList.contains('on'));
+      });
+    };
+    sel.addEventListener('change', sync);
+    ['w-guest', 'w-wg'].forEach(function (id) {
+      const sw = document.getElementById(id);
+      if (sw) sw.addEventListener('click', function () {
+        sw.classList.toggle('on');
+        sync();
+      });
+    });
+    document.querySelectorAll('.wz-row .switch').forEach(function (sw) {
+      sw.addEventListener('click', function () { sw.classList.toggle('on'); });
+    });
+
+    go.addEventListener('click', function () {
+      const opts = wizCollect();
+      store.set('wiz', JSON.stringify(opts));
+      const res = window.ConfigWizard ? window.ConfigWizard.generate(opts) : { text: '', warnings: ['Генератор не загружен'], lines: 0 };
+      const out = document.getElementById('wizOut');
+      let h = '<section class="card" style="margin-top:14px"><h3 class="card-h">' + svg('task', 15) + 'Готовый конфиг</h3>' +
+        '<div class="hint" style="margin:-4px 0 10px">' + esc(res.title || '') + ' · строк: ' + (res.lines || 0) + '</div>';
+      if (res.warnings && res.warnings.length) {
+        h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div>' + res.warnings.map(esc).join('<br>') + '</div></div>';
+      }
+      h += '<div class="cfg"><div class="cfg-h"><span>' + esc(res.title || 'RouterOS 7') + '</span>' +
+        '<span class="cfg-btns"><button class="copy">копировать</button><button class="share" data-share="cfg">поделиться</button></span></div>' +
+        '<pre>' + esc(res.text || '') + '</pre></div>' +
+        '<div class="hint" style="margin-top:10px">Вставьте в Winbox → New Terminal. Перед вставкой сохраните текущий конфиг: <code class="inl">/export file=before-change</code>.</div>' +
+        '</section>';
+      out.innerHTML = h;
+      if (out.scrollIntoView) { try { out.scrollIntoView({ block: 'start' }); } catch (e) { } }
+    });
+  }
+
+  /* ================= калькулятор подсетей ================= */
+  function subnetView() {
+    const last = store.get('snq') || '192.168.10.0/24';
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Калькулятор подсетей</span></div>';
+    html += '<h1 class="art-title">Калькулятор подсетей</h1>';
+    html += '<div class="card"><div class="sn-row"><input class="inp mono" id="snInput" value="' + esc(last) + '" placeholder="192.168.10.0/24">' +
+      '<button class="btn primary" id="snGo">Посчитать</button></div>' +
+      '<div class="hint">Можно вводить <b>192.168.10.5/24</b>, <b>10.0.0.0 26</b> или <b>192.168.1.0/255.255.255.0</b>.</div></div>';
+    html += '<div id="snOut"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function snRender() {
+    const inp = document.getElementById('snInput');
+    const out = document.getElementById('snOut');
+    if (!inp || !out) return;
+    const C = window.NetCalc;
+    if (!C) { out.innerHTML = '<div class="empty">Модуль расчёта не загружен</div>'; return; }
+    const q = inp.value.trim();
+    const p = C.parse(q);
+    if (!p) {
+      out.innerHTML = '<div class="card"><div class="empty">Не разобрал адрес. Пример: 192.168.10.0/24</div></div>';
+      return;
+    }
+    store.set('snq', q);
+    const inf = C.info(p.ip, p.prefix);
+    const rows = [
+      ['Адрес с префиксом', p.ipStr + '/' + p.prefix],
+      ['Маска', inf.mask],
+      ['Wildcard (для firewall)', inf.wildcard],
+      ['Сеть', inf.network],
+      ['Broadcast', inf.broadcast],
+      ['Первый хост', inf.first],
+      ['Последний хост', inf.last],
+      ['Хостов в подсети', String(inf.hosts)],
+      ['Обратная маска / prefix-list', inf.wildcard + ' · le ' + inf.prefix]
+    ];
+    let h = '<section class="card"><h3 class="card-h">' + svg('ip', 15) + 'Результат</h3><div class="kv">' +
+      rows.map(function (r) { return '<div class="kv-r"><span>' + esc(r[0]) + '</span><b class="mono">' + esc(r[1]) + '</b></div>'; }).join('') +
+      '</div></section>';
+
+    const nextP = Math.min(30, p.prefix + 2);
+    h += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Деление на подсети</h3>' +
+      '<div class="sn-row"><span class="wz-l">Новый префикс</span><input class="inp mono" id="snNew" value="' + nextP + '" style="max-width:90px">' +
+      '<button class="btn" id="snSplit">Разбить</button></div><div id="snSplitOut"></div></section>';
+    out.innerHTML = h;
+
+    const splitBtn = document.getElementById('snSplit');
+    if (splitBtn) splitBtn.addEventListener('click', function () {
+      const np = parseInt(document.getElementById('snNew').value, 10);
+      const list = C.split(inf.networkInt, p.prefix, np, 64);
+      const host = document.getElementById('snSplitOut');
+      if (!list.length) { host.innerHTML = '<div class="empty">Новый префикс должен быть больше исходного</div>'; return; }
+      host.innerHTML = '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>#</th><th>Подсеть</th><th>Диапазон</th><th>Broadcast</th><th>Хостов</th></tr></thead><tbody>' +
+        list.map(function (x, i) {
+          return '<tr><td>' + (i + 1) + '</td><td class="mono">' + esc(x.cidr) + '</td><td class="mono">' + esc(x.first + '–' + x.last) +
+            '</td><td class="mono">' + esc(x.broadcast) + '</td><td>' + x.hosts + '</td></tr>';
+        }).join('') + '</tbody></table></div>' +
+        (Math.pow(2, np - p.prefix) > list.length ? '<div class="hint">Показаны первые ' + list.length + ' подсетей</div>' : '');
+    });
+  }
+
+  function bindSubnet() {
+    const inp = document.getElementById('snInput');
+    const go = document.getElementById('snGo');
+    if (!inp) return;
+    if (go) go.addEventListener('click', snRender);
+    inp.addEventListener('keydown', function (e) { if (e.key === 'Enter') snRender(); });
+    snRender();
+  }
+
+  /* ================= сравнение конфигов ================= */
+  const DIFF_SAMPLE_A = '/interface bridge add name=bridge-lan\n' +
+    '/ip address add address=192.168.88.1/24 interface=bridge-lan\n' +
+    '/ip dns set servers=1.1.1.1\n' +
+    '/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade\n';
+  const DIFF_SAMPLE_B = '/interface bridge add name=bridge-lan\n' +
+    '/ip address add address=192.168.88.1/24 interface=bridge-lan\n' +
+    '/ip address add address=192.168.10.1/24 interface=vlan-office\n' +
+    '/ip dns set servers=1.1.1.1,8.8.8.8\n' +
+    '/ip firewall nat add chain=srcnat out-interface-list=WAN action=masquerade\n';
+
+  function diffView() {
+    const a = store.get('diffA') || '';
+    const b = store.get('diffB') || '';
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Сравнить конфиги</span></div>';
+    html += '<h1 class="art-title">Сравнить конфиги</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Вставьте два вывода <code class="inl">/export</code> — приложение покажет, что добавилось и что исчезло.</div>';
+    html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Было</h3>' +
+      '<textarea class="inp mono diff-in" id="dA" rows="7" placeholder="/ip address add …">' + esc(a) + '</textarea></section>';
+    html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Стало</h3>' +
+      '<textarea class="inp mono diff-in" id="dB" rows="7" placeholder="/ip address add …">' + esc(b) + '</textarea></section>';
+    html += '<div class="wz-actions"><button class="btn primary" id="dGo">Сравнить</button>' +
+      '<button class="btn" id="dSample">Пример</button>' +
+      '<label class="chk-line"><input type="checkbox" id="dIgnore"' + (store.get('diffIgnore') === '1' ? ' checked' : '') + '> игнорировать комментарии #</label></div>';
+    html += '<div id="dOut"></div></div>';
+    return html;
+  }
+
+  function diffRender() {
+    const a = document.getElementById('dA').value;
+    const b = document.getElementById('dB').value;
+    const ignore = document.getElementById('dIgnore').checked;
+    store.set('diffA', a);
+    store.set('diffB', b);
+    store.set('diffIgnore', ignore ? '1' : '0');
+    const out = document.getElementById('dOut');
+    if (!window.TextDiff) { out.innerHTML = '<div class="empty">Модуль сравнения не загружен</div>'; return; }
+    if (!a.trim() && !b.trim()) { out.innerHTML = '<div class="card"><div class="empty">Заполните хотя бы одно поле</div></div>'; return; }
+    const r = window.TextDiff.compare(a, b, { ignoreComments: ignore });
+    let h = '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Различия</h3>' +
+      '<div class="diff-stats"><span class="add">+' + r.added + '</span><span class="del">−' + r.removed + '</span>' +
+      '<span class="same">без изменений: ' + r.same + '</span>' +
+      (r.truncated ? '<span class="warn-inline">файл большой — сравнение по строкам</span>' : '') + '</div>';
+    if (!r.changed) h += '<div class="empty">Конфиги идентичны</div>';
+    else {
+      h += '<div class="diff">' + r.lines.map(function (l) {
+        const cls = l.t === '+' ? 'add' : l.t === '-' ? 'del' : 'ctx';
+        return '<div class="dl ' + cls + '"><span class="sg">' + (l.t === ' ' ? ' ' : l.t) + '</span><span class="tx">' + esc(l.s) + '</span></div>';
+      }).join('') + '</div>';
+    }
+    h += '</section>';
+    out.innerHTML = h;
+  }
+
+  function bindDiff() {
+    const go = document.getElementById('dGo');
+    if (!go) return;
+    go.addEventListener('click', diffRender);
+    document.getElementById('dSample').addEventListener('click', function () {
+      document.getElementById('dA').value = DIFF_SAMPLE_A;
+      document.getElementById('dB').value = DIFF_SAMPLE_B;
+      diffRender();
+    });
+    document.getElementById('dIgnore').addEventListener('change', diffRender);
+  }
+
+  /* ================= самопроверка ================= */
+  let QZ = null;
+  let runTick = null;
+
+  function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  function quizStart() {
+    const pool = (window.QUIZ || []).slice();
+    shuffle(pool);
+    QZ = { list: pool.slice(0, 10), i: 0, ans: [], picked: null, done: false };
+  }
+
+  function quizScore() {
+    let n = 0;
+    QZ.ans.forEach(function (a) { if (a && a.pick === a.c) n++; });
+    return n;
+  }
+
+  function quizView() {
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Самопроверка</span></div>';
+    html += '<h1 class="art-title">Самопроверка</h1>';
+
+    if (!QZ) {
+      const total = (window.QUIZ || []).length;
+      html += '<section class="card"><div class="hint">10 случайных вопросов из ' + total + '. После каждого ответа — пояснение и ссылка на статью. Результат можно отправить себе или коллеге.</div>' +
+        '<div class="wz-actions"><button class="btn primary block" id="qzStart">Начать тест</button></div></section></div>';
+      return html;
+    }
+
+    if (!QZ.done) {
+      const cur = QZ.list[QZ.i];
+      const picked = QZ.picked;
+      html += '<div class="qz-top"><span>Вопрос ' + (QZ.i + 1) + ' из ' + QZ.list.length + '</span>' +
+        '<span>Верно: ' + quizScore() + '</span></div>' +
+        '<div class="upd-bar"><i style="width:' + Math.round((QZ.i / QZ.list.length) * 100) + '%"></i></div>';
+      html += '<section class="card qz-card"><h3 class="qz-q">' + esc(cur.q) + '</h3><div class="qz-opts">' +
+        cur.a.map(function (t, i) {
+          let cls = 'qz-opt';
+          if (picked != null) {
+            if (i === cur.c) cls += ' correct';
+            else if (i === picked) cls += ' wrong';
+            else cls += ' muted';
+          }
+          return '<button class="' + cls + '" data-qi="' + i + '"' + (picked != null ? ' disabled' : '') + '>' +
+            '<span class="qz-k">' + String.fromCharCode(65 + i) + '</span><span>' + esc(t) + '</span></button>';
+        }).join('') + '</div>';
+      if (picked != null) {
+        const ok = picked === cur.c;
+        html += '<div class="qz-fb ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? 'Верно.' : 'Неверно.') + '</b> ' + esc(cur.e) +
+          (cur.r && BY_ID[cur.r] ? ' <a href="#/' + cur.r + '">Разобрать: ' + esc(BY_ID[cur.r].t) + '</a>' : '') + '</div>' +
+          '<div class="wz-actions"><button class="btn primary" id="qzNext">' + (QZ.i + 1 < QZ.list.length ? 'Дальше' : 'Показать результат') + '</button></div>';
+      }
+      html += '</section></div>';
+      return html;
+    }
+
+    const score = quizScore();
+    const pct = Math.round((score / QZ.list.length) * 100);
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Результат</h3>' +
+      '<div class="qz-result"><b>' + score + ' из ' + QZ.list.length + '</b><span>' + pct + '% · ' +
+      (pct >= 90 ? 'отлично' : pct >= 70 ? 'хорошо' : pct >= 50 ? 'есть пробелы' : 'стоит перечитать разделы') + '</span></div>' +
+      '<div class="upd-bar"><i style="width:' + pct + '%"></i></div></section>';
+
+    const wrong = QZ.ans.map(function (a, i) { return { a: a, q: QZ.list[i] }; }).filter(function (x) { return x.a.pick !== x.a.c; });
+    if (wrong.length) {
+      html += '<section class="card"><h3 class="card-h">' + svg('book', 15) + 'Что повторить</h3>' +
+        wrong.map(function (x) {
+          return '<a class="list-row" href="#/' + (x.q.r || '') + '"><span class="n">' + svg('book', 13) + '</span>' +
+            '<b>' + esc(x.q.q) + '</b><span>' + (BY_ID[x.q.r] ? esc(BY_ID[x.q.r].t) : 'статья') + '</span></a>';
+        }).join('') + '</section>';
+    }
+    html += '<div class="wz-actions"><button class="btn primary" id="qzRestart">Ещё раз</button>' +
+      '<button class="btn" id="qzShare">Поделиться результатом</button></div></div>';
+    return html;
+  }
+
+  function bindQuiz() {
+    const st = document.getElementById('qzStart');
+    if (st) st.addEventListener('click', function () { quizStart(); rerender(); });
+    const rs = document.getElementById('qzRestart');
+    if (rs) rs.addEventListener('click', function () { quizStart(); rerender(); });
+    document.querySelectorAll('.qz-opt').forEach(function (b) {
+      b.addEventListener('click', function () {
+        if (QZ.picked != null) return;
+        const i = parseInt(b.getAttribute('data-qi'), 10);
+        QZ.picked = i;
+        QZ.ans[QZ.i] = { pick: i, c: QZ.list[QZ.i].c };
+        rerender();
+      });
+    });
+    const nx = document.getElementById('qzNext');
+    if (nx) nx.addEventListener('click', function () {
+      QZ.picked = null;
+      if (QZ.i + 1 >= QZ.list.length) QZ.done = true;
+      else QZ.i++;
+      rerender();
+    });
+    const sh = document.getElementById('qzShare');
+    if (sh) sh.addEventListener('click', function () {
+      shareText('Самопроверка MikroTik: ' + quizScore() + ' из ' + QZ.list.length + '. Приложение «MikroTik · Учебник Winbox 4».', 'Мой результат');
+    });
+  }
+
+  function rerender() {
+    content.innerHTML = quizView();
+    content.scrollTop = 0;
+    bindQuiz();
+  }
+
+  /* ================= режим «на объекте» ================= */
+  function runState(id) {
+    try {
+      const v = JSON.parse(store.get('run:' + id) || '{}');
+      return { d: (v && v.d) || {}, start: (v && v.start) || 0 };
+    } catch (e) { return { d: {}, start: 0 }; }
+  }
+
+  function runSave(id, st) { store.set('run:' + id, JSON.stringify(st)); }
+
+  function runDone(st) { return Object.keys(st.d).filter(function (k) { return st.d[k]; }).length; }
+
+  function runClock(start) {
+    const s = Math.max(0, Math.floor((Date.now() - start) / 1000));
+    const m = Math.floor(s / 60), sec = s % 60;
+    return (m < 10 ? '0' : '') + m + ':' + (sec < 10 ? '0' : '') + sec;
+  }
+
+  function stopTick() { if (runTick) { clearInterval(runTick); runTick = null; } }
+
+  function runView(a) {
+    const st = runState(a.id);
+    if (!st.start) { st.start = Date.now(); runSave(a.id, st); }
+    const steps = a.steps || [];
+    const done = runDone(st);
+    const pct = steps.length ? Math.round((done / steps.length) * 100) : 0;
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/' + a.id + '">' + esc(a.t) + '</a><span class="sep">/</span><span>На объекте</span></div>';
+    html += '<h1 class="art-title">' + esc(a.t) + '</h1>';
+    html += '<div class="run-head"><div class="run-progress"><b id="runCount">' + done + ' из ' + steps.length + '</b>' +
+      '<span class="run-clock">⏱ <span id="runClock">' + runClock(st.start) + '</span></span></div>' +
+      '<div class="upd-bar"><i id="runBar" style="width:' + pct + '%"></i></div></div>';
+
+    html += '<div class="run-list">' + steps.map(function (s, i) {
+      const on = !!st.d[i];
+      const t = typeof s === 'string' ? s : s.t;
+      const d = typeof s === 'string' ? '' : (s.d || '');
+      return '<button class="run-step' + (on ? ' on' : '') + '" data-ri="' + i + '">' +
+        '<span class="rs-box">' + (on ? '✓' : '') + '</span>' +
+        '<span class="rs-body"><b>' + inline(t) + '</b>' + (d ? '<span class="rs-d">' + inline(d) + '</span>' : '') + '</span></button>';
+    }).join('') + '</div>';
+
+    html += '<div class="wz-actions">' +
+      '<button class="btn" id="runReset">Сбросить</button>' +
+      '<a class="btn" href="#/' + a.id + '">Открыть статью</a>' +
+      '<button class="btn primary" id="runFinish">' + (done === steps.length && steps.length ? 'Готово ✓' : 'Отметить прочитанной') + '</button>' +
+      '</div>';
+    html += '<div class="hint">Галочки сохраняются на устройстве — можно закрыть приложение и вернуться.</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function bindRun(a) {
+    const steps = a.steps || [];
+    const st = runState(a.id);
+    const paint = function () {
+      const done = runDone(st);
+      const pct = steps.length ? Math.round((done / steps.length) * 100) : 0;
+      const cnt = document.getElementById('runCount');
+      const bar = document.getElementById('runBar');
+      const fin = document.getElementById('runFinish');
+      if (cnt) cnt.textContent = done + ' из ' + steps.length;
+      if (bar) bar.style.width = pct + '%';
+      if (fin) fin.textContent = (done === steps.length && steps.length) ? 'Готово ✓' : 'Отметить прочитанной';
+    };
+    document.querySelectorAll('.run-step').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const i = b.getAttribute('data-ri');
+        st.d[i] = !st.d[i];
+        runSave(a.id, st);
+        b.classList.toggle('on', !!st.d[i]);
+        const box = b.querySelector('.rs-box');
+        if (box) box.textContent = st.d[i] ? '✓' : '';
+        paint();
+      });
+    });
+    const rs = document.getElementById('runReset');
+    if (rs) rs.addEventListener('click', function () {
+      st.d = {}; st.start = Date.now(); runSave(a.id, st);
+      document.querySelectorAll('.run-step').forEach(function (b) {
+        b.classList.remove('on');
+        const box = b.querySelector('.rs-box');
+        if (box) box.textContent = '';
+      });
+      paint();
+      toast('Чек-лист сброшен');
+    });
+    const fin = document.getElementById('runFinish');
+    if (fin) fin.addEventListener('click', function () {
+      markRead(a.id);
+      toast('Статья отмечена прочитанной');
+    });
+
+    stopTick();
+    const clk = document.getElementById('runClock');
+    if (clk) {
+      runTick = setInterval(function () {
+        const el = document.getElementById('runClock');
+        if (!el) { stopTick(); return; }
+        el.textContent = runClock(st.start);
+      }, 1000);
+    }
+  }
+
   /* ---------------- роутер ---------------- */
   const content = $('#content');
 
   function route() {
+    stopTick();
     const hash = location.hash.replace(/^#\/?/, '');
     const id = hash.split('?')[0];
 
@@ -1166,6 +1895,35 @@
       document.title = 'О программе · MikroTik';
       return;
     }
+    const TOOL_TITLES = { tools: 'Инструменты', wizard: 'Мастер конфигурации', subnet: 'Калькулятор подсетей', diff: 'Сравнить конфиги', quiz: 'Самопроверка' };
+    if (TOOL_TITLES[id]) {
+      content.innerHTML = id === 'tools' ? toolsView() : id === 'wizard' ? wizardView()
+        : id === 'subnet' ? subnetView() : id === 'diff' ? diffView() : quizView();
+      content.scrollTop = 0;
+      markActive(null);
+      if (id === 'wizard') bindWizard();
+      if (id === 'subnet') bindSubnet();
+      if (id === 'diff') bindDiff();
+      if (id === 'quiz') bindQuiz();
+      document.title = TOOL_TITLES[id] + ' · MikroTik';
+      return;
+    }
+
+    if (id.indexOf('run/') === 0) {
+      const rid = id.slice(4);
+      const ra = BY_ID[rid];
+      if (!ra) {
+        content.innerHTML = '<div class="wrap"><div class="empty">Статья не найдена.<br><br><a class="badge" href="#/">На главную</a></div></div>';
+        return;
+      }
+      content.innerHTML = runView(ra);
+      content.scrollTop = 0;
+      markActive(rid);
+      bindRun(ra);
+      document.title = 'На объекте · ' + ra.t;
+      return;
+    }
+
     const a = BY_ID[id];
     if (!a) {
       content.innerHTML = '<div class="wrap"><div class="empty">Раздел не найден.<br><br><a class="badge" href="#/">На главную</a></div></div>';
@@ -1187,6 +1945,26 @@
     if (!fb) return;
     const id = location.hash.replace(/^#\/?/, '').split('?')[0];
     if (id) toggleFav(id);
+  });
+
+  /* поделиться конфигом или статьёй */
+  document.addEventListener('click', function (e) {
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const cfgBtn = t.closest('[data-share="cfg"]');
+    if (cfgBtn) {
+      const host = cfgBtn.closest('.cfg');
+      const pre = host ? host.querySelector('pre') : null;
+      shareText(pre ? pre.innerText : '', 'Конфиг RouterOS');
+      return;
+    }
+    const artBtn = t.closest('#shareArt');
+    if (artBtn) {
+      const cur = BY_ID[location.hash.replace(/^#\/?/, '').split('?')[0]];
+      if (!cur) return;
+      shareText((cur.path ? cur.path + '\n' : '') + (cur.purpose || '') +
+        '\n\nИз приложения «MikroTik · Учебник Winbox 4».', cur.t);
+    }
   });
 
   /* копирование команд и готовых конфигов */

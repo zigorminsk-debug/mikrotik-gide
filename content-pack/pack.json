@@ -1,0 +1,133 @@
+{
+  "version": "2026.11.03.1",
+  "date": "2026-11-03",
+  "title": "Дополнения: VETH и контейнеры, L2TP-Ethernet, PIM-SM",
+  "groups": [
+    {
+      "id": "pack",
+      "name": "Дополнения (контент-пак)",
+      "ic": "book",
+      "items": [
+        {
+          "id": "pack-veth",
+          "t": "VETH и контейнеры: Docker на RouterOS 7",
+          "lvl": 3,
+          "path": "Interface → VETH + System → Packages",
+          "tags": ["veth", "контейнеры", "docker", "routeros 7"],
+          "purpose": "RouterOS 7 на x86/CHR умеет запускать контейнеры. VETH — виртуальный Ethernet между ядром роутера и контейнером: контейнер получает свой адрес и живёт как отдельное устройство со своими правилами firewall.",
+          "usage": [
+            "AdGuard Home, Pi-hole, Unbound прямо на роутере.",
+            "Лёгкие сервисы: мониторинг, reverse-proxy, бэкап.",
+            "Лаборатория: проверка сервисов без отдельного сервера."
+          ],
+          "steps": [
+            { "t": "Проверьте ресурсы", "d": "Нужны x86/CHR (не ARM), RouterOS 7.4+, 256 МБ RAM и место на диске. `system resource print`." },
+            { "t": "Включите контейнеры", "d": "System → Packages: установите пакет `container`, перезагрузитесь." },
+            { "t": "Создайте VETH", "d": "Interface → VETH → `+`: name=`veth1`, address=172.17.0.2/24, gateway=172.17.0.1." },
+            { "t": "Создайте мост для контейнеров", "d": "Bridge `docker` с адресом 172.17.0.1/24, VETH — портом этого моста." },
+            { "t": "Добавьте контейнер", "d": "System → Containers → `+`: remote-image=`adguard/adguardhome:latest`, interface=veth1, root-dir=`docker/adguard`." },
+            { "t": "Откройте доступ", "d": "Firewall forward: LAN → docker разрешить нужные порты; доступ к веб-интерфейсу — через dstnat." }
+          ],
+          "scenes": [
+            {
+              "path": "System → Containers", "win": "Containers", "noTools": true,
+              "cols": [{ "t": "Name", "w": 110 }, { "t": "Image", "w": 210 }, { "t": "Interface", "w": 90 }, { "t": "Status", "w": 90 }],
+              "rows": [
+                [{ "v": "adguard", "m": 1 }, { "v": "adguard/adguardhome:latest" }, { "v": "veth1", "m": 2 }, { "v": "running", "m": 3 }]
+              ],
+              "sel": 0,
+              "notes": ["Имя контейнера", "VETH, через который он подключён", "Статус: running"]
+            }
+          ],
+          "check": [{ "d": "терминал", "c": "/container print\n/interface veth print\n/ip address print where interface=docker\n/log print where topics~\"container\"" }],
+          "warn": "Контейнеры не работают на ARM-моделях (hAP, cAP). Нужен x86/CHR и достаточно RAM.",
+          "mistakes": [
+            "Запуск контейнера без VETH — он остаётся без сети.",
+            "Мало места на диске: образ не скачивается.",
+            "Забыли правило forward из LAN в сеть контейнеров."
+          ]
+        },
+        {
+          "id": "pack-l2tpeth",
+          "t": "L2TP-Ethernet: L2 между площадками без MPLS",
+          "lvl": 3,
+          "path": "Interface → L2TP-Ethernet",
+          "tags": ["l2tp", "l2", "туннель", "l2tpv3"],
+          "purpose": "L2TP-Ethernet (L2TPv3) прокидывает Ethernet-сегмент между двумя роутерами поверх IP — там, где MPLS недоступен, а EoIP не подходит из-за NAT. Получается «удлинитель» L2: обе площадки в одной подсети.",
+          "usage": [
+            "Перенос сервера в другую площадку без смены адресов.",
+            "Объединение двух офисов в один L2-сегмент.",
+            "Резерв, когда провайдер не даёт L2-канал."
+          ],
+          "steps": [
+            { "t": "Подготовьте IP-связность", "d": "Между роутерами должен быть ping по IP (публичные адреса или VPN)." },
+            { "t": "Создайте интерфейс на стороне A", "d": "Interface → L2TP-Ethernet → `+`: name=`l2-a`, remote-peer=`198.51.100.2`, local-address=`198.51.100.1`, session-id=1, remote-session-id=2." },
+            { "t": "Создайте интерфейс на стороне B", "d": "Зеркально: session-id=2, remote-session-id=1." },
+            { "t": "Добавьте в мост", "d": "Bridge → Ports: l2-a/l2-b — порты моста там, где нужен общий сегмент." },
+            { "t": "Откройте протокол", "d": "Firewall input: accept protocol=udp dst-port=1701 (или 11500 при выборе другого порта) только с адреса peer." },
+            { "t": "Проверка", "d": "`/interface l2tp-ether print`, ping между хостами одной подсети, ARP виден на обеих сторонах." }
+          ],
+          "scenes": [
+            {
+              "path": "Interface → L2TP-Ethernet → New", "win": "New L2TP-Ethernet", "noTools": true,
+              "form": {
+                "title": "New L2TP-Ethernet", "buttons": ["OK", "Cancel", "Apply"],
+                "fields": [
+                  { "l": "Name", "v": "l2-a", "m": 1 },
+                  { "l": "Remote Peer", "v": "198.51.100.2", "m": 2 },
+                  { "l": "Local Address", "v": "198.51.100.1" },
+                  { "l": "Session ID", "v": "1", "m": 3 },
+                  { "l": "Remote Session ID", "v": "2", "m": 4 }
+                ]
+              },
+              "notes": ["Имя интерфейса", "Адрес второго роутера", "Свой идентификатор сессии", "Идентификатор сессии партнёра"]
+            }
+          ],
+          "check": [{ "d": "терминал", "c": "/interface l2tp-ether print detail\n/interface bridge port print\n/ping 198.51.100.2 count=4" }],
+          "warn": "Session ID должны быть зеркальными и уникальными. При несовпадении туннель не поднимется без явной ошибки в интерфейсе.",
+          "mistakes": [
+            "Одинаковые session-id с двух сторон.",
+            "Закрытый UDP-порт в firewall.",
+            "Один L2-сегмент с двух сторон с одинаковыми адресами шлюзов."
+          ]
+        },
+        {
+          "id": "pack-pim",
+          "t": "PIM-SM: multicast между площадками",
+          "lvl": 3,
+          "path": "Routing → PIM-SM",
+          "tags": ["multicast", "pim", "iptv", "routing"],
+          "purpose": "Когда IPTV-поток нужен в нескольких сегментах, одного IGMP Proxy мало: PIM-SM строит дерево multicast-маршрутизации между роутерами. Источник регистрируется на Rendezvous Point, клиенты подписываются на группу.",
+          "usage": [
+            "IPTV в филиалах через общий канал.",
+            "Видеонаблюдение multicast на несколько объектов.",
+            "Корпоративные multicast-сервисы (обновления, вещание)."
+          ],
+          "steps": [
+            { "t": "Включите PIM на интерфейсах", "d": "Routing → PIM-SM → Instances → Interfaces: добавьте LAN и WAN (или туннели), mode=sparse." },
+            { "t": "Задайте RP", "d": "Routing → PIM-SM → RP: address=<адрес RP>, group=239.0.0.0/8 — одинаково на всех роутерах." },
+            { "t": "Разрешите multicast", "d": "IGMP на LAN-интерфейсе включён по умолчанию; проверьте `/routing igmp-proxy` или IGMP-настройки интерфейса." },
+            { "t": "Пропустите трафик в firewall", "d": "forward: accept для dst-address=224.0.0.0/4 и протокола igmp." },
+            { "t": "Проверьте дерево", "d": "`/routing pimsm mroute print` — видно (S,G) и интерфейсы входящего/исходящего трафика." }
+          ],
+          "scenes": [
+            {
+              "path": "Routing → PIM-SM", "win": "PIM-SM", "tabs": ["Instances", "Interfaces", "RP", "Mroute"], "tab": "RP", "noTools": true,
+              "cols": [{ "t": "Address", "w": 140 }, { "t": "Group", "w": 140 }, { "t": "Priority", "w": 90 }],
+              "rows": [[{ "v": "192.168.88.1", "m": 1 }, { "v": "239.0.0.0/8", "m": 2 }, { "v": "0" }]],
+              "sel": 0,
+              "notes": ["Rendezvous Point — адрес роутера-точки встречи", "Диапазон multicast-групп"]
+            }
+          ],
+          "check": [{ "d": "терминал", "c": "/routing pimsm rp print\n/routing pimsm interface print\n/routing pimsm mroute print" }],
+          "warn": "PIM-SM требует одинакового RP на всех роутерах. При разных RP дерево не сойдётся и поток не пойдёт.",
+          "mistakes": [
+            "Не разрешён igmp в firewall.",
+            "RP указан только на одном роутере.",
+            "Multicast заворачивается в NAT без необходимости."
+          ]
+        }
+      ]
+    }
+  ]
+}
