@@ -1,0 +1,72 @@
+plugins {
+    id 'com.android.application'
+}
+
+// ---- подпись постоянным ключом ----
+// keystore/keystore.properties создаётся один раз (в CI или локально) и хранится в репозитории,
+// чтобы каждая следующая сборка ставилась поверх предыдущей как обновление.
+def ksPropsFile = rootProject.file('keystore/keystore.properties')
+def hasKeystore = ksPropsFile.exists()
+
+android {
+    namespace 'by.mikrotik.gide'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "by.mikrotik.gide"
+        minSdk 24
+        targetSdk 34
+        versionCode (project.findProperty('appVersionCode') ?: '1').toInteger()
+        versionName (project.findProperty('appVersionName') ?: '1.0.0')
+        resConfigs 'ru', 'en'
+    }
+
+    if (hasKeystore) {
+        def props = new Properties()
+        ksPropsFile.withInputStream { props.load(it) }
+        signingConfigs {
+            release {
+                storeFile rootProject.file(props['storeFile'])
+                storePassword props['storePassword']
+                keyAlias props['keyAlias']
+                keyPassword props['keyPassword']
+                storeType props['storeType'] ?: 'JKS'
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            if (hasKeystore) {
+                signingConfig signingConfigs.release
+            }
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError false
+        checkReleaseBuilds false
+    }
+
+    applicationVariants.all { variant ->
+        variant.outputs.all { output ->
+            if (variant.buildType.name == 'release') {
+                outputFileName = "mikrotik-gide-v${variant.versionName}.apk"
+            }
+        }
+    }
+}
+
+// Нет сторонних зависимостей: приложение — Java + локальные assets (WebView).
+dependencies { }

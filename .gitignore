@@ -1,0 +1,21 @@
+# Gradle / Android сборка
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Артефакты
+*.apk
+*.aab
+!app/build/outputs/**/mapping.txt
+
+# ОС / редакторы
+.DS_Store
+Thumbs.db
+*.swp
+node_modules/
