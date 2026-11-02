@@ -235,6 +235,11 @@ code.inl{
   border:1px solid #cfd8e3;position:relative;
 }
 .scene-host .scene-scale{transform-origin:top left}
+.scene-hint{
+  display:none;margin:8px 0 0;font-size:11.5px;color:var(--txt-mute);
+  align-items:center;gap:6px;
+}
+.scene-hint.on{display:flex}
 .notes{margin:9px 0 0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px}
 .notes li{display:flex;gap:8px;font-size:13.5px;color:var(--txt-dim);align-items:flex-start}
 .notes .n{

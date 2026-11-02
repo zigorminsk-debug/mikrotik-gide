@@ -260,8 +260,14 @@
     inner.style.transform = 'scale(' + k + ')';
     const h = base.offsetHeight || 400;
     host.style.height = Math.ceil(h * k) + 'px';
-    host.style.overflowX = (k <= 0.601 && avail / natural < 0.6) ? 'auto' : 'hidden';
+    const needScroll = (avail / natural) < 0.6;
+    host.style.overflowX = needScroll ? 'auto' : 'hidden';
     inner.style.width = natural + 'px';
+    const hint = host.parentElement ? host.parentElement.querySelector('.scene-hint') : null;
+    if (hint) {
+      if (needScroll) hint.classList.add('on');
+      else hint.classList.remove('on');
+    }
   }
 
   function render(spec) {
@@ -329,6 +335,7 @@
     scale.appendChild(root);
     host.appendChild(scale);
     block.appendChild(host);
+    block.appendChild(el('div', 'scene-hint', '⇄ Окно шире экрана — прокрутите вбок или сожмите двумя пальцами'));
     if (spec.notes && spec.notes.length) {
       const ul = el('ul', 'notes');
       spec.notes.forEach(function (t, i) {
@@ -352,6 +359,7 @@
     scale.appendChild(terminal(spec));
     host.appendChild(scale);
     block.appendChild(host);
+    block.appendChild(el('div', 'scene-hint', '⇄ Команды можно скопировать кнопкой в правом верхнем углу окна'));
     if (spec.notes && spec.notes.length) {
       const ul = el('ul', 'notes');
       spec.notes.forEach(function (t, i) {

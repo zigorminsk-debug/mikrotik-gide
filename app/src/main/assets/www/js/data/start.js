@@ -158,16 +158,16 @@ window.DATA.push({
           { t: '⇅', id: 'sort' }, { t: '⌕', id: 'find' }],
         cols: [{ t: '#', w: 30 }, { t: 'Chain', w: 80 }, { t: 'Action', w: 74 }, { t: 'Bytes', w: 90 }, { t: 'Comment', w: 240 }],
         rows: [
-          ['0', 'input', 'accept', '12.4 GiB', 'established,related'],
+          ['0', { v: 'input', m: 2 }, 'accept', '12.4 GiB', 'established,related'],
           ['1', 'input', 'drop', '402 MiB', { v: 'invalid', m: 3 }],
           ['2', 'forward', 'accept', '90.1 GiB', 'LAN → WAN']
         ],
         sel: 0,
         tabMark: 'Filter Rules', tabMarkN: 4,
         notes: ['Кнопка «+» добавляет правило в открытую вкладку',
-          'Вкладки переключают списки раздела IP → Firewall',
-          'Двойной клик по строке открывает свойства правила',
-          'Активная вкладка всегда подсвечена']
+          'Двойной клик по строке (например по «input») открывает свойства',
+          'Пример правила в списке: цепочка input, действие drop',
+          'Вкладки переключают списки раздела, активная подсвечена']
       }],
       check: [{ d: 'то же самое в терминале', c: '/ip firewall filter print\n/ip firewall filter print stats' }]
     },

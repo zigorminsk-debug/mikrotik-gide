@@ -904,7 +904,7 @@ window.DATA.push({
             { l: 'Mode', v: 'https', type: 'select' },
             { l: 'User', v: 'router' },
             { l: 'Password', v: '••••••••' },
-            { l: 'Upload', v: true, type: 'check' }
+            { l: 'Upload', v: true, type: 'check', m: 3 }
           ]
         },
         notes: ['Адрес сервера', 'Путь на сервере', 'Upload=yes — отправка файла с роутера']
