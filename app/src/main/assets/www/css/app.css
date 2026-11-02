@@ -44,6 +44,9 @@ html[data-fs="1"]{--fsm:1}
 html[data-fs="2"]{--fsm:1.08}
 html[data-fs="3"]{--fsm:1.18}
 html[data-fs="4"]{--fsm:1.3}
+html[data-fs="5"]{--fsm:1.45}
+html[data-fs="6"]{--fsm:1.6}
+html[data-fs="7"]{--fsm:1.8}
 
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0;height:100%}
@@ -961,3 +964,23 @@ html[data-theme="light"] .hero{background:radial-gradient(1200px 300px at 20% -1
 .hd-why{margin:0 0 8px;font-size:calc(13px * var(--fsm, 1));line-height:1.55;color:var(--txt-dim)}
 .hd-item.done .hd-top b{color:var(--txt-mute);text-decoration:line-through;text-decoration-color:rgba(255,255,255,.25)}
 .hd-item.done .hd-why{opacity:.65}
+
+/* ---- крупный шрифт: компенсируем отступы, чтобы текст не «расползался» ---- */
+html[data-fs="5"] .wrap, html[data-fs="6"] .wrap, html[data-fs="7"] .wrap{max-width:980px}
+html[data-fs="6"] .card, html[data-fs="7"] .card{padding-left:12px;padding-right:12px}
+html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
+
+/* ---- мастер: сегменты, резервирования, DNS ---- */
+.seg-row,.lease-row,.dns-row{display:grid;gap:6px;margin-bottom:8px;align-items:center}
+.seg-row{grid-template-columns:62px 1fr 1.25fr 0.85fr 34px}
+.lease-row{grid-template-columns:1.25fr 1fr 1fr 34px}
+.dns-row{grid-template-columns:1fr 1fr 34px}
+@media (max-width:560px){
+  .seg-row{grid-template-columns:1fr 1fr}
+  .lease-row{grid-template-columns:1fr 1fr}
+  .seg-row .s-del,.lease-row .l-del{justify-self:end}
+}
+.seg-row .s-del,.lease-row .l-del,.dns-row .ds-del{padding:8px 0;font-size:calc(13px * var(--fsm, 1))}
+
+/* ---- быстрые карточки проверки на главной ---- */
+.home-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0}

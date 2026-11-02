@@ -104,7 +104,7 @@
   function readCount() { return Object.keys(readMap()).length; }
 
   /* ---------------- размер шрифта ---------------- */
-  const FS_STEPS = [0.9, 1, 1.08, 1.18, 1.3];
+  const FS_STEPS = [0.9, 1, 1.08, 1.18, 1.3, 1.45, 1.6, 1.8];
   let fsIdx = 1;
   (function initFs() {
     const saved = parseInt(store.get('fs') || '1', 10);
@@ -334,6 +334,12 @@
     });
     html += '</div>';
 
+    html += '<div class="home-tools">' +
+      toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню Winbox — проверить роутер', 'svc') +
+      toolCard('#/audit', 'Аудит конфига', 'вставьте /export — 24 проверки с оценкой', 'task') +
+      toolCard('#/diag', 'Диагностика', 'если что-то не работает — пошагово', 'start') +
+      '</div>';
+
     const last = lastRead();
     if (last) {
       const la = BY_ID[last.id];
@@ -403,6 +409,7 @@
 
     html += '<div class="art-actions">' +
       '<button class="btn" id="shareArt">Поделиться</button>' +
+      '<button class="btn" id="printArt">В PDF</button>' +
       ((a.steps && a.steps.length) ? '<a class="btn" href="#/run/' + a.id + '">Режим на объекте</a>' : '') +
       '</div>';
 
@@ -1437,6 +1444,33 @@
       '<button class="btn f-del" type="button" aria-label="Удалить">✕</button></div>';
   }
 
+  function segRow(sg, i) {
+    sg = sg || {};
+    return '<div class="seg-row" data-si="' + i + '">' +
+      '<input class="inp s-vid mono" value="' + esc(sg.vlanId || '') + '" placeholder="VLAN">' +
+      '<input class="inp s-name" value="' + esc(sg.name || '') + '" placeholder="Название">' +
+      '<input class="inp s-ip mono" value="' + esc(sg.ip || '') + '" placeholder="192.168.30.1/24">' +
+      '<input class="inp s-port" value="' + esc(sg.port || '') + '" placeholder="ether4">' +
+      '<button class="btn s-del" type="button" aria-label="Удалить">✕</button></div>';
+  }
+
+  function leaseRow(l, i) {
+    l = l || {};
+    return '<div class="lease-row" data-li="' + i + '">' +
+      '<input class="inp l-mac mono" value="' + esc(l.mac || '') + '" placeholder="AA:BB:CC:DD:EE:FF">' +
+      '<input class="inp l-ip mono" value="' + esc(l.ip || '') + '" placeholder="192.168.88.50">' +
+      '<input class="inp l-cmt" value="' + esc(l.comment || '') + '" placeholder="принтер">' +
+      '<button class="btn l-del" type="button" aria-label="Удалить">✕</button></div>';
+  }
+
+  function dnsRow(d, i) {
+    d = d || {};
+    return '<div class="dns-row" data-di="' + i + '">' +
+      '<input class="inp ds-name mono" value="' + esc(d.name || '') + '" placeholder="nas.local">' +
+      '<input class="inp ds-ip mono" value="' + esc(d.address || '') + '" placeholder="192.168.88.10">' +
+      '<button class="btn ds-del" type="button" aria-label="Удалить">✕</button></div>';
+  }
+
   function wizardView() {
     const o = wizSaved();
     const presets = (window.ConfigWizard && window.ConfigWizard.presets) ? window.ConfigWizard.presets() : [];
@@ -1454,7 +1488,11 @@
       }).join('') + '</div>';
     }
 
+    const models = (window.ConfigWizard && window.ConfigWizard.models) ? window.ConfigWizard.models() : [];
     html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Роутер и WAN</h3>' +
+      (models.length ? wizSelect('w-model', 'Модель роутера', o.model, models.map(function (m) {
+        return { v: m.id, t: m.name };
+      }), 'подставит порты и наличие Wi-Fi') : '') +
       wizField('w-identity', 'Имя роутера', o.identity) +
       wizSelect('w-wan', 'Подключение к провайдеру', o.wan, [
         { v: 'dhcp', t: 'DHCP (автоматически)' },
@@ -1470,6 +1508,13 @@
       '<div class="wz-group' + (isPppoe ? '' : ' off') + '" data-g="pppoe">' +
       wizField('w-pppoeUser', 'Логин PPPoE', o.pppoeUser) +
       wizField('w-pppoePass', 'Пароль PPPoE', o.pppoePass) +
+      '</div></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('down', 15) + 'Резервный канал</h3>' +
+      wizSwitch('w-failover', 'Второй WAN (LTE, второй провайдер)', o.failover, 'резервный маршрут с дистанцией 2') +
+      '<div class="wz-group' + (o.failover ? '' : ' off') + '" data-g="failover">' +
+      wizField('w-wan2Port', 'Порт резервного канала', o.wan2Port, 'например lte1 или ether5') +
+      wizField('w-wan2Check', 'Адрес проверки канала', o.wan2Check, 'netwatch переключит маршрут') +
       '</div></section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'LAN, DHCP и DNS</h3>' +
@@ -1529,6 +1574,40 @@
       '<div id="wizFwd">' + (o.forwards || []).map(fwdRow).join('') + '</div>' +
       '<button class="btn" id="fwdAdd" type="button">+ Добавить правило</button></section>';
 
+    html += '<section class="card"><h3 class="card-h">' + svg('bridge', 15) + 'Сегменты VLAN</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Офис, камеры, телефоны, IoT: каждый сегмент получает свой VLAN, шлюз, DHCP и изоляцию от LAN.</div>' +
+      '<div id="wizSegs">' + (o.segments || []).map(segRow).join('') + '</div>' +
+      '<button class="btn" id="segAdd" type="button">+ Добавить сегмент</button></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Резервирование адресов и имена</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Постоянный адрес для принтера, камеры или NAS — по MAC. Локальные имена работают через DNS роутера.</div>' +
+      '<div id="wizLeases">' + (o.leases || []).map(leaseRow).join('') + '</div>' +
+      '<button class="btn" id="leaseAdd" type="button">+ Резервирование</button>' +
+      '<div id="wizDns" style="margin-top:10px">' + (o.dnsStatic || []).map(dnsRow).join('') + '</div>' +
+      '<button class="btn" id="dnsAdd" type="button">+ Локальное имя</button></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('gear', 15) + 'Сервисы</h3>' +
+      wizSwitch('w-hotspot', 'Hotspot для гостей', o.hotspot, 'страница входа и ваучеры') +
+      '<div class="wz-group' + (o.hotspot ? '' : ' off') + '" data-g="hotspot">' +
+      wizField('w-hotspotPass', 'Пароль гостя', o.hotspotPass, 'логин guest') +
+      '</div>' +
+      wizSwitch('w-qos', 'Ограничение скорости (QoS)', o.qos, 'PCQ-очередь на LAN') +
+      '<div class="wz-group' + (o.qos ? '' : ' off') + '" data-g="qos">' +
+      wizField('w-wanDown', 'Скорость скачивания, Мбит/с', o.wanDown) +
+      wizField('w-wanUp', 'Скорость отдачи, Мбит/с', o.wanUp) +
+      '</div>' +
+      wizSwitch('w-snmp', 'SNMP для мониторинга', o.snmp, 'Zabbix, PRTG, Observium') +
+      '<div class="wz-group' + (o.snmp ? '' : ' off') + '" data-g="snmp">' +
+      wizField('w-snmpCommunity', 'SNMP community', o.snmpCommunity) +
+      wizField('w-snmpHost', 'Сеть мониторинга', o.snmpHost) +
+      '</div>' +
+      wizSwitch('w-syslog', 'Логи на сервер', o.syslog, 'remote syslog') +
+      '<div class="wz-group' + (o.syslog ? '' : ' off') + '" data-g="syslog">' +
+      wizField('w-syslogHost', 'IP сервера логов', o.syslogHost) +
+      '</div>' +
+      wizSwitch('w-harden', 'Базовая защита от взлома', o.harden, 'MAC-сервер, discovery, blacklist') +
+      '</section>';
+
     html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Дополнительно</h3>' +
       wizSwitch('w-protect', 'Firewall и защита', o.protect, 'рекомендуется включить') +
       wizSwitch('w-nat', 'NAT (masquerade)', o.nat, 'интернет для LAN') +
@@ -1584,6 +1663,40 @@
       pppoePool: g('w-pppoePool', ''), pppoeServerUser: g('w-pppoeServerUser', ''),
       pppoeServerPass: g('w-pppoeServerPass', ''),
       forwards: forwards,
+      segments: (function () {
+        const out = [];
+        document.querySelectorAll('#wizSegs .seg-row').forEach(function (r) {
+          const get = function (cls) { const el = r.querySelector(cls); return el ? el.value.trim() : ''; };
+          const sg = { vlanId: get('.s-vid'), name: get('.s-name'), ip: get('.s-ip'), port: get('.s-port') };
+          if (sg.vlanId || sg.ip || sg.port) out.push(sg);
+        });
+        return out;
+      })(),
+      leases: (function () {
+        const out = [];
+        document.querySelectorAll('#wizLeases .lease-row').forEach(function (r) {
+          const get = function (cls) { const el = r.querySelector(cls); return el ? el.value.trim() : ''; };
+          const l = { mac: get('.l-mac'), ip: get('.l-ip'), comment: get('.l-cmt') };
+          if (l.mac || l.ip) out.push(l);
+        });
+        return out;
+      })(),
+      dnsStatic: (function () {
+        const out = [];
+        document.querySelectorAll('#wizDns .dns-row').forEach(function (r) {
+          const get = function (cls) { const el = r.querySelector(cls); return el ? el.value.trim() : ''; };
+          const d = { name: get('.ds-name'), address: get('.ds-ip') };
+          if (d.name || d.address) out.push(d);
+        });
+        return out;
+      })(),
+      model: g('w-model', 'generic'),
+      failover: on('w-failover'), wan2Port: g('w-wan2Port', 'lte1'), wan2Check: g('w-wan2Check', '8.8.8.8'),
+      harden: on('w-harden'),
+      hotspot: on('w-hotspot'), hotspotPass: g('w-hotspotPass', 'guest-2026'),
+      qos: on('w-qos'), wanDown: g('w-wanDown', 100), wanUp: g('w-wanUp', 100),
+      snmp: on('w-snmp'), snmpCommunity: g('w-snmpCommunity', 'mon-8f3c1a'), snmpHost: g('w-snmpHost', '192.168.88.0/24'),
+      syslog: on('w-syslog'), syslogHost: g('w-syslogHost', '192.168.88.10'),
       nat: on('w-nat'), protect: on('w-protect'), autobackup: on('w-autobackup'),
       tz: wizSaved().tz || 'Europe/Minsk', ntp: wizSaved().ntp || 'by.pool.ntp.org',
       preset: wizSaved().preset || ''
@@ -1611,7 +1724,9 @@
     const c = res.counts || {};
     let h = '<section class="card" style="margin-top:14px"><h3 class="card-h">' + svg('task', 15) + 'Готовый конфиг</h3>' +
       '<div class="hint" style="margin:-4px 0 10px">' + esc(res.title || '') + ' · строк: ' + (res.lines || 0) +
-      ' · пробросов: ' + (c.forwards || 0) + ' · VPN-сервисов: ' + (c.vpn || 0) + '</div>';
+      ' · пробросов: ' + (c.forwards || 0) + ' · сегментов: ' + (c.segments || 0) +
+      ' · резервирований: ' + (c.leases || 0) + ' · сервисов: ' + (c.services || 0) +
+      ' · VPN: ' + (c.vpn || 0) + '</div>';
     if (res.errors && res.errors.length) {
       h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div><b>Есть ошибки в полях:</b><br>' +
         res.errors.map(esc).join('<br>') + '</div></div>';
@@ -1693,6 +1808,11 @@
         if (key === 'wg') show = on('w-wg');
         if (key === 'l2tp') show = on('w-l2tp');
         if (key === 'pppoeSrv') show = on('w-pppoeServer');
+        if (key === 'failover') show = on('w-failover');
+        if (key === 'hotspot') show = on('w-hotspot');
+        if (key === 'qos') show = on('w-qos');
+        if (key === 'snmp') show = on('w-snmp');
+        if (key === 'syslog') show = on('w-syslog');
         g.classList.toggle('off', !show);
       });
     };
@@ -1708,6 +1828,15 @@
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', function () { sync(); wizStore(wizCollect()); });
     });
+
+    const modelSel = document.getElementById('w-model');
+    if (modelSel) modelSel.addEventListener('change', function () {
+      const cur = wizCollect();
+      const next = window.ConfigWizard && window.ConfigWizard.applyModel ? window.ConfigWizard.applyModel(cur, modelSel.value) : cur;
+      wizStore(next);
+      route();
+      toast('Модель: ' + modelSel.options[modelSel.selectedIndex].text);
+    });
     document.querySelectorAll('#wizFwd .fwd-row').forEach(function (row) {
       const del = row.querySelector('.f-del');
       if (del) del.addEventListener('click', function () {
@@ -1715,6 +1844,34 @@
         wizStore(wizCollect());
       });
     });
+
+    /* сегменты, резервирования, DNS: удаление существующих строк */
+    [['#wizSegs .seg-row', '.s-del'], ['#wizLeases .lease-row', '.l-del'], ['#wizDns .dns-row', '.ds-del']].forEach(function (sel) {
+      document.querySelectorAll(sel[0]).forEach(function (row) {
+        const del = row.querySelector(sel[1]);
+        if (del) del.addEventListener('click', function () {
+          row.parentNode.removeChild(row);
+          wizStore(wizCollect());
+        });
+      });
+    });
+
+    const wire = function (btnId, hostId, rowFn, delSel, focusSel) {
+      const btn = document.getElementById(btnId);
+      if (!btn) return;
+      btn.addEventListener('click', function () {
+        const host = document.getElementById(hostId);
+        host.insertAdjacentHTML('beforeend', rowFn(null, host.children.length));
+        const row = host.lastElementChild;
+        const del = row.querySelector(delSel);
+        if (del) del.addEventListener('click', function () { row.parentNode.removeChild(row); });
+        const f = row.querySelector(focusSel);
+        if (f) f.focus();
+      });
+    };
+    wire('segAdd', 'wizSegs', segRow, '.s-del', '.s-vid');
+    wire('leaseAdd', 'wizLeases', leaseRow, '.l-del', '.l-mac');
+    wire('dnsAdd', 'wizDns', dnsRow, '.ds-del', '.ds-name');
 
     const add = document.getElementById('fwdAdd');
     if (add) add.addEventListener('click', function () {
@@ -2943,6 +3100,14 @@
       const host = cfgBtn.closest('.cfg');
       const pre = host ? host.querySelector('pre') : null;
       shareText(pre ? pre.innerText : '', 'Конфиг RouterOS');
+      return;
+    }
+    const printBtn = t.closest('#printArt');
+    if (printBtn) {
+      const cur = BY_ID[location.hash.replace(/^#\/?/, '').split('?')[0]];
+      const title = cur ? cur.t : 'MikroTik';
+      if (window.AndroidBridge && window.AndroidBridge.printPage) window.AndroidBridge.printPage(title);
+      else if (window.print) window.print();
       return;
     }
     const artBtn = t.closest('#shareArt');

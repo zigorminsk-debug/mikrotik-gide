@@ -31,9 +31,29 @@
     pppoeServer: false, pppoeServerPort: 'ether5', pppoePool: '10.30.30.10-10.30.30.99',
     pppoeServerUser: '', pppoeServerPass: '',
     forwards: [],           // [{proto, extPort, toIp, toPort, comment}]
+    leases: [],             // [{mac, ip, comment}] — резервирование адресов
+    dnsStatic: [],          // [{name, address}] — локальные имена
+    segments: [],           // [{vlanId, name, ip, port}] — дополнительные VLAN
+    model: 'generic',       // generic | hex | ax2 | ax3 | rb4011 | crs328
+    failover: false, wan2Port: 'lte1', wan2Check: '8.8.8.8',
+    harden: false,          // расширенная защита (сервисы, MAC-сервер, blacklist)
+    hotspot: false, hotspotPass: 'guest-2026',
+    qos: false, wanDown: 100, wanUp: 100,
+    snmp: false, snmpCommunity: 'mon-8f3c1a', snmpHost: '192.168.88.0/24',
+    syslog: false, syslogHost: '192.168.88.10',
     nat: true, protect: true,
     autobackup: false,
     tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org'
+  };
+
+  /* типовые модели: подставляют порты и наличие Wi-Fi */
+  const MODELS = {
+    generic: { name: 'Универсальный', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5' },
+    hex: { name: 'hEX / hEX S', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: false },
+    ax2: { name: 'hAP ax2', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: true },
+    ax3: { name: 'hAP ax3', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: true },
+    rb4011: { name: 'RB4011', wanPort: 'ether1', lanPorts: 'ether2-ether9', guestPort: 'ether10', wifi: false },
+    crs328: { name: 'CRS328-24P', wanPort: 'ether1', lanPorts: 'ether2-ether23', guestPort: 'ether24', wifi: false }
   };
 
   const PRESETS = {
@@ -199,6 +219,69 @@
       }
     }
 
+    if (opt(o, 'failover')) {
+      const w2 = clean(opt(o, 'wan2Port'));
+      if (!w2) err('wan2Port', 'Укажите порт резервного канала');
+      if (w2 === wanPortV) err('wan2Port', 'Резервный канал не может быть тем же портом, что основной WAN');
+      const lanList = expandPorts(opt(o, 'lanPorts'));
+      if (lanList.indexOf(w2) >= 0) warn('wan2Port', 'Порт резервного канала входит в список LAN — уберите его оттуда');
+      if (!ipOk(opt(o, 'wan2Check'))) warn('wan2Check', 'Адрес проверки канала не похож на IP — оставьте 8.8.8.8');
+    }
+
+    const segVlans = {};
+    (o.segments || []).forEach(function (sg, i) {
+      const tag = 'Сегмент ' + (i + 1) + ': ';
+      const vId = parseInt(sg.vlanId, 10);
+      if (segVlans[vId]) err('seg' + i, tag + 'VLAN ID ' + vId + ' уже используется другим сегментом');
+      segVlans[vId] = true;
+      const vid = parseInt(sg.vlanId, 10);
+      if (!(vid >= 1 && vid <= 4094)) err('seg' + i, tag + 'VLAN ID от 1 до 4094');
+      if (opt(o, 'guest') && vid === 20) warn('seg' + i, tag + 'VLAN 20 уже занят гостевой сетью');
+      const parts = String(sg.ip || '').split('/');
+      if (!ipOk(parts[0])) err('seg' + i, tag + 'некорректный IP шлюза');
+      const pfx = +(parts[1] || 24);
+      if (!(pfx >= 8 && pfx <= 30)) err('seg' + i, tag + 'префикс от 8 до 30');
+      if (!clean(sg.port)) err('seg' + i, tag + 'не указан порт');
+      else if (clean(sg.port) === wanPortV) err('seg' + i, tag + 'порт не может быть WAN');
+      else if (opt(o, 'guest') && clean(sg.port) === clean(opt(o, 'guestPort'))) {
+        warn('seg' + i, tag + 'порт уже занят гостевой сетью');
+      }
+    });
+
+    (o.leases || []).forEach(function (l, i) {
+      if (!clean(l.mac) || !/^([0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$/.test(clean(l.mac))) {
+        err('lease' + i, 'Резервирование ' + (i + 1) + ': MAC в формате AA:BB:CC:DD:EE:FF');
+      }
+      if (!ipOk(l.ip)) err('lease' + i, 'Резервирование ' + (i + 1) + ': некорректный IP');
+      if (lanNet && ipOk(l.ip) && !ipInNetwork(l.ip, lanNet)) {
+        warn('lease' + i, 'Резервирование ' + (i + 1) + ': адрес вне сети LAN');
+      }
+    });
+
+    (o.dnsStatic || []).forEach(function (d, i) {
+      if (!clean(d.name)) err('dns' + i, 'DNS-имя ' + (i + 1) + ': укажите имя, например nas.local');
+      if (!ipOk(d.address)) err('dns' + i, 'DNS-имя ' + (i + 1) + ': некорректный IP');
+    });
+
+    if (opt(o, 'hotspot') && !opt(o, 'guest')) {
+      err('hotspot', 'Hotspot работает на гостевой сети — включите «Гостевая сеть»');
+    }
+
+    if (opt(o, 'qos')) {
+      const dn = +opt(o, 'wanDown'), up = +opt(o, 'wanUp');
+      if (!(dn >= 1 && dn <= 100000)) err('wanDown', 'Скорость скачивания от 1 до 100000 Мбит/с');
+      if (!(up >= 1 && up <= 100000)) err('wanUp', 'Скорость отдачи от 1 до 100000 Мбит/с');
+    }
+
+    if (opt(o, 'snmp')) {
+      if (String(clean(opt(o, 'snmpCommunity'))).length < 4) err('snmpCommunity', 'SNMP community — минимум 4 символа');
+      if (String(clean(opt(o, 'snmpCommunity'))).toLowerCase() === 'public') err('snmpCommunity', 'community=public — так делать нельзя');
+      if (!ipOk(String(opt(o, 'snmpHost')).split('/')[0])) err('snmpHost', 'Укажите сеть мониторинга, например 192.168.88.0/24');
+    }
+    if (opt(o, 'syslog') && !ipOk(opt(o, 'syslogHost'))) {
+      err('syslogHost', 'Укажите IP сервера логов');
+    }
+
     (o.forwards || []).forEach(function (f, i) {
       if (!ipOk(f.toIp)) err('fwd' + i, 'Правило ' + (i + 1) + ': некорректный внутренний IP');
       const ep = +f.extPort, ip2 = +f.toPort || +f.extPort;
@@ -234,9 +317,40 @@
     const pppoeSrv = !!opt(o, 'pppoeServer');
     const ipv6Mode = opt(o, 'ipv6');
     const forwards = (o.forwards || []).filter(function (f) { return f && clean(f.toIp); });
+    const failoverOn = !!opt(o, 'failover');
+    const hardenOn = !!opt(o, 'harden');
+    const hotspotOn = !!opt(o, 'hotspot');
+    const qosOn = !!opt(o, 'qos');
+    const snmpOn = !!opt(o, 'snmp');
+    const syslogOn = !!opt(o, 'syslog');
+    const wan2Port = clean(opt(o, 'wan2Port')) || 'lte1';
+
+    const segs = (o.segments || []).map(function (sg) {
+      const parts = String(sg.ip || '').split('/');
+      return {
+        vlanId: parseInt(sg.vlanId, 10) || 0,
+        name: clean(sg.name) || ('vlan' + (sg.vlanId || '')),
+        ip: clean(parts[0]),
+        prefix: +(parts[1] || 24),
+        port: clean(sg.port)
+      };
+    }).filter(function (sg) { return sg.vlanId >= 1 && sg.vlanId <= 4094 && ipOk(sg.ip) && sg.port; });
+
+    const segIfaces = segs.map(function (sg) { return 'vlan-' + sg.vlanId; });
+    const leases = (o.leases || []).filter(function (l) {
+      return clean(l.mac) && ipOk(l.ip);
+    }).map(function (l) { return { mac: clean(l.mac), ip: clean(l.ip), comment: clean(l.comment) }; });
+    const dnsStatic = (o.dnsStatic || []).filter(function (d) {
+      return clean(d.name) && ipOk(d.address);
+    }).map(function (d) { return { name: clean(d.name), address: clean(d.address) }; });
 
     const lanPorts = expandPorts(opt(o, 'lanPorts')).filter(function (p) {
-      return p !== wanPort && !(guestOn && p === guestPort) && !(pppoeSrv && p === clean(opt(o, 'pppoeServerPort')));
+      if (p === wanPort) return false;
+      if (guestOn && p === guestPort) return false;
+      if (pppoeSrv && p === clean(opt(o, 'pppoeServerPort'))) return false;
+      if (failoverOn && p === wan2Port) return false;
+      if (segs.some(function (sg) { return sg.port === p; })) return false;
+      return true;
     });
 
     const L = [];
@@ -263,12 +377,16 @@
     lanPorts.forEach(function (p) {
       push('/interface bridge port add bridge=' + bridge + ' interface=' + p);
     });
-    if (guestOn) {
-      push('', '/interface bridge set ' + bridge + ' vlan-filtering=yes',
-        '/interface bridge vlan add bridge=' + bridge + ' tagged=bridge-lan untagged=' + guestPort + ' vlan-ids=20',
-        '/interface vlan add name=' + guestIface + ' vlan-id=20 interface=' + bridge,
-        '/interface bridge port add bridge=' + bridge + ' interface=' + guestPort + ' pvid=20',
-        '/interface list member add interface=' + guestIface + ' list=GUEST');
+    if (guestOn || segs.length) {
+      if (guestOn) {
+        push('', '/interface bridge set ' + bridge + ' vlan-filtering=yes',
+          '/interface bridge vlan add bridge=' + bridge + ' tagged=' + bridge + ' untagged=' + guestPort + ' vlan-ids=20',
+          '/interface vlan add name=' + guestIface + ' vlan-id=20 interface=' + bridge,
+          '/interface bridge port add bridge=' + bridge + ' interface=' + guestPort + ' pvid=20',
+          '/interface list member add interface=' + guestIface + ' list=GUEST');
+      } else {
+        push('', '/interface bridge set ' + bridge + ' vlan-filtering=yes');
+      }
     }
 
     sec('WAN');
@@ -282,6 +400,27 @@
         '/interface list member add interface=wan-pppoe list=WAN');
     } else {
       push('/ip dhcp-client add interface=' + wanPort + ' add-default-route=yes use-peer-dns=yes disabled=no');
+    }
+
+    if (failoverOn) {
+      push('', '# Резервный канал: основной маршрут дистанция 1, резервный — 2');
+      push('/ip dhcp-client add interface=' + wan2Port + ' add-default-route=yes default-route-distance=2 use-peer-dns=no disabled=no',
+        '/interface list member add interface=' + wan2Port + ' list=WAN');
+      let downCmd, upCmd;
+      if (wanMode === 'static') {
+        const gw = clean(opt(o, 'wanGw'));
+        downCmd = '/ip route set [find dst-address=0.0.0.0/0 gateway=' + gw + '] distance=10';
+        upCmd = '/ip route set [find dst-address=0.0.0.0/0 gateway=' + gw + '] distance=1';
+      } else if (wanMode === 'pppoe') {
+        downCmd = '/interface pppoe-client set [find name=wan-pppoe] default-route-distance=10';
+        upCmd = '/interface pppoe-client set [find name=wan-pppoe] default-route-distance=1';
+      } else {
+        downCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=10';
+        upCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=1';
+      }
+      push('/tool netwatch add host=' + (ipOk(opt(o, 'wan2Check')) ? clean(opt(o, 'wan2Check')) : '8.8.8.8') +
+        ' interval=30s comment="wan1 failover" down-script=' + q(downCmd) + ' up-script=' + q(upCmd),
+        '# Если канал оживёт, netwatch вернёт основному маршруту дистанцию 1.');
     }
 
     sec('LAN, DHCP и DNS');
@@ -308,6 +447,43 @@
         '/ip dhcp-server add name=dhcp-guest interface=' + guestIface + ' address-pool=guest-pool lease-time=1h',
         '/ip dhcp-server network add address=' + netCidr(gIp, +opt(o, 'guestPrefix')) + ' gateway=' + gIp +
         ' dns-server=' + clean(opt(o, 'dns')).split(',')[0]);
+    }
+
+    if (segs.length) {
+      sec('Дополнительные сегменты VLAN');
+      segs.forEach(function (sg) {
+        const iface = 'vlan-' + sg.vlanId;
+        const busy = sg.port === wanPort || (guestOn && sg.port === guestPort) ||
+          (pppoeSrv && sg.port === clean(opt(o, 'pppoeServerPort'))) || (failoverOn && sg.port === wan2Port);
+        if (busy) {
+          push('# ' + sg.name + ': порт ' + sg.port + ' уже занят — выберите свободный порт для этого сегмента');
+          return;
+        }
+        push('# ' + sg.name + ': VLAN ' + sg.vlanId + ', шлюз ' + sg.ip + '/' + sg.prefix + ', порт ' + sg.port,
+          '/interface vlan add name=' + iface + ' vlan-id=' + sg.vlanId + ' interface=' + bridge,
+          '/interface bridge port add bridge=' + bridge + ' interface=' + sg.port + ' pvid=' + sg.vlanId,
+          '/interface bridge vlan add bridge=' + bridge + ' tagged=' + bridge + ' untagged=' + sg.port + ' vlan-ids=' + sg.vlanId,
+          '/ip address add address=' + sg.ip + '/' + sg.prefix + ' interface=' + iface);
+        if (C && C.info) {
+          const inf = C.info(C.ipToInt(sg.ip), sg.prefix);
+          if (inf && inf.hosts > 2) {
+            const b = inf.network.split('.');
+            const base = b[0] + '.' + b[1] + '.' + b[2] + '.';
+            const from = base + (sg.prefix >= 25 ? 2 : 10);
+            const to = base + (inf.hosts > 200 ? 250 : Math.min(254, inf.hosts + 1));
+            push('/ip pool add name=pool-' + sg.vlanId + ' ranges=' + from + '-' + to,
+              '/ip dhcp-server add name=dhcp-' + sg.vlanId + ' interface=' + iface + ' address-pool=pool-' + sg.vlanId + ' lease-time=12h',
+              '/ip dhcp-server network add address=' + inf.cidr + ' gateway=' + sg.ip + ' dns-server=' + lanIp);
+          }
+        }
+        push('/ip firewall filter add chain=forward in-interface=' + iface + ' out-interface-list=LAN action=drop comment=' +
+          q(sg.name + ': в LAN нельзя'),
+          '/ip firewall filter add chain=forward in-interface-list=LAN out-interface=' + iface + ' action=drop comment=' +
+          q(sg.name + ': из LAN нельзя'),
+          '/ip firewall filter add chain=forward in-interface=' + iface + ' out-interface-list=WAN action=accept comment=' +
+          q(sg.name + ': в интернет'),
+          '/ip firewall filter add chain=forward in-interface=' + iface + ' action=drop comment=' + q(sg.name + ': остальное закрыто'));
+      });
     }
 
     if (wifiOn) {
@@ -445,6 +621,80 @@
       push('# /tool fetch url="sftp://backup@10.0.0.5/" src-path=($tag . ".backup") upload=yes user=backup password=***');
     }
 
+    if (hotspotOn) {
+      sec('Hotspot для гостей');
+      if (!guestOn) {
+        push('# Hotspot не настроен: он работает на гостевой сети. Включите «Гостевая сеть» и повторите.');
+      } else {
+        push('/ip hotspot profile add name=hsprof hotspot-address=' + clean(opt(o, 'guestIp')) +
+          ' dns-name=guest.local login-by=http-chap,cookie',
+          '/ip hotspot user profile add name=hs-users shared-users=1 rate-limit=5M/5M',
+          '/ip dhcp-server set [find name=dhcp-guest] disabled=yes',
+          '# Hotspot сам выдаёт адреса гостям, поэтому обычный DHCP на этой сети выключен.',
+          '/ip hotspot add name=hs-guest interface=' + guestIface + ' address-pool=guest-pool profile=hsprof disabled=no',
+          '/ip hotspot user add name=guest password=' + q(opt(o, 'hotspotPass')) + ' profile=hs-users',
+          '# Ваучеры: /ip hotspot user add name=voucher-01 password=… profile=hs-users');
+      }
+    }
+
+    if (leases.length) {
+      sec('Резервирование адресов (DHCP leases)');
+      if (!opt(o, 'dhcp')) push('# DHCP-сервер выключен — резервирования не сработают.');
+      leases.forEach(function (l) {
+        push('/ip dhcp-server lease add address=' + l.ip + ' mac-address=' + l.mac +
+          ' server=dhcp-lan comment=' + q(l.comment || 'static lease'));
+      });
+    }
+
+    if (dnsStatic.length) {
+      sec('Локальные DNS-имена');
+      dnsStatic.forEach(function (d) {
+        push('/ip dns static add name=' + clean(d.name) + ' address=' + d.address + ' ttl=1h');
+      });
+    }
+
+    if (qosOn) {
+      sec('Скорость и приоритеты (QoS)');
+      const dn = Math.max(1, Math.round((+opt(o, 'wanDown') || 100) * 0.95));
+      const up = Math.max(1, Math.round((+opt(o, 'wanUp') || 100) * 0.95));
+      push('/queue type add name=pcq-up kind=pcq pcq-classifier=src-address',
+        '/queue type add name=pcq-down kind=pcq pcq-classifier=dst-address',
+        '/queue simple add name=wan-shape target=' + (C && C.info ? C.info(C.ipToInt(lanIp), lanPrefix).cidr : netCidr(lanIp, lanPrefix)) +
+        ' max-limit=' + up + 'M/' + dn + 'M queue=pcq-up/pcq-down comment="qos shape"',
+        '# FastTrack обходит очереди: если шейпинг не срабатывает, исключите нужный трафик из fasttrack-connection.');
+    }
+
+    if (snmpOn || syslogOn) {
+      sec('Мониторинг');
+      if (snmpOn) {
+        push('/snmp set enabled=yes',
+          '/snmp community add name=' + clean(opt(o, 'snmpCommunity')) + ' addresses=' + clean(opt(o, 'snmpHost')));
+      }
+      if (syslogOn) {
+        push('/system logging action add name=remote target=remote remote=' + clean(opt(o, 'syslogHost')),
+          '/system logging add topics=info,error,warning action=remote');
+      }
+    }
+
+    if (hardenOn) {
+      sec('Базовая защита от взлома');
+      push('/tool mac-server set allowed-interface-list=LAN',
+        '/tool mac-server mac-winbox set allowed-interface-list=LAN',
+        '/tool mac-server ping set enabled=no',
+        '/ip neighbor discovery-settings set discover-interface-list=LAN',
+        '/ip upnp set enabled=no',
+        '/ip socks set enabled=no',
+        '/ip smb set enabled=no');
+      if (opt(o, 'protect')) {
+        push('# Брутфорс: 3 попытки → blacklist на неделю (правила встают перед блокировкой WAN)',
+          '/ip firewall filter add chain=input action=drop protocol=tcp dst-port=22,8291 src-address-list=blacklist comment="blacklist" place-before=[find where comment="drop wan input"]',
+          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 src-address-list=stage2 address-list=blacklist address-list-timeout=1w comment="brute stage3" place-before=[find where comment="drop wan input"]',
+          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 src-address-list=stage1 address-list=stage2 address-list-timeout=1m comment="brute stage2" place-before=[find where comment="drop wan input"]',
+          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 connection-state=new address-list=stage1 address-list-timeout=1m comment="brute stage1" place-before=[find where comment="drop wan input"]');
+      }
+      push('# Полный чек-лист защиты — раздел «Защита от взлома» в приложении.');
+    }
+
     sec('Сервисы и время');
     const lanNetBase = netCidr(lanIp, lanPrefix);
     push('/ip service set winbox address=' + lanNetBase,
@@ -476,7 +726,11 @@
         forwards: forwards.length,
         vpn: (wgOn ? 1 : 0) + (l2tpOn ? 1 : 0),
         'wifi': wifiOn ? 1 : 0,
-        ipv6: ipv6Mode === 'off' ? 0 : 1
+        ipv6: ipv6Mode === 'off' ? 0 : 1,
+        segments: segs.length,
+        leases: leases.length,
+        services: (failoverOn ? 1 : 0) + (hotspotOn ? 1 : 0) + (qosOn ? 1 : 0) + (snmpOn ? 1 : 0) +
+          (syslogOn ? 1 : 0) + (hardenOn ? 1 : 0)
       }
     };
   }
@@ -499,11 +753,35 @@
     return out;
   }
 
+  function models() {
+    const out = [];
+    for (const k in MODELS) out.push({ id: k, name: MODELS[k].name });
+    return out;
+  }
+
+  /* применение модели: порты и Wi-Fi */
+  function applyModel(base, modelId) {
+    const m = MODELS[modelId];
+    const out = {};
+    for (const k in DEFAULTS) out[k] = (base && base[k] != null) ? base[k] : DEFAULTS[k];
+    if (m) {
+      out.model = modelId;
+      out.wanPort = m.wanPort;
+      out.lanPorts = m.lanPorts;
+      out.guestPort = m.guestPort;
+      if (m.wifi != null) out.wifi = m.wifi;
+      if (out.pppoeServerPort && (m.wanPort === out.pppoeServerPort)) out.pppoeServerPort = m.guestPort;
+    }
+    return out;
+  }
+
   window.ConfigWizard = {
     generate: generate,
     validate: validate,
     presets: presets,
     applyPreset: applyPreset,
+    models: models,
+    applyModel: applyModel,
     defaults: DEFAULTS,
     expandPorts: expandPorts,
     networkOf: networkOf

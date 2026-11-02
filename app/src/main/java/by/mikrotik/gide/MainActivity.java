@@ -3,12 +3,16 @@ package by.mikrotik.gide;
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.print.PrintAttributes;
+import android.print.PrintDocumentAdapter;
+import android.print.PrintManager;
 import android.provider.MediaStore;
 import android.provider.Settings;
 import android.view.KeyEvent;
@@ -222,6 +226,24 @@ public class MainActivity extends Activity {
                         i.setType("text/plain");
                         i.putExtra(Intent.EXTRA_TEXT, text);
                         startActivity(Intent.createChooser(i, "Поделиться"));
+                    } catch (Exception ignored) {
+                    }
+                }
+            });
+        }
+
+        /** Печать статьи или сохранение в PDF через системное окно печати. */
+        @JavascriptInterface
+        public void printPage(final String title) {
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
+                        if (pm == null || web == null) return;
+                        String name = (title == null || title.trim().isEmpty()) ? "MikroTik" : title.trim();
+                        PrintDocumentAdapter adapter = web.createPrintDocumentAdapter(name);
+                        pm.print(name, adapter, new PrintAttributes.Builder().build());
                     } catch (Exception ignored) {
                     }
                 }
