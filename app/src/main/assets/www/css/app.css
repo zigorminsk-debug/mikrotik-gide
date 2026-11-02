@@ -198,6 +198,19 @@ ol.steps>li:not(:last-child)::after{
 }
 .step-t{font-weight:600}
 .step-d{color:var(--txt-dim);font-size:calc(14.5px * var(--fsm, 1))}
+
+/* ---------- окно Winbox под каждым шагом ---------- */
+.step-shot{margin:8px 0 2px}
+.step-shot .scene-block{margin:0}
+.step-shot .scene-cap{font-size:calc(11.5px * var(--fsm, 1));margin:0 0 5px}
+.step-shot .scene-host{border-radius:9px}
+.step-shot .scene-block.compact .notes{display:none}
+.step-shot .scene-block.compact .scene-hint{display:none}
+.step-shot .scene-zoom{font-size:calc(10px * var(--fsm, 1));padding:2px 6px}
+.wb .dim{opacity:.32;filter:grayscale(.35)}
+.wb .foc{outline:2px solid #e11d48;outline-offset:1px;border-radius:5px}
+.tile.resume{grid-column:1/-1;display:flex;align-items:center;gap:10px;background:var(--accent-soft);border-color:rgba(47,129,247,.35)}
+.tile.resume b{display:block}
 code.inl{
   font-family:var(--mono);font-size:calc(12.5px * var(--fsm, 1));background:var(--panel-2);border:1px solid var(--line-soft);
   padding:1px 5px;border-radius:5px;color:var(--txt);white-space:nowrap;

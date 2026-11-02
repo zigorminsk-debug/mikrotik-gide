@@ -33,7 +33,7 @@ files.forEach(f => require(path.join(DATA_DIR, f)));
 const DATA = global.window.DATA || [];
 const errors = [];
 const ids = new Set();
-let articles = 0, scenes = 0, notes = 0;
+let articles = 0, scenes = 0, notes = 0, mappedSteps = 0, totalSteps = 0;
 
 DATA.forEach(g => {
   if (!g.id || !g.name) errors.push('Группа без id/name');
@@ -45,6 +45,35 @@ DATA.forEach(g => {
     if (!a.t) errors.push(`${a.id}: нет заголовка`);
     if (!a.purpose) errors.push(`${a.id}: нет блока «Назначение»`);
     if (!a.steps || !a.steps.length) errors.push(`${a.id}: нет инструкции`);
+
+    // привязка шагов к окнам: индекс должен существовать, фокус — попадать в элемент
+    let mapped = 0;
+    (a.steps || []).forEach((st, i) => {
+      if (!st || typeof st !== 'object') return;
+      if (st.s == null) return;
+      mapped++;
+      const sc = (a.scenes || [])[st.s];
+      if (!sc) {
+        errors.push(`${a.id}: шаг ${i + 1} ссылается на несуществующую схему ${st.s}`);
+        return;
+      }
+      const f = st.shot;
+      if (!f) return;
+      if (f.field != null && !((sc.form && sc.form.fields) || [])[f.field]) {
+        errors.push(`${a.id}: шаг ${i + 1} — поле ${f.field} вне схемы ${st.s}`);
+      }
+      if (f.row != null && !(sc.rows || [])[f.row]) {
+        errors.push(`${a.id}: шаг ${i + 1} — строка ${f.row} вне схемы ${st.s}`);
+      }
+      if (f.tab != null && !(sc.tabs || [])[f.tab]) {
+        errors.push(`${a.id}: шаг ${i + 1} — вкладка ${f.tab} вне схемы ${st.s}`);
+      }
+      if (f.tool != null && !(sc.tools || [])[f.tool]) {
+        errors.push(`${a.id}: шаг ${i + 1} — кнопка ${f.tool} вне схемы ${st.s}`);
+      }
+    });
+    mappedSteps += mapped;
+    totalSteps += (a.steps || []).length;
 
     (a.scenes || []).forEach((sc, si) => {
       scenes++;
@@ -77,6 +106,7 @@ DATA.forEach(g => (g.items || []).forEach(a => {
 }));
 
 console.log(`Разделов: ${DATA.length}, статей: ${articles}, схем: ${scenes}, подсказок со стрелками: ${notes}`);
+console.log(`Шагов с собственным окном: ${mappedSteps} из ${totalSteps} (остальным окно подбирается автоматически)`);
 
 if (errors.length) {
   console.error('\nОШИБКИ (' + errors.length + '):');

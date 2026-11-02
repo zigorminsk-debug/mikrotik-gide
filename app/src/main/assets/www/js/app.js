@@ -276,6 +276,7 @@
     const total = FLAT.length;
     const tasks = (GROUPS.filter(function (g) { return g.id === 'tasks'; })[0] || { items: [] }).items.length;
     const scenesCount = FLAT.reduce(function (n, a) { return n + ((a.scenes || []).length); }, 0);
+    const stepsCount = FLAT.reduce(function (n, a) { return n + ((a.steps || []).length); }, 0);
     const quick = ['start-first-login', 'start-base-setup', 'ip-firewall-filter', 'ip-firewall-nat',
       'ip-dhcp-server', 'start-backup', 'vpn-wireguard', 'task-lan-internet'];
 
@@ -288,6 +289,7 @@
       '<div class="stats">' +
       '<div class="st"><b>' + total + '</b><span>статей</span></div>' +
       '<div class="st"><b>' + scenesCount + '</b><span>схем</span></div>' +
+      '<div class="st"><b>' + stepsCount + '</b><span>шагов с окном</span></div>' +
       '<div class="st"><b>' + tasks + '</b><span>задач PROD</span></div>' +
       '<div class="st"><b>' + (window.APP_VERSION || 'dev') + '</b><span>сборка</span></div>' +
       '</div></div>';
@@ -300,6 +302,13 @@
         '<b>' + esc(a.t) + '</b><span>' + esc(a.path || '') + '</span></a>';
     });
     html += '</div>';
+
+    const last = lastRead();
+    if (last) {
+      const la = BY_ID[last.id];
+      html += '<a class="tile resume" href="#/' + la.id + '"><span class="ti">' + svg('book', 16) + '</span>' +
+        '<b>Продолжить: ' + esc(la.t) + '</b><span>' + esc(la._group.name) + ' · вы остановились здесь</span></a>';
+    }
 
     html += '<div class="set-card">' +
       '<h3 class="card-h">' + svg('system', 15) + 'Ваш прогресс</h3>' +
@@ -383,12 +392,20 @@
     if (a.danger) html += '<div class="warn danger"><span class="wi">' + warnIcon() + '</span><div><b>Осторожно.</b> ' + inline(a.danger) + '</div></div>';
 
     if (a.steps && a.steps.length) {
-      html += card('Инструкция по настройке', 'task', '<ol class="steps">' +
-        a.steps.map(function (s) {
-          if (typeof s === 'string') return '<li><div class="step-d">' + inline(s) + '</div></li>';
-          return '<li><div class="step-t">' + inline(s.t) + '</div>' +
-            (s.d ? '<div class="step-d">' + inline(s.d) + '</div>' : '') + '</li>';
-        }).join('') + '</ol>');
+      const withShots = shotsEnabled() && (a.scenes && a.scenes.length);
+      html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Инструкция по настройке</h3>' +
+        (withShots ? '<div class="hint" style="margin:-4px 0 10px">Под каждым шагом — окно Winbox 4 ' +
+          'с красной рамкой на том элементе, о котором идёт речь. Тап по окну открывает его на весь экран.</div>' : '') +
+        '<ol class="steps">' +
+        a.steps.map(function (s, i) {
+          if (typeof s === 'string') {
+            return '<li class="step"><div class="step-d">' + inline(s) + '</div>' +
+              (withShots ? '<div class="step-shot" data-si="' + i + '"></div>' : '') + '</li>';
+          }
+          return '<li class="step"><div class="step-t">' + inline(s.t) + '</div>' +
+            (s.d ? '<div class="step-d">' + inline(s.d) + '</div>' : '') +
+            (withShots ? '<div class="step-shot" data-si="' + i + '"></div>' : '') + '</li>';
+        }).join('') + '</ol></section>';
     }
 
     if (a.config) {
@@ -454,6 +471,230 @@
     return scored.map(function (o) { return o.a; });
   }
 
+  /* ---------------- схемы к каждому шагу ----------------
+     У шага может быть своя схема: step.s — индекс в a.scenes, step.shot — что
+     подсветить ({field, row, tab, tool}) или step.sc — объект схемы целиком.
+     Если ничего не указано, окно подбирается по совпадению слов шага с
+     содержимым схемы (заголовок, поля, колонки, заметки).               */
+  const STOP = { 'это': 1, 'как': 1, 'для': 1, 'или': 1, 'что': 1, 'если': 1, 'при': 1,
+    'все': 1, 'они': 1, 'где': 1, 'так': 1, 'его': 1, 'она': 1, 'это': 1, 'уже': 1,
+    'надо': 1, 'нужно': 1, 'можно': 1, 'чтобы': 1, 'когда': 1, 'тоже': 1, 'этот': 1 };
+
+  function stems(txt) {
+    const out = String(txt == null ? '' : txt).toLowerCase().replace(/ё/g, 'е')
+      .replace(/[^a-zа-я0-9]+/g, ' ').split(' ');
+    const set = {};
+    out.forEach(function (w) {
+      if (w.length < 3 || STOP[w]) return;
+      set[w.slice(0, 5)] = 1;
+    });
+    return set;
+  }
+
+  const SCENE_STEMS = typeof WeakMap === 'function' ? new WeakMap() : null;
+
+  function sceneStems(sc) {
+    if (SCENE_STEMS && SCENE_STEMS.has(sc)) return SCENE_STEMS.get(sc);
+    const menu = [sc.cap, sc.win, sc.path, sc.tab];
+    const parts = [sc.cap, sc.win, sc.path, sc.tab, sc.status];
+    if (sc.tabs) parts.push(sc.tabs.join(' '));
+    if (sc.notes) parts.push(sc.notes.join(' '));
+    if (sc.tools) parts.push(sc.tools.map(function (b) { return b.t + ' ' + (b.title || ''); }).join(' '));
+    if (sc.cols) parts.push(sc.cols.map(function (c) { return c.t || c; }).join(' '));
+    if (sc.rows) {
+      sc.rows.forEach(function (r) {
+        r.forEach(function (c) { parts.push(c && typeof c === 'object' ? c.v : c); });
+      });
+    }
+    if (sc.form) {
+      parts.push(sc.form.title, sc.form.note);
+      (sc.form.fields || []).forEach(function (f) { parts.push(f.l, f.v); });
+    }
+    const st = { all: stems(parts.join(' ')), menu: stems(menu.join(' ')) };
+    if (SCENE_STEMS) SCENE_STEMS.set(sc, st);
+    return st;
+  }
+
+  function overlap(a, b) {
+    let n = 0;
+    for (const k in a) if (b[k]) n++;
+    return n;
+  }
+
+  function autoFocus(sc, st, info) {
+    const raw = ' ' + ((info && info.__text) || '') + ' ';
+    if (sc.form && sc.form.fields && sc.form.fields.length) {
+      let best = -1, bestN = 0;
+      sc.form.fields.forEach(function (f, i) {
+        const n = overlap(st, stems((f.l || '') + ' ' + (f.v || '') + ' ' + (f.type || '')));
+        if (n > bestN) { bestN = n; best = i; }
+      });
+      if (best >= 0) return { field: best };
+    }
+    if (sc.rows && sc.rows.length) {
+      let best = -1, bestN = 0;
+      sc.rows.forEach(function (r, i) {
+        const n = overlap(st, stems(r.map(function (c) { return c && typeof c === 'object' ? c.v : c; }).join(' ')));
+        if (n > bestN) { bestN = n; best = i; }
+      });
+      if (best >= 0) return { row: best };
+    }
+    if (sc.tabs && sc.tabs.length) {
+      let best = -1, bestN = 0;
+      sc.tabs.forEach(function (t, i) {
+        const n = overlap(st, stems(t));
+        if (n > bestN) { bestN = n; best = i; }
+      });
+      if (best >= 0) return { tab: best };
+    }
+    if (sc.tools && sc.tools.length) {
+      let best = -1, bestN = 0;
+      sc.tools.forEach(function (b, i) {
+        const n = overlap(st, stems((b.t || '') + ' ' + (b.title || '')));
+        if (n > bestN) { bestN = n; best = i; }
+      });
+      if (best >= 0) return { tool: best };
+    }
+    /* эвристика: «нажмите +», «создайте», «перейдите на вкладку» */
+    if (sc.tools && /(нажм|кнопк|добав|созда|плюс)/.test(raw)) {
+      for (let i = 0; i < sc.tools.length; i++) if (sc.tools[i].t === '+') return { tool: i };
+      return { tool: 0 };
+    }
+    if (sc.tabs && /(вкладк|перейд|открой|закладк)/.test(raw)) {
+      for (let i = 0; i < sc.tabs.length; i++) if (sc.tabs[i] !== sc.tab) return { tab: i };
+      return { tab: 0 };
+    }
+    if (sc.form && (sc.form.fields || []).length && /(пол[ея]|укаж|введ|заполн|выбер|постав|включ)/.test(raw)) {
+      return { field: 0 };
+    }
+    if (sc.rows && sc.rows.length && /(строк|выбер|найд|запис)/.test(raw)) {
+      return { row: 0 };
+    }
+    /* последний вариант — подсветить путь окна: видно, где вы находитесь */
+    return { path: true };
+  }
+
+  function stripMarks(sc) {
+    const c = {};
+    for (const k in sc) c[k] = sc[k];
+    c.compact = true;
+    if (sc.form) {
+      const f = {};
+      for (const k in sc.form) f[k] = sc.form[k];
+      f.fields = (sc.form.fields || []).map(function (fd) {
+        const x = {};
+        for (const k2 in fd) x[k2] = fd[k2];
+        x.m = 0;
+        return x;
+      });
+      c.form = f;
+    }
+    if (sc.rows) {
+      c.rows = sc.rows.map(function (r) {
+        return r.map(function (cell) {
+          const o = (cell && typeof cell === 'object') ? (function () { const y = {}; for (const k2 in cell) y[k2] = cell[k2]; return y; })() : { v: cell };
+          o.m = 0;
+          return o;
+        });
+      });
+    }
+    if (sc.tools) {
+      c.tools = sc.tools.map(function (b) {
+        const x = {};
+        for (const k2x in b) x[k2x] = b[k2x];
+        x.m = 0;
+        return x;
+      });
+    }
+    if (c.tabMark) c.tabMark = null;
+    c.notes = [];
+    return c;
+  }
+
+  function shotFor(sc, focus) {
+    const c = {};
+    for (const k in sc) c[k] = sc[k];
+    c.compact = true;
+    c.cap = sc.cap || ('Окно Winbox: ' + (sc.path || sc.win || 'RouterOS 7'));
+    if (focus) c.focus = focus;
+    else return stripMarks(sc);
+    return c;
+  }
+
+  /* путь по меню из текста шага: «IP → Firewall → NAT» */
+  function menuPath(text) {
+    const t = String(text || '').replace(/\s+/g, ' ');
+    const m = t.match(/([A-Za-zА-Яа-яЁё0-9][A-Za-zА-Яа-яЁё0-9 .\/\-]{0,26}?)\s*→\s*([^\n]{1,60})/);
+    if (!m) return null;
+    let head = m[1].replace(/^.*\s(и|или|затем|потом|далее|раздел|меню|вкладк[аеу]|пункт|окн[ое])\s+/i, '').trim();
+    if (head.length > 18) head = head.split(' ').slice(-2).join(' ');
+    const tail = m[2].split(/[:;,.()]/)[0].replace(/`/g, '').trim();
+    if (!tail) return null;
+    return (head ? head + ' → ' : '') + tail;
+  }
+
+  /* команды в тексте шага — покажем терминал */
+  function stepCommands(text) {
+    const out = [];
+    const re = /`([^`]{2,120})`/g;
+    let m;
+    while ((m = re.exec(String(text || ''))) !== null) {
+      const c = m[1].trim();
+      if (/^\//.test(c)) out.push(c);
+    }
+    return out;
+  }
+
+  function stepSceneFor(a, i) {
+    const steps = a.steps || [];
+    const st = steps[i];
+    const scenes = a.scenes || [];
+    if (!st || typeof st === 'string') return null;
+    if (!scenes.length && !st.sc) return null;
+    if (st.sc && typeof st.sc === 'object') {
+      return { spec: shotFor(st.sc, st.shot || null), src: 'own' };
+    }
+    const text = (st.t || '') + ' ' + (st.d || '');
+    const my = stems(text);
+    const inWords = { __text: text };
+
+    /* 1. шаг про терминал и в тексте есть команды — рисуем терминал */
+    const cmds = stepCommands(text);
+    if (cmds.length && /(терминал|terminal|консол|cli|командн)/i.test(text)) {
+      return {
+        spec: { term: true, compact: true, win: 'New Terminal', path: 'RouterOS 7',
+          lines: cmds.map(function (c) { return { k: 'pr', t: c }; }) },
+        src: 'own'
+      };
+    }
+    if (st.s != null && scenes[st.s]) {
+      const sc0 = scenes[st.s];
+      return { spec: shotFor(sc0, st.shot || autoFocus(sc0, my, inWords)), src: 'map' };
+    }
+    let best = 0, bestN = 0;
+    scenes.forEach(function (sc, j) {
+      const w = sceneStems(sc);
+      const n = overlap(my, w.all) + 2 * overlap(my, w.menu);
+      if (n > bestN) { bestN = n; best = j; }
+    });
+    const sc = scenes[best];
+    const focus = autoFocus(sc, my, inWords);
+    /* 2. окно не подходит, но в шаге назван путь по меню — покажем меню */
+    const mp = menuPath(text);
+    if (mp && bestN < 3 && (!focus || focus.path)) return { spec: { nav: true, path: mp }, src: 'nav' };
+    return { spec: shotFor(sc, focus), src: bestN ? 'auto' : 'fallback' };
+  }
+
+  function shotsEnabled() { return store.get('shots') !== '0'; }
+
+  /* ---------------- продолжить чтение ---------------- */
+  function lastRead() {
+    try {
+      const v = JSON.parse(store.get('last') || 'null');
+      return v && BY_ID[v.id] ? v : null;
+    } catch (e) { return null; }
+  }
+
   /* ---------------- настройки ---------------- */
   function settingsView() {
     let html = '<div class="wrap">';
@@ -471,6 +712,10 @@
       '<div class="set-row">' +
       '<div class="grow"><div class="lbl">Тёмная тема</div><div class="hint">Оформление приложения; схемы Winbox всегда светлые</div></div>' +
       '<div class="switch' + (document.documentElement.getAttribute('data-theme') === 'dark' ? ' on' : '') + '" id="themeSwitch" role="switch" aria-label="Тёмная тема"></div>' +
+      '</div>' +
+      '<div class="set-row">' +
+      '<div class="grow"><div class="lbl">Схема у каждого шага</div><div class="hint">Показывать окно Winbox 4 под каждым действием инструкции</div></div>' +
+      '<div class="switch' + (shotsEnabled() ? ' on' : '') + '" id="shotsSwitch" role="switch" aria-label="Схема у каждого шага"></div>' +
       '</div>' +
       '<div class="set-row">' +
       '<div class="grow"><div class="lbl">Текущая версия</div><div class="hint">Номер сборки присваивается автоматически в GitHub Actions</div></div>' +
@@ -782,6 +1027,15 @@
     const scenesHost = $('#scenesHost');
     if (scenesHost && a.scenes) Scene.mount(scenesHost, a.scenes);
 
+    /* окно под каждым шагом инструкции */
+    const shots = content.querySelectorAll('.step-shot');
+    Array.prototype.forEach.call(shots, function (host) {
+      const i = parseInt(host.getAttribute('data-si'), 10);
+      const pick = stepSceneFor(a, i);
+      if (!pick) return;
+      Scene.mount(host, [pick.spec], { compact: true });
+    });
+
     const checkHost = $('#checkHost');
     if (checkHost && a.check) {
       const specs = a.check.map(function (c) {
@@ -803,6 +1057,14 @@
       document.documentElement.setAttribute('data-theme', nx);
       store.set('theme', nx);
       sw.classList.toggle('on', nx === 'dark');
+    });
+
+    const shs = $('#shotsSwitch');
+    if (shs) shs.addEventListener('click', function () {
+      const on = !shs.classList.contains('on');
+      shs.classList.toggle('on', on);
+      store.set('shots', on ? '1' : '0');
+      route();
     });
 
     const chk = $('#checkUpdBtn');
@@ -911,6 +1173,7 @@
     content.scrollTop = 0;
     markActive(id);
     markRead(id);
+    store.set('last', JSON.stringify({ id: id, at: Date.now() }));
     syncFavBtn();
     hydrate(a);
     document.title = a.t + ' · MikroTik Winbox 4';
@@ -992,7 +1255,10 @@
     document.documentElement.setAttribute('data-theme', store.get('theme') || 'dark');
     syncFsUi();
 
-    window.addEventListener('hashchange', route);
+    /* отладочный доступ для автопроверок (не влияет на работу приложения) */
+  window.AppDebug = { stepSceneFor: stepSceneFor, stems: stems, autoFocus: autoFocus };
+
+  window.addEventListener('hashchange', route);
     route();
   }
 

@@ -107,6 +107,7 @@
         d.id = 'cell-' + r + '-' + i;
         if (o.m) d.setAttribute('data-m', o.m);
         if (o.m) d.classList.add('wb-target');
+        if (o.foc) d.classList.add('foc');
         tr.appendChild(d);
       });
       wrap.appendChild(tr);
@@ -134,12 +135,14 @@
         const c = el('div', 'chk' + (fd.v ? ' on' : ''));
         c.id = 'f-' + i;
         if (fd.m) { c.setAttribute('data-m', fd.m); c.classList.add('wb-target'); }
+        if (fd.foc) c.classList.add('foc');
         row.appendChild(c);
       } else {
         const c = el('div', 'ctl' + (fd.type === 'select' ? ' sel' : '') + (fd.ro ? ' ro' : ''),
           esc(fd.v == null ? '' : fd.v));
         c.id = 'f-' + i;
         if (fd.m) { c.setAttribute('data-m', fd.m); c.classList.add('wb-target'); }
+        if (fd.foc) c.classList.add('foc');
         row.appendChild(c);
       }
       body.appendChild(row);
@@ -302,6 +305,8 @@
     if (k > 1) k = 1;
     if (k < 0.6) k = 0.6;
     inner.style.transform = 'scale(' + k + ')';
+    host._k = k;
+    host._natW = natural;
     const h = base.offsetHeight || 400;
     host.style.height = Math.ceil(h * k) + 'px';
     const needScroll = (avail / natural) < 0.6;
@@ -314,7 +319,88 @@
     }
   }
 
-  function render(spec) {
+  /* ---------- фокус на конкретном элементе окна ----------
+     Одна и та же схема используется для разных шагов: подсвечивается
+     только то поле/строка/вкладка, о которой говорит шаг.            */
+  function withFocus(spec) {
+    const f = spec.focus;
+    if (!f) return spec;
+    const s = {};
+    for (const k in spec) s[k] = spec[k];
+
+    if (f.path) {
+      s._fp = true;
+      s.notes = ['Это окно открывается по пути: ' + (spec.path || spec.win || 'RouterOS 7')];
+      return s;
+    }
+    if (f.field != null && spec.form && (spec.form.fields || [])[f.field]) {
+      const fld = spec.form.fields;
+      const form = {};
+      for (const k in spec.form) form[k] = spec.form[k];
+      form.fields = fld.map(function (fd, i) {
+        const c = {};
+        for (const k2 in fd) c[k2] = fd[k2];
+        if (i === f.field) { c.m = 1; c.foc = true; } else { c.m = 0; }
+        return c;
+      });
+      s.form = form;
+      s._ff = f.field;
+      const F = form.fields[f.field];
+      s.notes = ['Поле «' + (F.l || '') + '»' + (F.v != null && F.v !== '' ? ' → ' + F.v : '')];
+      return s;
+    }
+    if (f.row != null && spec.rows && spec.rows[f.row]) {
+      const row = spec.rows[f.row];
+      s.rows = spec.rows.map(function (r, i) {
+        return r.map(function (cell, j) {
+          const o = (cell && typeof cell === 'object') ? (function () { const c = {}; for (const k2 in cell) c[k2] = cell[k2]; return c; })() : { v: cell };
+          if (i === f.row && j === 0) { o.m = 1; o.foc = true; } else { o.m = 0; }
+          return o;
+        });
+      });
+      s._fr = f.row;
+      const first = row[0];
+      const label = (first && typeof first === 'object') ? first.v : first;
+      s.notes = ['Строка «' + String(label == null ? '' : label) + '»'];
+      return s;
+    }
+    if (f.tab != null && spec.tabs && spec.tabs[f.tab]) {
+      s.tab = spec.tabs[f.tab];
+      s.tabMark = spec.tabs[f.tab];
+      s.tabMarkN = 1;
+      s.notes = ['Вкладка «' + spec.tabs[f.tab] + '»'];
+      return s;
+    }
+    if (f.tool != null && spec.tools && spec.tools[f.tool]) {
+      s.tools = spec.tools.map(function (b, i) {
+        const c = {};
+        for (const k2 in b) c[k2] = b[k2];
+        if (i === f.tool) { c.m = 1; c.foc = true; } else { c.m = 0; }
+        return c;
+      });
+      s._fb = f.tool;
+      s.notes = ['Кнопка «' + (spec.tools[f.tool].t || '') + '»'];
+      return s;
+    }
+    return spec;
+  }
+
+  function applyDim(body, spec) {
+    if (spec._ff != null) {
+      Array.prototype.forEach.call(body.querySelectorAll('.wb-form-body > .wb-f'), function (r, i) {
+        r.classList.toggle('dim', i !== spec._ff);
+      });
+    }
+    if (spec._fr != null) {
+      Array.prototype.forEach.call(body.querySelectorAll('.wb-table > .wb-tr'), function (r, i) {
+        if (r.classList.contains('wb-th')) return;
+        r.classList.toggle('dim', (i - 1) !== spec._fr);
+      });
+    }
+  }
+
+  function render(specRaw) {
+    const spec = withFocus(specRaw);
     const block = el('div', 'scene-block');
     if (spec.cap) {
       block.appendChild(el('div', 'scene-cap', '<svg viewBox="0 0 24 24" width="13" height="13"><rect x="3" y="4" width="18" height="16" rx="3" stroke="currentColor" stroke-width="1.6" fill="none"/><path d="M3 9h18" stroke="currentColor" stroke-width="1.6"/></svg> <b>' + esc(spec.cap) + '</b>'));
@@ -330,6 +416,10 @@
     tb.innerHTML = '<span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>' +
       '<span class="tt">' + esc(spec.win || 'Winbox') + '</span>' +
       '<span class="path">' + esc(spec.path || '') + '</span>';
+    if (spec._fp) {
+      const pEl = tb.querySelector('.path');
+      if (pEl) { pEl.id = 'wpath'; pEl.setAttribute('data-m', '1'); pEl.classList.add('wb-target'); pEl.classList.add('foc'); }
+    }
     main.appendChild(tb);
 
     if (!spec.noTools) {
@@ -344,6 +434,7 @@
         btn.id = 'tb-' + (b.id || ('b' + i));
         btn.title = b.title || '';
         if (b.m) { btn.setAttribute('data-m', b.m); btn.classList.add('wb-target'); }
+        if (b.foc) btn.classList.add('foc');
         tools.appendChild(btn);
       });
       if (spec.toolsNote) tools.appendChild(el('span', null, '<span style="margin-left:8px;color:#8b9bad;font-size:10.5px">' + esc(spec.toolsNote) + '</span>'));
@@ -356,7 +447,7 @@
         const on = (spec.tab || spec.tabs[0]) === t;
         const d = el('div', 'wb-tab' + (on ? ' on' : ''), esc(t));
         d.id = 'tab-' + i;
-        if (spec.tabMark === t) { d.setAttribute('data-m', spec.tabMarkN || 1); d.classList.add('wb-target'); }
+        if (spec.tabMark === t) { d.setAttribute('data-m', spec.tabMarkN || 1); d.classList.add('wb-target'); d.classList.add('foc'); }
         tabs.appendChild(d);
       });
       main.appendChild(tabs);
@@ -366,6 +457,7 @@
     if (spec.cols) body.appendChild(table(spec));
     if (spec.form) body.appendChild(form(spec));
     if (spec.bodyHtml) body.insertAdjacentHTML('beforeend', spec.bodyHtml);
+    applyDim(body, spec);
     main.appendChild(body);
 
     if (spec.status) {
@@ -379,7 +471,8 @@
     scale.appendChild(root);
     host.appendChild(scale);
     block.appendChild(host);
-    block.appendChild(el('div', 'scene-hint', '⇄ Окно шире экрана — прокрутите вбок или нажмите «⤢ крупнее»'));
+    block._compact = !!spec.compact;
+    if (!spec.compact) block.appendChild(el('div', 'scene-hint', '⇄ Окно шире экрана — прокрутите вбок или нажмите «⤢ крупнее»'));
     addZoom(block, host, spec);
     if (spec.notes && spec.notes.length) {
       const ul = el('ul', 'notes');
@@ -390,6 +483,62 @@
     }
     block._host = host;
     block._fit = function () { fit(host); };
+    block._foc = main.querySelector('.foc') || null;
+    block._compact = !!spec.compact;
+    return block;
+  }
+
+  /* ---------- меню Winbox: «где нажать», когда окно ещё не открыто ---------- */
+  function renderNav(spec) {
+    const block = el('div', 'scene-block');
+    block.appendChild(el('div', 'scene-cap',
+      '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 6h16M4 12h11M4 18h7" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg> <b>' +
+      esc('Меню Winbox 4' + (spec.path ? ': ' + spec.path : '')) + '</b>'));
+    const host = el('div', 'scene-host');
+    const scale = el('div', 'scene-scale');
+    const root = el('div', 'wb wb-navwin');
+    root.appendChild(sidebar(spec.path));
+
+    const main = el('div', 'wb-main');
+    const tb = el('div', 'wb-tb');
+    tb.innerHTML = '<span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>' +
+      '<span class="tt">Winbox 4</span><span class="path">меню слева → раздел</span>';
+    main.appendChild(tb);
+    const body = el('div', 'wb-body');
+    body.innerHTML = '<div class="wb-navpath">' +
+      String(spec.path || '').split('→').map(function (p) { return '<span class="np">' + esc(p.trim()) + '</span>'; }).join('<span class="narr">→</span>') +
+      '</div><div class="wb-navhint">Нажмите раздел в дереве меню — откроется окно настроек</div>';
+    main.appendChild(body);
+    root.appendChild(main);
+
+    scale.appendChild(root);
+    host.appendChild(scale);
+    block.appendChild(host);
+
+    // подсветка целевого пункта
+    const subs = root.querySelectorAll('.sb-sub.hl');
+    const grps = root.querySelectorAll('.sb-grp.hl');
+    const target = subs.length ? subs[subs.length - 1] : (grps.length ? grps[0] : null);
+    let notes = [];
+    if (target) {
+      target.id = 'navtarget';
+      target.setAttribute('data-m', '1');
+      target.classList.add('wb-target');
+      target.classList.add('foc');
+      notes = ['Откройте в меню: ' + (spec.path || '')];
+    }
+    addZoom(block, host, spec);
+    if (notes.length) {
+      const ul = el('ul', 'notes');
+      notes.forEach(function (t, i) {
+        ul.appendChild(el('li', null, '<span class="n">' + (i + 1) + '</span><span>' + esc(t) + '</span>'));
+      });
+      block.appendChild(ul);
+    }
+    block._host = host;
+    block._fit = function () { fit(host); };
+    block._nav = true;
+    block._compact = true;
     return block;
   }
 
@@ -421,7 +570,7 @@
 
   /* ---------- полноэкранный просмотр схемы ---------- */
   function addZoom(block, host, spec) {
-    const btn = el('button', 'scene-zoom', '⤢ крупнее');
+    const btn = el('button', 'scene-zoom', (spec && spec.compact) ? '⤢' : '⤢ крупнее');
     btn.type = 'button';
     host.appendChild(btn);
     btn.addEventListener('click', function (e) {
@@ -640,12 +789,53 @@
     requestAnimationFrame(boot);
   }
 
-  function mount(container, specs) {
+  /* один обработчик resize на всё приложение: блоков в статье бывает 10+ */
+  const LIVE = [];
+  let rt = null;
+  function onResizeAll() {
+    clearTimeout(rt);
+    rt = setTimeout(function () {
+      for (let i = LIVE.length - 1; i >= 0; i--) {
+        const b = LIVE[i];
+        if (!b.isConnected) { LIVE.splice(i, 1); continue; }
+        if (b._fit) b._fit();
+        if (b._annotate) b._annotate();
+        centerFocus(b);
+      }
+    }, 120);
+  }
+  window.addEventListener('resize', onResizeAll);
+  window.addEventListener('orientationchange', onResizeAll);
+
+  /* если шаг говорит про конкретное поле — прокручиваем окно к нему */
+  function centerFocus(b) {
+    const host = b._host, f = b._foc;
+    if (!host || !f || !b._compact) return;
+    const k = host._k || 1;
+    if (host.scrollWidth <= host.clientWidth + 2) return;
+    const left = (f.offsetLeft || 0) * k;
+    const w = (f.offsetWidth || 0) * k;
+    const target = left + w / 2 - host.clientWidth / 2;
+    host.scrollLeft = Math.max(0, target);
+  }
+
+  function mount(container, specs, opts) {
+    const compact = !!(opts && opts.compact);
+    // забываем блоки прошлых статей, чтобы не копить память при переходах
+    for (let i = LIVE.length - 1; i >= 0; i--) if (!LIVE[i].isConnected) LIVE.splice(i, 1);
     const blocks = [];
     (specs || []).forEach(function (spec) {
-      const b = spec.term ? renderTerminal(spec) : render(spec);
+      const one = compact ? (function () {
+        const c = {};
+        for (const k in spec) c[k] = spec[k];
+        c.compact = true;
+        return c;
+      })() : spec;
+      const b = one.nav ? renderNav(one) : (one.term ? renderTerminal(one) : render(one));
+      if (compact) b.classList.add('compact');
       container.appendChild(b);
       blocks.push(b);
+      LIVE.push(b);
     });
     // аннотации считаем после вставки в DOM (нужна реальная геометрия)
     requestAnimationFrame(function () {
@@ -659,21 +849,9 @@
             b._annotate();
           }
         }
+        centerFocus(b);
       });
     });
-
-    let rt = null;
-    function onResize() {
-      clearTimeout(rt);
-      rt = setTimeout(function () {
-        blocks.forEach(function (b) {
-          if (b._fit) b._fit();
-          if (b._annotate) b._annotate();
-        });
-      }, 120);
-    }
-    window.addEventListener('resize', onResize);
-    window.addEventListener('orientationchange', onResize);
     return blocks;
   }
 
@@ -685,5 +863,5 @@
     });
   }
 
-  window.Scene = { render: render, renderTerminal: renderTerminal, mount: mount, fit: fit };
+  window.Scene = { render: render, renderTerminal: renderTerminal, renderNav: renderNav, mount: mount, fit: fit };
 })();

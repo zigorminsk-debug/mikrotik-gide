@@ -5,6 +5,21 @@ window.CHANGELOG = [
   {
     v: 'auto',
     date: '2026-11-03',
+    title: 'Скриншот к каждому действию и 35 новых окон Winbox',
+    items: [
+      'Под каждым шагом инструкции теперь есть окно Winbox 4 с красной рамкой на том элементе, о котором говорит шаг. Всего 1115 шагов и столько же картинок.',
+      'Добавлено 35 новых окон: Interface List, Bridge, DHCP Client, мастер DHCP Setup, DHCP Leases и Options, DNS Static, New Address, New Route, New NAT Rule (General и Action), New Filter Rule, Files, IP Services, New User, New Scheduler, New Simple Queue, New WireGuard Peer, New Netwatch, New MPLS, New BGP Connection, New WiFi Interface, терминал с проверкой конфига и другие.',
+      'Если в шаге назван путь по меню, а окна ещё нет — показывается скриншот меню Winbox с подсвеченным разделом: видно, куда нажимать.',
+      'Если шаг про терминал, показывается окно New Terminal с командами из этого шага.',
+      'Окно под шагом прокручивается к нужному полю автоматически, а тап по нему открывает полноэкранный просмотр.',
+      'В настройках появился переключатель «Схема у каждого шага» — можно выключить картинки для быстрого чтения.',
+      'На главной — карточка «Продолжить: <статья>»: приложение помнит, где вы остановились.',
+      'Стало 15 разделов, 215 статей, 265 схем и 721 подсказка со стрелками.'
+    ]
+  },
+  {
+    v: '1.0.23',
+    date: '2026-11-03',
     title: 'Сверка с меню RouterOS 7, MPLS и готовые конфиги',
     items: [
       'Сверка содержания с меню Winbox 4: добавлено 34 статьи по пунктам, которых не хватало — MPLS (включение, LDP, VPLS, диагностика), Routing (Nexthops, Prefix Lists, BGP-шаблоны, IGMP Proxy, Router ID), IP (SSH, TFTP, PXE, secondary address), IPv6 (Pool, Settings), System (Ports, Reboot, Users и политика паролей), Tools (IP Scan, Traffic Monitor, SMS), WiFi (WPS, Sniffer, частоты), Switch (Hosts, зеркалирование), Interfaces (VXLAN, Ethernet speed/duplex/flow-control, Bridge NAT и изоляция).',
