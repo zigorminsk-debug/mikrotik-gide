@@ -101,9 +101,18 @@ jobs:
       - name: Сборка release APK
         run: |
           chmod +x ./gradlew
+          set -o pipefail
           ./gradlew --no-daemon --stacktrace assembleRelease \
             -PappVersionCode=${{ steps.ver.outputs.code }} \
-            -PappVersionName=${{ steps.ver.outputs.name }}
+            -PappVersionName=${{ steps.ver.outputs.name }} 2>&1 | tee build.log
+
+      - name: Лог сборки (при ошибке)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: warn
 
       - name: Проверка подписи
         run: |
