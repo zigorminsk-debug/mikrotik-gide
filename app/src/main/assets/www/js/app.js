@@ -7,11 +7,30 @@
   const GROUPS = window.DATA || [];
   const $ = function (s, r) { return (r || document).querySelector(s); };
 
-  /* безопасное хранилище: localStorage может быть недоступен для file:// */
+  /* безопасное хранилище: localStorage может быть недоступен (file://, приватный режим).
+     Если он недоступен — работаем в памяти, чтобы интерфейс не ломался. */
+  const memStore = Object.create(null);
+  const ls = (function () {
+    try {
+      const s = window.localStorage;
+      s.setItem('__probe', '1');
+      s.removeItem('__probe');
+      return s;
+    } catch (e) { return null; }
+  })();
   const store = {
-    get: function (k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } },
-    set: function (k, v) { try { window.localStorage.setItem(k, v); } catch (e) { } },
-    del: function (k) { try { window.localStorage.removeItem(k); } catch (e) { } }
+    get: function (k) {
+      if (ls) { try { return ls.getItem(k); } catch (e) { } }
+      return k === '__proto__' ? null : (k in memStore ? memStore[k] : null);
+    },
+    set: function (k, v) {
+      if (ls) { try { ls.setItem(k, String(v)); return; } catch (e) { } }
+      memStore[k] = String(v);
+    },
+    del: function (k) {
+      if (ls) { try { ls.removeItem(k); } catch (e) { } }
+      delete memStore[k];
+    }
   };
 
   const REPO = 'zigorminsk-debug/mikrotik-gide';
@@ -50,6 +69,40 @@
 
   const LVL = { 1: 'База', 2: 'Средний', 3: 'Продвинутый' };
 
+  /* ---------------- избранное и прогресс чтения ---------------- */
+  const FAV_KEY = 'fav', READ_KEY = 'read';
+
+  function favs() {
+    try {
+      const v = JSON.parse(store.get(FAV_KEY) || '[]');
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
+  function isFav(id) { return favs().indexOf(id) >= 0; }
+  function toggleFav(id) {
+    const a = favs();
+    const i = a.indexOf(id);
+    if (i >= 0) a.splice(i, 1); else a.push(id);
+    store.set(FAV_KEY, JSON.stringify(a));
+    buildFavBox();
+    syncFavBtn();
+  }
+  function readMap() {
+    try {
+      const v = JSON.parse(store.get(READ_KEY) || '{}');
+      return (v && typeof v === 'object') ? v : {};
+    } catch (e) { return {}; }
+  }
+  function markRead(id) {
+    const m = readMap();
+    if (!m[id]) {
+      m[id] = 1;
+      store.set(READ_KEY, JSON.stringify(m));
+      refreshProgress();
+    }
+  }
+  function readCount() { return Object.keys(readMap()).length; }
+
   /* ---------------- размер шрифта ---------------- */
   const FS_STEPS = [0.9, 1, 1.08, 1.18, 1.3];
   let fsIdx = 1;
@@ -87,6 +140,11 @@
     title.textContent = 'Меню Winbox 4 и задачи';
     frag.appendChild(title);
 
+    const favBox = document.createElement('div');
+    favBox.className = 'fav-box';
+    favBox.id = 'favBox';
+    frag.appendChild(favBox);
+
     GROUPS.forEach(function (g) {
       const wrap = document.createElement('div');
       wrap.className = 'grp';
@@ -95,7 +153,7 @@
       const head = document.createElement('button');
       head.className = 'grp-head';
       head.innerHTML = '<span class="grp-ico">' + svg(g.ic, 15) + '</span><span>' + g.name +
-        '</span><span class="chev"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
+        '</span><span class="cnt" data-g="' + g.id + '"></span><span class="chev"><svg viewBox="0 0 24 24" width="14" height="14"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span>';
       head.addEventListener('click', function () { wrap.classList.toggle('open'); });
       wrap.appendChild(head);
 
@@ -117,10 +175,67 @@
     sidebarScroll.innerHTML = '';
     sidebarScroll.appendChild(frag);
 
+    buildFavBox();
+    refreshProgress();
+
     const foot = $('#sidebarFoot');
     foot.innerHTML = '<a href="#/about" style="color:inherit">О программе</a>' +
       '<span>build ' + (window.APP_VERSION || 'dev') + '</span>';
     foot.querySelector('a').addEventListener('click', closeSidebar);
+  }
+
+  function buildFavBox() {
+    const box = $('#favBox');
+    if (!box) return;
+    const ids = favs().filter(function (id) { return BY_ID[id]; });
+    if (!ids.length) {
+      box.innerHTML = '<div class="fav-empty">Отмечайте статьи звёздочкой ★ — они появятся здесь</div>';
+      return;
+    }
+    box.innerHTML = '<div class="fav-h">' + svg('svc', 13) + 'Избранное</div>' +
+      ids.map(function (id) {
+        const a = BY_ID[id];
+        return '<a class="item fav" href="#/' + a.id + '"><span>' + esc(a.t) + '</span></a>';
+      }).join('');
+    Array.prototype.forEach.call(box.querySelectorAll('.item'), function (el) {
+      el.addEventListener('click', closeSidebar);
+    });
+  }
+
+  function syncFavBtn() {
+    const b = $('#favBtn');
+    if (!b) return;
+    const cur = location.hash.replace(/^#\/?/, '').split('?')[0];
+    const on = isFav(cur);
+    b.classList.toggle('on', on);
+    b.textContent = on ? '★' : '☆';
+    b.setAttribute('aria-label', on ? 'Убрать из избранного' : 'В избранное');
+  }
+
+  function refreshProgress() {
+    const m = readMap();
+    Array.prototype.forEach.call(document.querySelectorAll('.grp'), function (grp) {
+      const gid = grp.dataset.gid;
+      const g = GROUPS.filter(function (x) { return x.id === gid; })[0];
+      if (!g) return;
+      let done = 0;
+      (g.items || []).forEach(function (a) { if (m[a.id]) done++; });
+      const cnt = grp.querySelector('.cnt');
+      if (cnt) {
+        cnt.textContent = done ? done + '/' + g.items.length : '';
+      }
+    });
+    Array.prototype.forEach.call(sidebarScroll.querySelectorAll('.item'), function (el) {
+      if (!el.dataset.id) return;
+      el.classList.toggle('read', !!m[el.dataset.id]);
+    });
+    const stat = $('#readStat');
+    if (stat) {
+      const total = FLAT.length, done = Math.min(total, JSON.stringify(m) === '{}' ? 0 : Object.keys(m).length);
+      stat.textContent = done + ' из ' + total + ' (' + Math.round(done * 100 / total) + '%)';
+      const bar = $('#readBar');
+      if (bar) bar.style.width = Math.round(done * 100 / total) + '%';
+    }
   }
 
   function markActive(id) {
@@ -186,6 +301,14 @@
     });
     html += '</div>';
 
+    html += '<div class="set-card">' +
+      '<h3 class="card-h">' + svg('system', 15) + 'Ваш прогресс</h3>' +
+      '<div class="hint" style="margin:-2px 0 8px">Прочитано <b id="readStat">0 из ' + total + ' (0%)</b></div>' +
+      '<div class="upd-bar"><i id="readBar" style="width:0%"></i></div>' +
+      '<div class="hint" style="margin-top:8px">Статьи отмечаются прочитанными автоматически при открытии. ' +
+      'Избранное — звёздочкой ★ в заголовке статьи.</div>' +
+      '</div>';
+
     html += card('Приложение', 'gear',
       '<a class="list-row" href="#/settings"><span class="n">' + svg('gear', 13) + '</span>' +
       '<b>Настройки и проверка обновлений</b><span>v' + (window.APP_VERSION || '') + '</span></a>' +
@@ -220,7 +343,8 @@
     let html = '<div class="wrap">';
     html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span>' +
       '<span>' + esc(a._group.name) + '</span></div>';
-    html += '<h1 class="art-title">' + esc(a.t) + '</h1>';
+    html += '<h1 class="art-title">' + esc(a.t) +
+      '<button class="fav-btn" id="favBtn" aria-label="В избранное">☆</button></h1>';
     if (a.path) html += '<div class="art-path">' + svg('iface', 12) + esc(a.path) + '</div>';
 
     html += '<div class="badges">';
@@ -267,6 +391,14 @@
         }).join('') + '</ol>');
     }
 
+    if (a.config) {
+      const text = Array.isArray(a.config) ? a.config.join('\n') : String(a.config);
+      html += '<section class="card"><h3 class="card-h">' + svg('task', 15) +
+        'Готовый конфиг — можно копировать целиком</h3>' +
+        '<div class="cfg"><div class="cfg-h"><span>' + esc(a.configTitle || 'RouterOS 7 · терминал') +
+        '</span><button class="copy">копировать</button></div><pre>' + esc(text) + '</pre></div></section>';
+    }
+
     if (a.scenes && a.scenes.length) {
       html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) +
         'Winbox 4: куда нажимать</h3>' +
@@ -289,12 +421,37 @@
         }).join('') + '</div>');
     }
 
+    const rel = related(a);
+    if (rel.length) {
+      html += '<section class="card"><h3 class="card-h">' + svg('book', 15) + 'Смотрите также</h3>' +
+        rel.map(function (r) {
+          return '<a class="list-row" href="#/' + r.id + '"><span class="n">' + svg(r._group.ic, 13) +
+            '</span><b>' + esc(r.t) + '</b><span>' + esc(r._group.name) + '</span></a>';
+        }).join('') + '</section>';
+    }
+
     html += '<div class="nav-foot">' +
       (prev ? '<a href="#/' + prev.id + '">← Предыдущий<b>' + esc(prev.t) + '</b></a>' : '<a href="#/">← На главную<b>Оглавление</b></a>') +
       (next ? '<a href="#/' + next.id + '" style="text-align:right">Следующий →<b>' + esc(next.t) + '</b></a>' : '<a href="#/tasks" style="text-align:right">Раздел →<b>Задачи PROD</b></a>') +
       '</div>';
     html += '</div>';
     return html;
+  }
+
+  /* похожие статьи: по общим тегам */
+  function related(a) {
+    const tags = a.tags || [];
+    if (!tags.length) return [];
+    const scored = FLAT.filter(function (x) { return x.id !== a.id; })
+      .map(function (x) {
+        let n = 0;
+        (x.tags || []).forEach(function (t) { if (tags.indexOf(t) >= 0) n++; });
+        return { a: x, n: n };
+      })
+      .filter(function (o) { return o.n > 0; })
+      .sort(function (p, q) { return q.n - p.n; })
+      .slice(0, 4);
+    return scored.map(function (o) { return o.a; });
   }
 
   /* ---------------- настройки ---------------- */
@@ -326,6 +483,12 @@
       '<div class="upd" id="updBox">Нажмите «Проверить обновления» — приложение запросит последний релиз на GitHub.</div>' +
       '<div style="margin-top:10px"><button class="btn primary block" id="checkUpdBtn">' + svg('down', 15) + 'Проверить обновления</button></div>' +
       '<div class="hint" style="margin-top:8px">Приложение проверяет страницу релизов ' + esc(REPO) + ' и сравнивает версии. Скачивание APK — по кнопке, в браузере.</div>' +
+      '</div>';
+
+    html += '<div class="set-card">' +
+      '<div class="set-row"><div class="grow"><div class="lbl">Прогресс чтения и избранное</div>' +
+      '<div class="hint">Прочитано <b id="readStat">0 из ' + FLAT.length + '</b>, в избранном ' + favs().length + ' статей</div></div>' +
+      '<button class="btn" id="resetProgress">Сбросить прогресс</button></div>' +
       '</div>';
 
     html += '<div class="set-card">' +
@@ -645,6 +808,18 @@
     const chk = $('#checkUpdBtn');
     if (chk) chk.addEventListener('click', checkUpdates);
 
+    const rp = $('#resetProgress');
+    if (rp) rp.addEventListener('click', function () {
+      store.del(READ_KEY);
+      store.del(FAV_KEY);
+      buildFavBox();
+      refreshProgress();
+      rp.textContent = 'Сброшено';
+      setTimeout(function () { rp.textContent = 'Сбросить прогресс'; }, 1500);
+    });
+
+    refreshProgress();
+
     const rst = $('#resetBtn');
     if (rst) rst.addEventListener('click', function () {
       store.del('fs'); store.del('theme');
@@ -707,6 +882,7 @@
       content.innerHTML = homeView();
       content.scrollTop = 0;
       markActive(null);
+      refreshProgress();
       document.title = 'MikroTik · Учебник Winbox 4';
       return;
     }
@@ -734,15 +910,26 @@
     content.innerHTML = articleView(a);
     content.scrollTop = 0;
     markActive(id);
+    markRead(id);
+    syncFavBtn();
     hydrate(a);
     document.title = a.t + ' · MikroTik Winbox 4';
   }
 
-  /* копирование команд */
+  /* звезда «в избранное» */
+  document.addEventListener('click', function (e) {
+    const fb = e.target.closest && e.target.closest('#favBtn');
+    if (!fb) return;
+    const id = location.hash.replace(/^#\/?/, '').split('?')[0];
+    if (id) toggleFav(id);
+  });
+
+  /* копирование команд и готовых конфигов */
   document.addEventListener('click', function (e) {
     const btn = e.target.closest && e.target.closest('.copy');
     if (!btn) return;
-    const pre = btn.closest('.term, .wb-term').querySelector('pre');
+    const host = btn.closest('.term, .wb-term, .cfg');
+    const pre = host ? host.querySelector('pre') : null;
     const text = pre ? pre.innerText : '';
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text);

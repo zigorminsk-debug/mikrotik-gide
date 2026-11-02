@@ -394,6 +394,48 @@ code.inl{
   box-shadow:0 0 0 1.5px #fff,0 2px 5px rgba(180,10,45,.4);
 }
 
+
+/* ---------- избранное, прогресс, готовый конфиг ---------- */
+.fav-box{margin:0 0 10px}
+.fav-box:empty{display:none}
+.fav-h{
+  display:flex;align-items:center;gap:6px;padding:6px 10px 4px;
+  font-size:calc(11px * var(--fsm, 1));letter-spacing:.4px;text-transform:uppercase;
+  color:#e5b53a;font-weight:700;
+}
+.fav-empty{
+  margin:0 8px 8px;padding:8px 10px;border-radius:9px;font-size:calc(11.5px * var(--fsm, 1));
+  color:var(--txt-mute);background:rgba(229,181,58,.07);border:1px dashed rgba(229,181,58,.28);
+}
+.item.fav>span:first-child::before{content:'★ ';color:#e5b53a}
+.grp-head .cnt{
+  margin-left:auto;margin-right:4px;font-size:calc(10.5px * var(--fsm, 1));
+  color:#7ea2c9;font-variant-numeric:tabular-nums;
+}
+.item.read>span:first-child::after{content:' ✓';color:#3ba55d;font-size:calc(10px * var(--fsm, 1))}
+.fav-btn{
+  float:right;width:34px;height:34px;margin:2px 0 0 8px;border-radius:10px;cursor:pointer;
+  border:1px solid var(--line);background:var(--bg-soft);color:#7d8b9e;
+  font-size:calc(19px * var(--fsm, 1));line-height:1;
+}
+.fav-btn.on{color:#e5b53a;border-color:rgba(229,181,58,.5);background:rgba(229,181,58,.12)}
+.cfg{
+  border:1px solid #1e2a37;border-radius:11px;overflow:hidden;background:#0b1016;
+}
+.cfg-h{
+  display:flex;align-items:center;gap:8px;padding:7px 10px;background:#0d141c;
+  border-bottom:1px solid #1e2a37;color:#8b9bad;font-size:calc(11.5px * var(--fsm, 1));
+}
+.cfg-h button{
+  margin-left:auto;border:1px solid #22303f;background:#131c26;color:#cfe3f7;
+  border-radius:7px;padding:3px 9px;font-size:calc(11.5px * var(--fsm, 1));cursor:pointer;
+}
+.cfg pre{
+  margin:0;padding:10px 12px;font-family:var(--mono);
+  font-size:calc(11.5px * var(--fsm, 1));line-height:1.55;color:#cfe3f7;white-space:pre;
+  max-height:64vh;overflow:auto;-webkit-overflow-scrolling:touch;
+}
+
 /* ---------- плюсы/минусы и таблицы ---------- */
 .pc{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 @media (max-width:520px){.pc{grid-template-columns:1fr}}
