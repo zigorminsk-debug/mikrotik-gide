@@ -984,3 +984,69 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 
 /* ---- быстрые карточки проверки на главной ---- */
 .home-tools{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:10px;margin:12px 0}
+
+/* =============== подсветка RouterOS =============== */
+.cfg pre .hl-cmd{color:#79c0ff}
+.cfg pre .hl-kw{color:#d2a8ff}
+.cfg pre .hl-k{color:#7ee787}
+.cfg pre .hl-s{color:#ffa657}
+.cfg pre .hl-num{color:#f2cc60}
+.cfg pre .hl-cm{color:#8b949e;font-style:italic}
+.cfg pre .hl-sec{color:#58a6ff;font-weight:700}
+.diff .tx .hl-cmd{color:#79c0ff}
+.diff .tx .hl-kw{color:#d2a8ff}
+.diff .tx .hl-k{color:#7ee787}
+.diff .tx .hl-s{color:#ffa657}
+.diff .tx .hl-num{color:#f2cc60}
+.diff .tx .hl-cm{color:#8b949e;font-style:italic}
+.ai-fix code .hl-cmd{color:#79c0ff}
+.ai-fix code .hl-kw{color:#d2a8ff}
+.ai-fix code .hl-k{color:#7ee787}
+.ai-fix code .hl-s{color:#ffa657}
+[data-theme="light"] .cfg pre .hl-cmd,[data-theme="light"] .diff .tx .hl-cmd,[data-theme="light"] .ai-fix code .hl-cmd{color:#0550ae}
+[data-theme="light"] .cfg pre .hl-kw,[data-theme="light"] .diff .tx .hl-kw,[data-theme="light"] .ai-fix code .hl-kw{color:#8250df}
+[data-theme="light"] .cfg pre .hl-k,[data-theme="light"] .diff .tx .hl-k,[data-theme="light"] .ai-fix code .hl-k{color:#116329}
+[data-theme="light"] .cfg pre .hl-s,[data-theme="light"] .diff .tx .hl-s,[data-theme="light"] .ai-fix code .hl-s{color:#953800}
+[data-theme="light"] .cfg pre .hl-num,[data-theme="light"] .diff .tx .hl-num{color:#7d4e00}
+
+/* =============== курс 7 дней =============== */
+.cday{border-left:3px solid var(--line)}
+.cday.now{border-left-color:var(--accent)}
+.cday.done{border-left-color:#2ea043}
+.cday-meta{font-size:calc(12px * var(--fsm, 1));color:var(--txt-mute);margin:-2px 0 4px}
+.cday-list{margin:6px 0 10px}
+.cday-task{
+  font-size:calc(13px * var(--fsm, 1));line-height:1.55;color:var(--txt-dim);
+  background:var(--panel-2);border:1px dashed var(--line);border-radius:10px;padding:10px 12px;
+}
+.cday-task b{color:var(--txt)}
+
+/* =============== порты моделей =============== */
+.panel{
+  display:flex;flex-wrap:wrap;gap:6px;padding:14px;border-radius:12px;
+  background:linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  border:1px solid var(--line);
+}
+.port{
+  position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;
+  min-width:72px;padding:8px 6px 6px;border-radius:8px;border:1px solid var(--line);
+  background:var(--panel);color:var(--txt-dim);
+}
+.port .p-led{width:6px;height:6px;border-radius:50%;background:#3fb950;box-shadow:0 0 6px rgba(63,185,80,.7)}
+.port .p-num{font-size:calc(10px * var(--fsm, 1));color:var(--txt-mute);line-height:1}
+.port .p-lbl{font-family:var(--mono, monospace);font-size:calc(12px * var(--fsm, 1));color:var(--txt);font-weight:700}
+.port .p-role{font-size:calc(9.5px * var(--fsm, 1));text-transform:uppercase;letter-spacing:.4px}
+.port.wan{border-color:rgba(88,166,255,.55);background:rgba(88,166,255,.12)}
+.port.wan .p-role{color:#79c0ff}
+.port.wan2{border-color:rgba(210,168,255,.55);background:rgba(210,168,255,.12)}
+.port.wan2 .p-role{color:#d2a8ff}
+.port.poe{border-color:rgba(240,161,58,.5);background:rgba(240,161,58,.1)}
+.port.poe .p-role{color:var(--amber)}
+.port.uplink{border-color:rgba(63,185,80,.5);background:rgba(63,185,80,.1)}
+.port.uplink .p-role{color:#3fb950}
+[data-theme="light"] .panel{background:#f6f8fa}
+[data-theme="light"] .port{background:#fff}
+
+/* =============== экзамен =============== */
+.qz-opt.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--txt)}
+.qz-modes .btn[data-qn="exam"]{border-color:rgba(240,161,58,.5);color:var(--amber)}

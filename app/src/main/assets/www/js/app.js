@@ -285,6 +285,11 @@
   function closeSidebar() { sidebar.classList.remove('open'); $('#scrim').classList.remove('on'); }
 
   /* ---------------- утилиты ---------------- */
+  function hlCfg(text) {
+    if (window.HL && window.HL.cfg) return window.HL.cfg(text);
+    return esc(text);
+  }
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
   }
@@ -335,6 +340,7 @@
     html += '</div>';
 
     html += '<div class="home-tools">' +
+      toolCard('#/course', 'Курс за 7 дней', 'по дню за подход: статьи + практика', 'book') +
       toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню Winbox — проверить роутер', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'вставьте /export — 24 проверки с оценкой', 'task') +
       toolCard('#/diag', 'Диагностика', 'если что-то не работает — пошагово', 'start') +
@@ -465,7 +471,7 @@
         'Готовый конфиг — можно копировать целиком</h3>' +
         '<div class="cfg"><div class="cfg-h"><span>' + esc(a.configTitle || 'RouterOS 7 · терминал') +
         '</span><span class="cfg-btns"><button class="copy">копировать</button>' +
-        '<button class="share" data-share="cfg">поделиться</button></span></div><pre>' + esc(text) + '</pre></div></section>';
+        '<button class="share" data-share="cfg">поделиться</button></span></div><pre>' + hlCfg(text) + '</pre></div></section>';
     }
 
     if (a.scenes && a.scenes.length) {
@@ -816,6 +822,12 @@
       (pk.loaded ? '<button class="btn" id="packClear">Удалить</button>' : '') +
       '</div>' +
       '<div class="hint" style="margin-top:8px">Новые статьи и схемы приходят отдельно от APK — переустанавливать приложение не нужно.</div>' +
+      '</div>';
+
+    html += '<div class="set-card">' +
+      '<h3 class="card-h">' + svg('down', 15) + 'Библиотека для печати</h3>' +
+      '<div class="hint">Выгрузить все статьи в один HTML-файл: открывается в любом браузере, печатается и читается офлайн на компьютере.</div>' +
+      '<div class="row-btns" style="margin-top:10px"><button class="btn" id="libExport">Сохранить HTML</button></div>' +
       '</div>';
 
     html += '<div class="set-card">' +
@@ -1201,6 +1213,8 @@
   }
 
   function bindSettings() {
+    const lib = document.getElementById('libExport');
+    if (lib) lib.addEventListener('click', exportLibrary);
     const dn = $('#fsDown2'), up = $('#fsUp2');
     if (dn) dn.addEventListener('click', function () { applyFs(fsIdx - 1); });
     if (up) up.addEventListener('click', function () { applyFs(fsIdx + 1); });
@@ -1372,6 +1386,7 @@
     html += '<div class="hint" style="margin:-6px 0 14px">Всё считается на устройстве и работает без интернета.</div>';
     html += '<div class="tools-grid">' +
       toolCard('#/wizard', 'Мастер конфигурации', 'WAN, LAN, IPv6, Wi-Fi, VPN, пробросы — готовый конфиг', 'gear') +
+      toolCard('#/course', 'Курс за 7 дней', 'План обучения с практикой и прогрессом', 'book') +
       toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню: доступ, firewall, сервисы, Wi-Fi', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'Вставьте /export — проверю firewall, NAT, DHCP, Wi-Fi', 'svc') +
       toolCard('#/diag', 'Диагностика по симптому', 'Нет интернета, VPN, проброс — порядок проверки', 'start') +
@@ -1379,6 +1394,7 @@
       toolCard('#/vlsm', 'VLSM-планировщик', 'План адресации по числу хостов + CSV', 'iface') +
       toolCard('#/diff', 'Сравнить конфиги', 'Два экспорта — что изменилось', 'task') +
       toolCard('#/quiz', 'Самопроверка', '111 вопросов по RouterOS с разбором ошибок', 'book') +
+      toolCard('#/models', 'Порты моделей', 'hEX, hAP ax3, RB4011, CRS328 — где WAN, PoE и SFP', 'iface') +
       toolCard('#/glossary', 'Глоссарий и порты', 'Термины RouterOS и таблица портов с поиском', 'bridge') +
       toolCard('#/backup', 'Данные и резервная копия', 'Заметки, прогресс, чек-листы — экспорт и импорт', 'down') +
       '</div>';
@@ -1738,7 +1754,7 @@
       '<span class="cfg-btns"><button class="copy">копировать</button>' +
       '<button class="share" data-share="cfg">поделиться</button>' +
       '<button class="share" id="wizSave">файл</button></span></div>' +
-      '<pre>' + esc(res.text || '') + '</pre></div>' +
+      '<pre>' + hlCfg(res.text || '') + '</pre></div>' +
       '<div class="hint" style="margin-top:10px">Вставьте в Winbox → New Terminal. Перед вставкой сохраните текущий конфиг: <code class="inl">/export file=before-change</code>.</div>' +
       '</section>';
     out.innerHTML = h;
@@ -2156,7 +2172,8 @@
       '<textarea class="inp mono diff-in" id="bOut" rows="6" readonly>' + esc(dump) + '</textarea>' +
       '<div class="wz-actions"><button class="btn" id="bCopy">Копировать</button>' +
       '<button class="btn" id="bShare">Поделиться</button>' +
-      '<button class="btn" id="bFile">Сохранить файл</button></div></section>';
+      '<button class="btn" id="bFile">Сохранить файл</button>' +
+      '<button class="btn" id="bHtml">Библиотека в HTML</button></div></section>';
     html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Импорт</h3>' +
       '<div class="hint" style="margin:-4px 0 8px">Вставьте JSON из резервной копии и нажмите «Восстановить». Текущие данные заменятся.</div>' +
       '<textarea class="inp mono diff-in" id="bIn" rows="6" placeholder="{ &quot;app&quot;: &quot;mikrotik-gide&quot;, … }"></textarea>' +
@@ -2178,11 +2195,13 @@
       shareText(document.getElementById('bOut').value, 'Резервная копия MikroTik-учебника');
     });
     document.getElementById('bFile').addEventListener('click', function () {
-      const name = 'mikrotik-gide-backup-' + new Date().toISOString().slice(0, 10) + '.json';
+      const name = 'mikrotik-gide-backup-' + todayISO() + '.json';
       const saved = saveTextFile(name, document.getElementById('bOut').value);
       if (saved === 'blob') toast('Сохранено: ' + name);
       else if (!saved) toast('Сохранение недоступно — используйте «Поделиться»');
     });
+    const bHtml = document.getElementById('bHtml');
+    if (bHtml) bHtml.addEventListener('click', exportLibrary);
     document.getElementById('bRestore').addEventListener('click', function () {
       const msg = document.getElementById('bMsg');
       let obj = null;
@@ -2262,7 +2281,7 @@
     else {
       h += '<div class="diff">' + r.lines.map(function (l) {
         const cls = l.t === '+' ? 'add' : l.t === '-' ? 'del' : 'ctx';
-        return '<div class="dl ' + cls + '"><span class="sg">' + (l.t === ' ' ? ' ' : l.t) + '</span><span class="tx">' + esc(l.s) + '</span></div>';
+        return '<div class="dl ' + cls + '"><span class="sg">' + (l.t === ' ' ? ' ' : l.t) + '</span><span class="tx">' + hlCfg(l.s) + '</span></div>';
       }).join('') + '</div>';
     }
     h += '</section>';
@@ -2279,6 +2298,209 @@
       diffRender();
     });
     document.getElementById('dIgnore').addEventListener('change', diffRender);
+  }
+
+  /* ================= курс «7 дней» ================= */
+  function courseStartDate() { return store.get('courseStart') || ''; }
+
+  function todayISO() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function courseToday() {
+    const d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function courseDayIndex(startISO) {
+    if (!startISO) return 0;
+    const start = new Date(startISO + 'T00:00:00');
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    const diff = Math.round((now - start) / 86400000);
+    return Math.max(0, Math.min(6, diff));
+  }
+
+  function courseDate(startISO, i) {
+    const d = new Date(startISO + 'T00:00:00');
+    d.setDate(d.getDate() + i);
+    return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+  }
+
+  function courseView() {
+    const days = window.COURSE || [];
+    const start = courseStartDate();
+    const rm = readMap();
+    const totalItems = days.reduce(function (n, d) { return n + d.items.length; }, 0);
+    const done = days.reduce(function (n, d) {
+      return n + d.items.filter(function (id) { return rm[id]; }).length;
+    }, 0);
+    const pct = totalItems ? Math.round((done / totalItems) * 100) : 0;
+    const cur = courseDayIndex(start);
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Курс за 7 дней</span></div>';
+    html += '<h1 class="art-title">Курс за 7 дней</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">По одному дню за подход: 4–5 статей и одно упражнение руками. Прогресс считается по прочитанным статьям, даты — от дня старта.</div>';
+
+    html += '<section class="card hd-head"><div class="hd-progress"><div class="as-num"><b>' + pct + '%</b><span>' + done + ' из ' + totalItems + '</span></div>' +
+      '<div class="as-body"><div class="upd-bar"><i style="width:' + pct + '%"></i></div>' +
+      '<div class="as-legend">' + (start
+        ? 'старт ' + courseDate(start, 0) + ' · сегодня день ' + (cur + 1) + ' из ' + days.length
+        : 'курс ещё не начат') + '</div></div></div>' +
+      '<div class="wz-actions">' + (start
+        ? '<button class="btn" id="courseReset">Начать заново</button>' +
+          '<a class="btn primary" href="#/' + ((days[cur].items.filter(function (id) { return !rm[id]; })[0]) || days[cur].items[0]) + '">Продолжить день ' + (cur + 1) + '</a>'
+        : '<button class="btn primary" id="courseStart">Начать курс сегодня</button>') +
+      '</div></section>';
+
+    days.forEach(function (d, i) {
+      const read = d.items.filter(function (id) { return rm[id]; }).length;
+      const allRead = read === d.items.length;
+      const isNow = start && i === cur;
+      html += '<section class="card cday' + (isNow ? ' now' : '') + (allRead ? ' done' : '') + '">' +
+        '<h3 class="card-h">' + svg('book', 15) + 'День ' + d.day + ' · ' + esc(d.title) +
+        '<span class="hd-gcount">' + read + '/' + d.items.length + '</span></h3>' +
+        '<div class="cday-meta">' + (start ? courseDate(start, i) + ' · ' : '') + '≈ ' + d.hours + ' ч' +
+        (isNow ? ' · <b>сегодня</b>' : '') + (allRead ? ' · ✓ пройден' : '') + '</div>' +
+        '<div class="hint" style="margin:2px 0 10px">' + esc(d.goal) + '</div>' +
+        '<div class="cday-list">' + d.items.map(function (id) {
+          const a = BY_ID[id];
+          if (!a) return '';
+          return '<a class="list-row" href="#/' + id + '"><span class="n">' + (rm[id] ? '✓' : '•') + '</span>' +
+            '<b>' + esc(a.t) + '</b><span>' + esc(a._group ? a._group.name : '') + '</span></a>';
+        }).join('') + '</div>' +
+        '<div class="cday-task"><b>Практика:</b> ' + esc(d.task) + '</div>' +
+        (d.check ? '<div class="cfg" style="margin-top:10px"><div class="cfg-h"><span>Проверка</span>' +
+          '<span class="cfg-btns"><button class="copy">копировать</button></span></div><pre>' + hlCfg(d.check) + '</pre></div>' : '') +
+        '</section>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function bindCourse() {
+    const st = document.getElementById('courseStart');
+    if (st) st.addEventListener('click', function () {
+      store.set('courseStart', courseToday());
+      route();
+      toast('Курс начат — день 1');
+    });
+    const rs = document.getElementById('courseReset');
+    if (rs) rs.addEventListener('click', function () {
+      store.del('courseStart');
+      route();
+      toast('Курс сброшен');
+    });
+  }
+
+  /* ================= порты моделей ================= */
+  function modelsView() {
+    const maps = window.MODEL_MAPS || [];
+    let sel = store.get('modelView') || (maps[0] ? maps[0].id : '');
+    const m = maps.filter(function (x) { return x.id === sel; })[0] || maps[0];
+    if (!m) return '<div class="wrap"><div class="empty">Нет данных о моделях</div></div>';
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Порты моделей</span></div>';
+    html += '<h1 class="art-title">Порты моделей</h1>';
+    html += '<div class="hint" style="margin:-6px 0 10px">Какой порт для WAN, где PoE, где SFP — чтобы не гадать по документации.</div>';
+    html += '<div class="chips">' + maps.map(function (x) {
+      return '<button class="chip' + (x.id === m.id ? ' on' : '') + '" data-model="' + x.id + '">' + esc(x.name.split(' (')[0]) + '</button>';
+    }).join('') + '</div>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + esc(m.name) + '</h3>' +
+      '<div class="hint" style="margin:-4px 0 12px">' + esc(m.note || '') + '</div>' +
+      '<div class="panel">' + m.ports.map(function (p) {
+        const role = String(p.role || '').toLowerCase();
+        return '<div class="port ' + (role === 'wan' ? 'wan' : role === 'wan2' ? 'wan2' : role === 'poe' ? 'poe' : role === 'uplink' ? 'uplink' : 'lan') + '">' +
+          '<span class="p-led"></span>' +
+          '<span class="p-num">' + (typeof p.n === 'number' ? p.n : '') + '</span>' +
+          '<span class="p-lbl">' + esc(p.label) + '</span>' +
+          '<span class="p-role">' + esc(p.role || '') + '</span></div>';
+      }).join('') + '</div>' +
+      '<div class="tbl-wrap" style="margin-top:12px"><table class="tbl"><thead><tr><th>Порт</th><th>Роль</th><th>Заметка</th></tr></thead><tbody>' +
+      m.ports.map(function (p) {
+        return '<tr><td class="mono">' + esc(p.label) + '</td><td>' + esc(p.role || '') + '</td><td>' + esc(p.note || '—') + '</td></tr>';
+      }).join('') + '</tbody></table></div></section>';
+
+    if (m.extras && m.extras.length) {
+      html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Дополнительно</h3><ul class="clean">' +
+        m.extras.map(function (e) { return '<li><b>' + esc(e.t) + '</b> — ' + esc(e.note) + '</li>'; }).join('') + '</ul></section>';
+    }
+    if (m.art && BY_ID[m.art]) {
+      html += '<div class="wz-actions"><a class="btn" href="#/' + m.art + '">Статья: ' + esc(BY_ID[m.art].t) + '</a>' +
+        '<a class="btn" href="#/wizard">Собрать конфиг для этой модели</a></div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function bindModels() {
+    document.querySelectorAll('[data-model]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        store.set('modelView', b.getAttribute('data-model'));
+        route();
+      });
+    });
+  }
+
+  /* ================= экспорт библиотеки в HTML ================= */
+  function libraryHtml() {
+    const parts = [];
+    const ver = window.APP_VERSION || 'dev';
+    parts.push('<!doctype html><html lang="ru"><head><meta charset="utf-8">');
+    parts.push('<meta name="viewport" content="width=device-width,initial-scale=1">');
+    parts.push('<title>MikroTik · Учебник Winbox 4 — версия ' + esc(ver) + '</title>');
+    parts.push('<style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;line-height:1.55;color:#111}');
+    parts.push('h1{margin:0 0 4px;font-size:28px}h2{margin:32px 0 8px;border-bottom:2px solid #eee;padding-bottom:6px}h3{margin:22px 0 6px;font-size:18px}');
+    parts.push('.meta{color:#666;font-size:13px;margin-bottom:4px}.p{white-space:pre-wrap}pre{background:#f6f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:10px;overflow-x:auto;font-size:13px}');
+    parts.push('code{background:#f6f8fa;padding:1px 4px;border-radius:4px}ul,ol{padding-left:22px}@media print{pre{page-break-inside:avoid}}</style></head><body>');
+    parts.push('<h1>MikroTik · Учебник Winbox 4</h1>');
+    parts.push('<div class="meta">Версия ' + esc(ver) + ' · выгружено ' + new Date().toLocaleString('ru-RU') +
+      ' · статей: ' + FLAT.length + '</div>');
+    GROUPS.forEach(function (g) {
+      if (!g.items || !g.items.length) return;
+      parts.push('<h2>' + esc(g.name) + '</h2>');
+      g.items.forEach(function (a) {
+        parts.push('<h3>' + esc(a.t) + '</h3>');
+        if (a.path) parts.push('<div class="meta">' + esc(a.path) + '</div>');
+        if (a.purpose) parts.push('<p>' + esc(a.purpose) + '</p>');
+        if (a.usage && a.usage.length) {
+          parts.push('<p><b>Где применяется:</b></p><ul>' + a.usage.map(function (u) {
+            return '<li>' + esc(u) + '</li>';
+          }).join('') + '</ul>');
+        }
+        if (a.steps && a.steps.length) {
+          parts.push('<p><b>Порядок настройки:</b></p><ol>' + a.steps.map(function (s) {
+            const t = typeof s === 'string' ? s : (s.t + (s.d ? ' — ' + s.d : ''));
+            const cmd = (typeof s === 'object' && s.cmd) ? '<pre>' + esc(s.cmd) + '</pre>' : '';
+            return '<li>' + esc(t) + cmd + '</li>';
+          }).join('') + '</ol>');
+        }
+        if (a.config) {
+          const text = Array.isArray(a.config) ? a.config.join('\n') : String(a.config);
+          parts.push('<p><b>Готовый конфиг:</b></p><pre>' + esc(text) + '</pre>');
+        }
+        if (a.check && a.check.length) {
+          parts.push('<p><b>Проверка:</b></p><ul>' + a.check.map(function (c) {
+            return '<li>' + esc(c) + '</li>';
+          }).join('') + '</ul>');
+        }
+      });
+    });
+    parts.push('<p class="meta">Выгружено из приложения «MikroTik · Учебник Winbox 4».</p></body></html>');
+    return parts.join('\n');
+  }
+
+  function exportLibrary() {
+    const html = libraryHtml();
+    const name = 'mikrotik-gide-library-' + todayISO() + '.html';
+    const saved = saveTextFile(name, html);
+    if (saved === 'blob') toast('Библиотека сохранена: ' + name);
+    else if (saved === 'bridge') toast('Файл сохраняется в Загрузки');
+    else shareText(html, 'Библиотека MikroTik');
   }
 
   /* ================= чек-лист защиты от взлома ================= */
@@ -2452,11 +2674,11 @@
     if (cfg) cfg.addEventListener('click', function () {
       const text = hardenConfigText();
       const box = document.getElementById('hdCfgOut');
-      const name = 'routeros-harden-' + new Date().toISOString().slice(0, 10) + '.rsc';
+      const name = 'routeros-harden-' + todayISO() + '.rsc';
       if (box) {
         box.innerHTML = '<div class="cfg" style="margin-top:12px"><div class="cfg-h"><span>Базовая защита</span>' +
           '<span class="cfg-btns"><button class="copy" id="hdCopyCfg">копировать</button>' +
-          '<button class="copy" id="hdSaveCfg">файл</button></span></div><pre>' + esc(text) + '</pre></div>' +
+          '<button class="copy" id="hdSaveCfg">файл</button></span></div><pre>' + hlCfg(text) + '</pre></div>' +
           '<div class="hint">Вставьте в Winbox → New Terminal. Сначала проверьте адреса сетей и порты в правилах.</div>';
         const cp = document.getElementById('hdCopyCfg');
         if (cp) cp.addEventListener('click', function () { copyText(text); toast('Конфиг скопирован'); });
@@ -2472,7 +2694,7 @@
     const rep = document.getElementById('hdReport');
     if (rep) rep.addEventListener('click', function () {
       const text = hardenReportText();
-      const name = 'protect-report-' + new Date().toISOString().slice(0, 10) + '.txt';
+      const name = 'protect-report-' + todayISO() + '.txt';
       const saved = saveTextFile(name, text);
       if (saved === 'blob') toast('Отчёт сохранён: ' + name);
       else if (saved === 'bridge') toast('Отчёт сохраняется в Загрузки');
@@ -2551,7 +2773,7 @@
           '<div class="ai-head"><span class="ai-badge">' + (f.level === 'error' ? '✕' : f.level === 'warn' ? '!' : 'i') + '</span>' +
           '<b>' + esc(f.t) + '</b><span class="ai-lvl">' + auditLevelName(f.level) + '</span></div>' +
           '<p class="ai-why">' + esc(f.why) + '</p>' +
-          '<div class="ai-fix"><code>' + esc(f.fix) + '</code><button class="btn ai-copy" data-ci="' + i + '">копировать</button></div>' +
+          '<div class="ai-fix"><code>' + hlCfg(f.fix) + '</code><button class="btn ai-copy" data-ci="' + i + '">копировать</button></div>' +
           (art ? '<a class="ai-link" href="#/' + f.art + '">Разобрать: ' + esc(art.t) + '</a>' : '') +
           '</section>';
       }).join('') + '</div>';
@@ -2569,12 +2791,12 @@
     });
     const sh = document.getElementById('aShare');
     if (sh) sh.addEventListener('click', function () {
-      shareText(window.ConfigAudit.report(res, { date: new Date().toISOString().slice(0, 10) }), 'Аудит конфигурации RouterOS');
+      shareText(window.ConfigAudit.report(res, { date: todayISO() }), 'Аудит конфигурации RouterOS');
     });
     const sv = document.getElementById('aSave');
     if (sv) sv.addEventListener('click', function () {
-      const name = 'routeros-audit-' + new Date().toISOString().slice(0, 10) + '.txt';
-      const saved = saveTextFile(name, window.ConfigAudit.report(res, { date: new Date().toISOString().slice(0, 10) }));
+      const name = 'routeros-audit-' + todayISO() + '.txt';
+      const saved = saveTextFile(name, window.ConfigAudit.report(res, { date: todayISO() }));
       if (saved === 'blob') toast('Сохранено: ' + name);
     });
   }
@@ -2619,7 +2841,7 @@
     html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Порядок проверки</h3>' +
       '<ol class="diag-steps">' + d.steps.map(function (s, i) {
         return '<li class="diag-step"><div class="ds-t">' + esc(s.t) + '</div>' +
-          (s.cmd ? '<div class="cfg"><div class="cfg-h"><span>терминал</span><span class="cfg-btns"><button class="copy">копировать</button></span></div><pre>' + esc(s.cmd) + '</pre></div>' : '') +
+          (s.cmd ? '<div class="cfg"><div class="cfg-h"><span>терминал</span><span class="cfg-btns"><button class="copy">копировать</button></span></div><pre>' + hlCfg(s.cmd) + '</pre></div>' : '') +
           (s.art && BY_ID[s.art] ? '<a class="ai-link" href="#/' + s.art + '">Подробнее: ' + esc(BY_ID[s.art].t) + '</a>' : '') +
           '</li>';
       }).join('') + '</ol></section>';
@@ -2699,6 +2921,17 @@
   /* ================= самопроверка ================= */
   let QZ = null;
   let runTick = null;
+  let qzTimer = null;
+
+  function stopQuizTimer() {
+    if (qzTimer) { clearInterval(qzTimer); qzTimer = null; }
+  }
+
+  function qzClock(sec) {
+    const m = Math.max(0, Math.floor(sec / 60));
+    const s2 = Math.max(0, sec % 60);
+    return m + ':' + String(s2).padStart(2, '0');
+  }
 
   function shuffle(arr) {
     for (let i = arr.length - 1; i > 0; i--) {
@@ -2716,12 +2949,13 @@
     return { q: q.q, a: opts, c: c, e: q.e, r: q.r };
   }
 
-  function quizStart(count) {
+  function quizStart(count, exam) {
+    stopQuizTimer();
     const pool = (window.QUIZ || []).slice();
     shuffle(pool);
     const n = count || 10;
     const list = (n >= pool.length ? pool : pool.slice(0, n)).map(quizShuffleOptions);
-    QZ = { list: list, i: 0, ans: [], picked: null, done: false };
+    QZ = { list: list, i: 0, ans: [], picked: null, done: false, exam: !!exam, left: exam ? 20 * 60 : 0 };
   }
 
   function quizScore() {
@@ -2742,6 +2976,7 @@
         '<button class="btn primary" data-qn="10">10 вопросов</button>' +
         '<button class="btn" data-qn="25">25 вопросов</button>' +
         '<button class="btn" data-qn="' + total + '">Все ' + total + '</button>' +
+        '<button class="btn" data-qn="exam">Экзамен: 30 вопросов · 20 мин</button>' +
         '</div></section></div>';
       return html;
     }
@@ -2749,14 +2984,18 @@
     if (!QZ.done) {
       const cur = QZ.list[QZ.i];
       const picked = QZ.picked;
-      html += '<div class="qz-top"><span>Вопрос ' + (QZ.i + 1) + ' из ' + QZ.list.length + '</span>' +
-        '<span>Верно: ' + quizScore() + ' · <button class="lnk" id="qzModes">сменить набор</button></span></div>' +
+      html += '<div class="qz-top"><span>Вопрос ' + (QZ.i + 1) + ' из ' + QZ.list.length + (QZ.exam ? ' · экзамен' : '') + '</span>' +
+        '<span>' + (QZ.exam ? '⏱ <b id="qzTimer">' + qzClock(QZ.left) + '</b>' : 'Верно: ' + quizScore()) +
+        ' · <button class="lnk" id="qzModes">сменить набор</button></span></div>' +
         '<div class="upd-bar"><i style="width:' + Math.round((QZ.i / QZ.list.length) * 100) + '%"></i></div>';
       html += '<section class="card qz-card"><h3 class="qz-q">' + esc(cur.q) + '</h3><div class="qz-opts">' +
         cur.a.map(function (t, i) {
           let cls = 'qz-opt';
           if (picked != null) {
-            if (i === cur.c) cls += ' correct';
+            if (QZ.exam) {
+              if (i === picked) cls += ' sel';
+              else cls += ' muted';
+            } else if (i === cur.c) cls += ' correct';
             else if (i === picked) cls += ' wrong';
             else cls += ' muted';
           }
@@ -2764,18 +3003,25 @@
             '<span class="qz-k">' + String.fromCharCode(65 + i) + '</span><span>' + esc(t) + '</span></button>';
         }).join('') + '</div>';
       if (picked != null) {
-        const ok = picked === cur.c;
-        html += '<div class="qz-fb ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? 'Верно.' : 'Неверно.') + '</b> ' + esc(cur.e) +
-          (cur.r && BY_ID[cur.r] ? ' <a href="#/' + cur.r + '">Разобрать: ' + esc(BY_ID[cur.r].t) + '</a>' : '') + '</div>' +
-          '<div class="wz-actions"><button class="btn primary" id="qzNext">' + (QZ.i + 1 < QZ.list.length ? 'Дальше' : 'Показать результат') + '</button></div>';
+        if (QZ.exam) {
+          html += '<div class="hint" style="margin-top:10px">Ответ принят. Разбор будет в конце экзамена.</div>' +
+            '<div class="wz-actions"><button class="btn primary" id="qzNext">' +
+            (QZ.i + 1 < QZ.list.length ? 'Следующий вопрос' : 'Завершить и показать результат') + '</button></div>';
+        } else {
+          const ok = picked === cur.c;
+          html += '<div class="qz-fb ' + (ok ? 'ok' : 'no') + '"><b>' + (ok ? 'Верно.' : 'Неверно.') + '</b> ' + esc(cur.e) +
+            (cur.r && BY_ID[cur.r] ? ' <a href="#/' + cur.r + '">Разобрать: ' + esc(BY_ID[cur.r].t) + '</a>' : '') + '</div>' +
+            '<div class="wz-actions"><button class="btn primary" id="qzNext">' + (QZ.i + 1 < QZ.list.length ? 'Дальше' : 'Показать результат') + '</button></div>';
+        }
       }
       html += '</section></div>';
       return html;
     }
 
+    stopQuizTimer();
     const score = quizScore();
     const pct = Math.round((score / QZ.list.length) * 100);
-    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Результат</h3>' +
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + (QZ.exam ? 'Результат экзамена' : 'Результат') + '</h3>' +
       '<div class="qz-result"><b>' + score + ' из ' + QZ.list.length + '</b><span>' + pct + '% · ' +
       (pct >= 90 ? 'отлично' : pct >= 70 ? 'хорошо' : pct >= 50 ? 'есть пробелы' : 'стоит перечитать разделы') + '</span></div>' +
       '<div class="upd-bar"><i style="width:' + pct + '%"></i></div></section>';
@@ -2788,6 +3034,9 @@
             '<b>' + esc(x.q.q) + '</b><span>' + (BY_ID[x.q.r] ? esc(BY_ID[x.q.r].t) : 'статья') + '</span></a>';
         }).join('') + '</section>';
     }
+    if (QZ.exam) {
+      html += '<div class="hint">Экзамен: 30 вопросов, 20 минут, без подсказок. Ниже — вопросы, где вы ошиблись, со ссылками на статьи.</div>';
+    }
     html += '<div class="wz-actions"><button class="btn primary" id="qzRestart">Ещё раз</button>' +
       '<button class="btn" id="qzShare">Поделиться результатом</button></div></div>';
     return html;
@@ -2796,31 +3045,54 @@
   function bindQuiz() {
     document.querySelectorAll('[data-qn]').forEach(function (b) {
       b.addEventListener('click', function () {
-        quizStart(parseInt(b.getAttribute('data-qn'), 10) || 10);
+        const v = b.getAttribute('data-qn');
+        if (v === 'exam') quizStart(30, true);
+        else quizStart(parseInt(v, 10) || 10, false);
         route();
       });
     });
     const legacy = document.getElementById('qzStart');
     if (legacy) legacy.addEventListener('click', function () { quizStart(10); route(); });
     const modes = document.getElementById('qzModes');
-    if (modes) modes.addEventListener('click', function () { QZ = null; route(); });
+    if (modes) modes.addEventListener('click', function () { QZ = null; stopQuizTimer(); route(); });
     const st = document.getElementById('qzStart');
     if (st) st.addEventListener('click', function () { quizStart(); rerender(); });
     const rs = document.getElementById('qzRestart');
-    if (rs) rs.addEventListener('click', function () { quizStart(); rerender(); });
+    if (rs) rs.addEventListener('click', function () {
+      const wasExam = !!(QZ && QZ.exam);
+      const n = QZ && QZ.list ? QZ.list.length : 10;
+      quizStart(wasExam ? 30 : n, wasExam);
+      rerender();
+    });
     document.querySelectorAll('.qz-opt').forEach(function (b) {
       b.addEventListener('click', function () {
-        if (QZ.picked != null) return;
+        if (!QZ || QZ.picked != null) return;
         const i = parseInt(b.getAttribute('data-qi'), 10);
         QZ.picked = i;
         QZ.ans[QZ.i] = { pick: i, c: QZ.list[QZ.i].c };
         rerender();
       });
     });
+
+    stopQuizTimer();
+    if (QZ && QZ.exam && !QZ.done) {
+      qzTimer = setInterval(function () {
+        const el = document.getElementById('qzTimer');
+        if (!QZ || QZ.done || !el) { stopQuizTimer(); return; }
+        QZ.left -= 1;
+        el.textContent = qzClock(QZ.left);
+        if (QZ.left <= 0) {
+          stopQuizTimer();
+          QZ.done = true;
+          rerender();
+          toast('Время вышло');
+        }
+      }, 1000);
+    }
     const nx = document.getElementById('qzNext');
     if (nx) nx.addEventListener('click', function () {
       QZ.picked = null;
-      if (QZ.i + 1 >= QZ.list.length) QZ.done = true;
+      if (QZ.i + 1 >= QZ.list.length) { QZ.done = true; stopQuizTimer(); }
       else QZ.i++;
       rerender();
     });
@@ -2964,7 +3236,7 @@
     const rep = document.getElementById('runReport');
     if (rep) rep.addEventListener('click', function () {
       const text = runReportText(a, st);
-      const name = 'report-' + a.id + '-' + new Date().toISOString().slice(0, 10) + '.txt';
+      const name = 'report-' + a.id + '-' + todayISO() + '.txt';
       const saved = saveTextFile(name, text);
       if (saved === 'blob') toast('Отчёт сохранён: ' + name);
       else if (saved === 'bridge') toast('Отчёт сохраняется в Загрузки');
@@ -2987,6 +3259,7 @@
 
   function route() {
     stopTick();
+    if (location.hash.indexOf('#/quiz') !== 0) stopQuizTimer();
     const hash = location.hash.replace(/^#\/?/, '');
     const id = hash.split('?')[0];
 
@@ -3018,20 +3291,22 @@
       tools: 'Инструменты', wizard: 'Мастер конфигурации', subnet: 'Калькулятор подсетей',
       vlsm: 'VLSM-планировщик', diff: 'Сравнить конфиги', quiz: 'Самопроверка',
       audit: 'Аудит конфига', diag: 'Диагностика по симптому', glossary: 'Глоссарий и порты',
-      harden: 'Защита от взлома', backup: 'Данные и резервная копия'
+      harden: 'Защита от взлома', course: 'Курс за 7 дней', models: 'Порты моделей',
+      backup: 'Данные и резервная копия'
     };
     if (TOOL_TITLES[id]) {
       const VIEWS = {
         tools: toolsView, wizard: wizardView, subnet: subnetView, vlsm: vlsmView, diff: diffView,
         quiz: quizView, audit: auditView, diag: diagView, glossary: glossaryView, harden: hardenView,
-        backup: backupView
+        course: courseView, models: modelsView, backup: backupView
       };
       content.innerHTML = VIEWS[id]();
       content.scrollTop = 0;
       markActive(null);
       const BINDS = {
         wizard: bindWizard, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
-        audit: bindAudit, glossary: bindGlossary, harden: bindHarden, backup: bindBackup
+        audit: bindAudit, glossary: bindGlossary, harden: bindHarden, course: bindCourse,
+        models: bindModels, backup: bindBackup
       };
       if (BINDS[id]) BINDS[id]();
       document.title = TOOL_TITLES[id] + ' · MikroTik';

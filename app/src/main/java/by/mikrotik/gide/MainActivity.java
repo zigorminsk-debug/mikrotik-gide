@@ -46,6 +46,7 @@ import android.widget.Toast;
 public class MainActivity extends Activity {
 
     private static final String START_URL = "file:///android_asset/www/index.html";
+    private static final String EXTRA_HASH = "hash";
     private static final String RELEASE_API =
             "https://api.github.com/repos/zigorminsk-debug/mikrotik-gide/releases/latest";
 
@@ -113,6 +114,24 @@ public class MainActivity extends Activity {
         } else {
             web.loadUrl(START_URL);
         }
+        openFromShortcut(getIntent());
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        openFromShortcut(intent);
+    }
+
+    /** Переход на нужный экран из ярлыка (долгое нажатие на иконку приложения). */
+    private void openFromShortcut(Intent intent) {
+        if (intent == null || web == null) return;
+        String hash = intent.getStringExtra(EXTRA_HASH);
+        if (hash == null || hash.isEmpty()) return;
+        if (!hash.startsWith("/")) hash = "/" + hash;
+        web.loadUrl(START_URL + "#" + hash);
+        intent.removeExtra(EXTRA_HASH);
     }
 
     private void openExternally(Uri u) {

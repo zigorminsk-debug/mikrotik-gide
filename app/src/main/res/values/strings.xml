@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MikroTik Winbox 4</string>
+    <string name="sc_wizard">Мастер конфигурации</string>
+    <string name="sc_wizard_long">Собрать конфиг RouterOS по ответам</string>
+    <string name="sc_harden">Защита от взлома</string>
+    <string name="sc_harden_long">Чек-лист защиты роутера по меню Winbox</string>
+    <string name="sc_diag">Диагностика</string>
+    <string name="sc_diag_long">Что проверить, если нет интернета или VPN</string>
+    <string name="sc_quiz">Самопроверка</string>
+    <string name="sc_quiz_long">Экзамен по RouterOS: 30 вопросов</string>
 </resources>
