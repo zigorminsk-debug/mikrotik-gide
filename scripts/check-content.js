@@ -107,6 +107,62 @@ QUIZ.forEach((q, i) => {
   if (q.r && !ids.has(q.r)) { errors.push(`quiz[${i}]: ссылка на несуществующую статью ${q.r}`); quizBad++; }
 });
 
+// id статей контент-пака — на них тоже можно ссылаться из диагностики и глоссария
+const packIds = new Set();
+try {
+  const pk = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../content-pack/pack.json'), 'utf8'));
+  (pk.groups || []).forEach(g => (g.items || []).forEach(a => packIds.add(a.id)));
+} catch (e) { /* пака может не быть — не ошибка */ }
+const knownId = id => ids.has(id) || packIds.has(id);
+
+// диагностика по симптому
+const DIAG = global.window.DIAG || [];
+let diagBad = 0;
+DIAG.forEach((d, i) => {
+  const tag = `diag[${i}]${d && d.id ? ' (' + d.id + ')' : ''}`;
+  if (!d || !d.id || !d.t) { errors.push(`${tag}: нет id или заголовка`); diagBad++; return; }
+  if (!Array.isArray(d.steps) || d.steps.length < 3) { errors.push(`${tag}: меньше трёх шагов`); diagBad++; }
+  (d.steps || []).forEach((s, j) => {
+    if (!s || !s.t) { errors.push(`${tag}: шаг ${j + 1} без текста`); diagBad++; }
+    if (s && s.art && !knownId(s.art)) { errors.push(`${tag}: шаг ${j + 1} ссылается на ${s.art}`); diagBad++; }
+  });
+  if (d.art && !knownId(d.art)) { errors.push(`${tag}: ссылка на статью ${d.art}`); diagBad++; }
+});
+
+// глоссарий и порты
+const GLO = global.window.GLOSSARY || [];
+const PORTS = global.window.PORTS || [];
+let gloBad = 0;
+const gloSeen = new Set();
+GLO.forEach((g, i) => {
+  if (!g || !g.t || !g.d) { errors.push(`glossary[${i}]: нет термина или описания`); gloBad++; return; }
+  if (gloSeen.has(g.t)) { errors.push(`glossary[${i}]: дубликат термина ${g.t}`); gloBad++; }
+  gloSeen.add(g.t);
+  if (g.art && !knownId(g.art)) { errors.push(`glossary[${i}] ${g.t}: ссылка на ${g.art}`); gloBad++; }
+});
+PORTS.forEach((p, i) => {
+  if (!p || !p.port || !p.proto || !p.t) { errors.push(`ports[${i}]: неполная запись`); gloBad++; }
+});
+
+// чек-лист защиты от взлома
+const HARDEN = global.window.HARDEN_GROUPS || [];
+let hdBad = 0, hdItems = 0;
+const hdIds = new Set();
+HARDEN.forEach((g, gi) => {
+  if (!g || !g.id || !g.name) { errors.push(`harden[${gi}]: нет id/названия группы`); hdBad++; return; }
+  (g.items || []).forEach((it, ii) => {
+    hdItems++;
+    const tag = `harden ${g.id}[${ii}]${it && it.id ? ' (' + it.id + ')' : ''}`;
+    if (!it || !it.id || !it.t) { errors.push(`${tag}: нет id или текста`); hdBad++; return; }
+    if (hdIds.has(it.id)) { errors.push(`${tag}: дубликат id`); hdBad++; }
+    hdIds.add(it.id);
+    if (!it.menu) { errors.push(`${tag}: не указано меню Winbox`); hdBad++; }
+    if (!it.why) { errors.push(`${tag}: нет пояснения`); hdBad++; }
+    if (!['critical', 'high', 'medium'].includes(it.risk)) { errors.push(`${tag}: неверная важность ${it.risk}`); hdBad++; }
+    if (it.art && !knownId(it.art)) { errors.push(`${tag}: ссылка на ${it.art}`); hdBad++; }
+  });
+});
+
 // контент-пак (публикуется отдельно от APK)
 let packArticles = 0, packScenes = 0;
 const packPath = path.resolve(__dirname, '../content-pack/pack.json');
@@ -160,6 +216,9 @@ DATA.forEach(g => (g.items || []).forEach(a => {
 console.log(`Разделов: ${DATA.length}, статей: ${articles}, схем: ${scenes}, подсказок со стрелками: ${notes}`);
 console.log(`Шагов с собственным окном: ${mappedSteps} из ${totalSteps} (остальным окно подбирается автоматически)`);
 console.log(`Вопросов самопроверки: ${QUIZ.length}` + (QUIZ.length ? ` (ошибок: ${quizBad})` : ''));
+console.log(`Диагностика: симптомов ${DIAG.length}, шагов ${DIAG.reduce((n, d) => n + (d.steps || []).length, 0)}` + (DIAG.length ? ` (ошибок: ${diagBad})` : ''));
+console.log(`Глоссарий: терминов ${GLO.length}, портов ${PORTS.length}` + (GLO.length ? ` (ошибок: ${gloBad})` : ''));
+console.log(`Защита от взлома: групп ${HARDEN.length}, пунктов ${hdItems}` + (HARDEN.length ? ` (ошибок: ${hdBad})` : ''));
 if (packArticles) console.log(`Контент-пак: статей ${packArticles}, схем ${packScenes}`);
 
 if (errors.length) {

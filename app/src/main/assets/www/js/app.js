@@ -134,6 +134,7 @@
   const sidebar = $('#sidebar');
 
   const SIDE_LINKS = [
+    { href: '#/harden', ic: 'svc', t: 'Защита от взлома', sub: 'чек-лист по меню Winbox' },
     { href: '#/tools', ic: 'gear', t: 'Инструменты', sub: 'мастер, калькуляторы, квиз' },
     { href: '#/backup', ic: 'down', t: 'Мои данные', sub: 'резервная копия и перенос' },
     { href: '#/about', ic: 'info', t: 'О программе', sub: 'build ' + (window.APP_VERSION || 'dev') }
@@ -1364,10 +1365,14 @@
     html += '<div class="hint" style="margin:-6px 0 14px">Всё считается на устройстве и работает без интернета.</div>';
     html += '<div class="tools-grid">' +
       toolCard('#/wizard', 'Мастер конфигурации', 'WAN, LAN, IPv6, Wi-Fi, VPN, пробросы — готовый конфиг', 'gear') +
+      toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню: доступ, firewall, сервисы, Wi-Fi', 'svc') +
+      toolCard('#/audit', 'Аудит конфига', 'Вставьте /export — проверю firewall, NAT, DHCP, Wi-Fi', 'svc') +
+      toolCard('#/diag', 'Диагностика по симптому', 'Нет интернета, VPN, проброс — порядок проверки', 'start') +
       toolCard('#/subnet', 'Калькулятор подсетей', 'Маска, диапазон, broadcast, деление на подсети', 'ip') +
       toolCard('#/vlsm', 'VLSM-планировщик', 'План адресации по числу хостов + CSV', 'iface') +
       toolCard('#/diff', 'Сравнить конфиги', 'Два экспорта — что изменилось', 'task') +
-      toolCard('#/quiz', 'Самопроверка', '10 вопросов по RouterOS с разбором ошибок', 'book') +
+      toolCard('#/quiz', 'Самопроверка', '111 вопросов по RouterOS с разбором ошибок', 'book') +
+      toolCard('#/glossary', 'Глоссарий и порты', 'Термины RouterOS и таблица портов с поиском', 'bridge') +
       toolCard('#/backup', 'Данные и резервная копия', 'Заметки, прогресс, чек-листы — экспорт и импорт', 'down') +
       '</div>';
     html += '<div class="hint">Ещё: под каждой статьёй — «Режим на объекте»: чек-лист с галочками и таймером.</div>';
@@ -1960,7 +1965,7 @@
   }
 
   /* ================= резервная копия данных ================= */
-  const BACKUP_KEYS = ['fav', 'read', 'notes', 'last', 'snq', 'wiz', 'vlsm', 'diffA', 'diffB', 'diffIgnore', 'shots', 'theme', 'fs'];
+  const BACKUP_KEYS = ['fav', 'read', 'notes', 'last', 'snq', 'wiz', 'vlsm', 'diffA', 'diffB', 'diffIgnore', 'shots', 'theme', 'fs', 'audit', 'harden'];
 
   function backupCollect() {
     const data = {};
@@ -2117,6 +2122,421 @@
       diffRender();
     });
     document.getElementById('dIgnore').addEventListener('change', diffRender);
+  }
+
+  /* ================= чек-лист защиты от взлома ================= */
+  const HARDEN_RISK = { critical: 'обязательно', high: 'важно', medium: 'желательно' };
+
+  function hardenState() {
+    let v = {};
+    try { v = JSON.parse(store.get('harden') || '{}') || {}; } catch (e) { v = {}; }
+    if (!v.done || typeof v.done !== 'object') v.done = {};
+    return v;
+  }
+
+  function hardenSave(st) { store.set('harden', JSON.stringify(st)); }
+
+  function hardenAll() {
+    const out = [];
+    (window.HARDEN_GROUPS || []).forEach(function (g) { g.items.forEach(function (i) { out.push(i); }); });
+    return out;
+  }
+
+  function hardenView() {
+    const st = hardenState();
+    const items = hardenAll();
+    const done = items.filter(function (i) { return st.done[i.id]; }).length;
+    const pct = items.length ? Math.round((done / items.length) * 100) : 0;
+    const crit = items.filter(function (i) { return i.risk === 'critical'; });
+    const critDone = crit.filter(function (i) { return st.done[i.id]; }).length;
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Защита от взлома</span></div>';
+    html += '<h1 class="art-title">Защита от взлома</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Чек-лист по меню Winbox 4: где что проверить и как исправить. Отмечайте пункты — прогресс сохраняется, из всех команд можно собрать один конфиг.</div>';
+
+    html += '<section class="card hd-head"><div class="hd-progress"><div class="as-num"><b id="hdDone">' + done + '</b><span>из ' + items.length + '</span></div>' +
+      '<div class="as-body"><div class="upd-bar"><i id="hdBar" style="width:' + pct + '%"></i></div>' +
+      '<div class="as-legend">обязательных: <b id="hdCrit">' + critDone + '</b> из ' + crit.length +
+      ' · осталось <b id="hdLeft">' + (items.length - done) + '</b></div></div></div>' +
+      '<div class="wz-actions"><button class="btn primary" id="hdCfg">Собрать конфиг защиты</button>' +
+      '<button class="btn" id="hdReport">Отчёт</button>' +
+      '<button class="btn" id="hdReset">Сбросить</button></div>' +
+      '<div id="hdCfgOut"></div></section>';
+
+    html += '<section class="card"><label class="hd-filter"><input type="checkbox" id="hdOnly"> показывать только невыполненные</label></section>';
+
+    (window.HARDEN_GROUPS || []).forEach(function (g) {
+      const total = g.items.length;
+      const d = g.items.filter(function (i) { return st.done[i.id]; }).length;
+      html += '<section class="card hd-group" data-g="' + g.id + '"><h3 class="card-h">' + svg(g.ic || 'svc', 15) + esc(g.name) +
+        '<span class="hd-gcount" data-gc="' + g.id + '">' + d + '/' + total + '</span></h3>' +
+        (g.note ? '<div class="hint" style="margin:-4px 0 10px">' + esc(g.note) + '</div>' : '') +
+        g.items.map(function (it) {
+          const on = !!st.done[it.id];
+          const art = it.art && BY_ID[it.art];
+          return '<div class="hd-item' + (on ? ' done' : '') + '" data-id="' + it.id + '" data-risk="' + it.risk + '">' +
+            '<input type="checkbox" class="hd-check" data-hid="' + it.id + '"' + (on ? ' checked' : '') + '>' +
+            '<div class="hd-body"><div class="hd-top"><b>' + esc(it.t) + '</b>' +
+            '<span class="hd-risk ' + it.risk + '">' + HARDEN_RISK[it.risk] + '</span></div>' +
+            '<div class="hd-menu">' + svg('gear', 12) + ' ' + esc(it.menu) + '</div>' +
+            '<p class="hd-why">' + esc(it.why) + '</p>' +
+            (it.cmd ? '<div class="ai-fix"><code>' + esc(it.cmd) + '</code><button class="btn hd-copy" data-cmd="' + it.id + '">копировать</button></div>' : '') +
+            (art ? '<a class="ai-link" href="#/' + it.art + '">Подробнее: ' + esc(art.t) + '</a>' : '') +
+            '</div></div>';
+        }).join('') + '</section>';
+    });
+    html += '</div>';
+    return html;
+  }
+
+  function hardenPaint() {
+    const st = hardenState();
+    const items = hardenAll();
+    const done = items.filter(function (i) { return st.done[i.id]; }).length;
+    const pct = items.length ? Math.round((done / items.length) * 100) : 0;
+    const dEl = document.getElementById('hdDone');
+    const bEl = document.getElementById('hdBar');
+    const lEl = document.getElementById('hdLeft');
+    const cEl = document.getElementById('hdCrit');
+    if (dEl) dEl.textContent = done;
+    if (bEl) bEl.style.width = pct + '%';
+    if (lEl) lEl.textContent = items.length - done;
+    if (cEl) cEl.textContent = items.filter(function (i) { return i.risk === 'critical' && st.done[i.id]; }).length;
+    document.querySelectorAll('.hd-group').forEach(function (g) {
+      const gid = g.getAttribute('data-g');
+      const grp = (window.HARDEN_GROUPS || []).filter(function (x) { return x.id === gid; })[0];
+      if (!grp) return;
+      const d = grp.items.filter(function (i) { return st.done[i.id]; }).length;
+      const badge = g.querySelector('[data-gc]');
+      if (badge) badge.textContent = d + '/' + grp.items.length;
+    });
+    const only = document.getElementById('hdOnly');
+    if (only && only.checked) hardenFilter();
+  }
+
+  function hardenFilter() {
+    const only = document.getElementById('hdOnly');
+    document.querySelectorAll('.hd-item').forEach(function (el) {
+      const on = el.classList.contains('done');
+      el.classList.toggle('off', !!(only && only.checked && on));
+    });
+  }
+
+  function hardenConfigText() {
+    const out = ['# Базовая защита роутера — команды из чек-листа приложения',
+      '# Проверьте адреса сетей и порты перед вставкой. Сохраните текущий конфиг: /export file=before-harden',
+      ''];
+    (window.HARDEN_GROUPS || []).forEach(function (g) {
+      out.push('# ---------- ' + g.name + ' ----------');
+      g.items.forEach(function (it) {
+        if (!it.cmd) return;
+        out.push('# [' + it.menu + '] ' + it.t);
+        String(it.cmd).split('\n').forEach(function (l) { out.push(l); });
+        out.push('');
+      });
+    });
+    return out.join('\n');
+  }
+
+  function hardenReportText() {
+    const st = hardenState();
+    const items = hardenAll();
+    const done = items.filter(function (i) { return st.done[i.id]; }).length;
+    const out = ['Чек-лист защиты роутера от взлома',
+      'Дата: ' + new Date().toLocaleString('ru-RU'),
+      'Выполнено: ' + done + ' из ' + items.length, ''];
+    (window.HARDEN_GROUPS || []).forEach(function (g) {
+      out.push('== ' + g.name + ' ==');
+      g.items.forEach(function (it) {
+        out.push((st.done[it.id] ? '[x] ' : '[ ] ') + it.t + '  (' + it.menu + ', ' + HARDEN_RISK[it.risk] + ')');
+        if (st.done[it.id] === undefined && it.risk === 'critical') out.push('      ! обязательный пункт');
+      });
+      out.push('');
+    });
+    out.push('Отчёт сформирован в приложении «MikroTik · Учебник Winbox 4».');
+    return out.join('\n');
+  }
+
+  function bindHarden() {
+    const st = hardenState();
+    const paintOne = function (el, on) {
+      el.classList.toggle('done', on);
+      const box = el.querySelector('.hd-check');
+      if (box) box.checked = on;
+    };
+
+    document.querySelectorAll('.hd-check').forEach(function (cb) {
+      cb.addEventListener('change', function () {
+        const id = cb.getAttribute('data-hid');
+        const el = cb.closest('.hd-item');
+        if (cb.checked) st.done[id] = true; else delete st.done[id];
+        hardenSave(st);
+        if (el) paintOne(el, cb.checked);
+        hardenPaint();
+        hardenFilter();
+      });
+    });
+
+    document.querySelectorAll('.hd-copy').forEach(function (b) {
+      b.addEventListener('click', function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const id = b.getAttribute('data-cmd');
+        const it = hardenAll().filter(function (x) { return x.id === id; })[0];
+        if (it && it.cmd) { copyText(it.cmd); toast('Команда скопирована'); }
+      });
+    });
+
+    const only = document.getElementById('hdOnly');
+    if (only) only.addEventListener('change', hardenFilter);
+
+    const cfg = document.getElementById('hdCfg');
+    if (cfg) cfg.addEventListener('click', function () {
+      const text = hardenConfigText();
+      const box = document.getElementById('hdCfgOut');
+      const name = 'routeros-harden-' + new Date().toISOString().slice(0, 10) + '.rsc';
+      if (box) {
+        box.innerHTML = '<div class="cfg" style="margin-top:12px"><div class="cfg-h"><span>Базовая защита</span>' +
+          '<span class="cfg-btns"><button class="copy" id="hdCopyCfg">копировать</button>' +
+          '<button class="copy" id="hdSaveCfg">файл</button></span></div><pre>' + esc(text) + '</pre></div>' +
+          '<div class="hint">Вставьте в Winbox → New Terminal. Сначала проверьте адреса сетей и порты в правилах.</div>';
+        const cp = document.getElementById('hdCopyCfg');
+        if (cp) cp.addEventListener('click', function () { copyText(text); toast('Конфиг скопирован'); });
+        const sv = document.getElementById('hdSaveCfg');
+        if (sv) sv.addEventListener('click', function () {
+          const saved = saveTextFile(name, text);
+          if (saved === 'blob') toast('Сохранено: ' + name);
+        });
+        if (box.scrollIntoView) { try { box.scrollIntoView({ block: 'nearest' }); } catch (e) { } }
+      }
+    });
+
+    const rep = document.getElementById('hdReport');
+    if (rep) rep.addEventListener('click', function () {
+      const text = hardenReportText();
+      const name = 'protect-report-' + new Date().toISOString().slice(0, 10) + '.txt';
+      const saved = saveTextFile(name, text);
+      if (saved === 'blob') toast('Отчёт сохранён: ' + name);
+      else if (saved === 'bridge') toast('Отчёт сохраняется в Загрузки');
+      else shareText(text, 'Чек-лист защиты роутера');
+    });
+
+    const reset = document.getElementById('hdReset');
+    if (reset) reset.addEventListener('click', function () {
+      st.done = {};
+      hardenSave(st);
+      route();
+      toast('Отметки сброшены');
+    });
+
+    hardenFilter();
+  }
+
+  /* ================= аудит конфигурации ================= */
+  const AUDIT_SAMPLE = [
+    '# Пример: типичные ошибки маленького офиса',
+    '/interface bridge add name=bridge vlan-filtering=no',
+    '/interface vlan add name=vlan-guest vlan-id=20 interface=bridge',
+    '/interface bridge port add bridge=bridge interface=ether2 pvid=20',
+    '/ip address add address=192.168.88.1/24 interface=bridge',
+    '/ip pool add name=lan-pool ranges=192.168.88.10-192.168.88.200',
+    '/ip dhcp-server add name=dhcp-lan interface=bridge address-pool=lan-pool',
+    '/ip dns set servers=1.1.1.1,8.8.8.8 allow-remote-requests=yes',
+    '/ip firewall nat add chain=srcnat out-interface=ether1 action=masquerade',
+    '/ip firewall filter add chain=input in-interface=ether1 action=drop',
+    '/interface wifi security add name=sec authentication-types=wpa-psk passphrase="12345678"',
+    '/ip cloud set ddns-enabled=yes'
+  ].join('\n');
+
+  function auditView() {
+    const saved = store.get('audit') || '';
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Аудит конфига</span></div>';
+    html += '<h1 class="art-title">Аудит конфига</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Вставьте вывод <code class="inl">/export</code> (или <code class="inl">/export compact</code>) — проверю типовые ошибки безопасности, NAT, DHCP, VLAN и IPv6 и дам команды для исправления. Конфиг никуда не отправляется.</div>';
+    html += '<section class="card"><textarea class="inp mono diff-in" id="aIn" rows="9" placeholder="# вставьте конфиг RouterOS"></textarea>' +
+      '<div class="wz-actions"><button class="btn primary" id="aGo">Проверить</button>' +
+      '<button class="btn" id="aSample">Пример с ошибками</button>' +
+      '<button class="btn" id="aClear">Очистить</button></div></section>';
+    html += '<div id="aOut"></div></div>';
+    return html;
+  }
+
+  function auditLevelName(l) {
+    return l === 'error' ? 'ошибка' : l === 'warn' ? 'внимание' : 'замечание';
+  }
+
+  function auditRender() {
+    const out = document.getElementById('aOut');
+    const inp = document.getElementById('aIn');
+    if (!out || !inp) return;
+    const text = inp.value;
+    store.set('audit', text);
+    if (!window.ConfigAudit) { out.innerHTML = '<div class="empty">Модуль аудита не загружен</div>'; return; }
+    const res = window.ConfigAudit.check(text);
+    if (res.empty) {
+      out.innerHTML = '<section class="card"><div class="empty">Вставьте конфиг — минимум несколько строк из <code class="inl">/export</code>.</div></section>';
+      return;
+    }
+    const tone = res.score >= 80 ? 'ok' : res.score >= 50 ? 'mid' : 'bad';
+    let h = '<section class="card audit-score ' + tone + '"><div class="as-num"><b>' + res.score + '</b><span>из 100</span></div>' +
+      '<div class="as-body"><div class="upd-bar"><i style="width:' + res.score + '%"></i></div>' +
+      '<div class="as-legend">ошибок <b class="c-red">' + res.counts.error + '</b> · предупреждений <b class="c-amber">' +
+      res.counts.warn + '</b> · замечаний <b class="c-mute">' + res.counts.info + '</b> · строк в конфиге ' + (res.lines || 0) + '</div></div></section>';
+
+    if (!res.findings.length) {
+      h += '<section class="card"><div class="qz-fb ok"><b>Проблем не найдено.</b> Конфиг выглядит аккуратно: firewall, NAT, сервисы и время настроены.</div></section>';
+    } else {
+      h += '<div class="audit-list">' + res.findings.map(function (f, i) {
+        const art = BY_ID[f.art];
+        return '<section class="card audit-item ' + f.level + '">' +
+          '<div class="ai-head"><span class="ai-badge">' + (f.level === 'error' ? '✕' : f.level === 'warn' ? '!' : 'i') + '</span>' +
+          '<b>' + esc(f.t) + '</b><span class="ai-lvl">' + auditLevelName(f.level) + '</span></div>' +
+          '<p class="ai-why">' + esc(f.why) + '</p>' +
+          '<div class="ai-fix"><code>' + esc(f.fix) + '</code><button class="btn ai-copy" data-ci="' + i + '">копировать</button></div>' +
+          (art ? '<a class="ai-link" href="#/' + f.art + '">Разобрать: ' + esc(art.t) + '</a>' : '') +
+          '</section>';
+      }).join('') + '</div>';
+      h += '<div class="wz-actions"><button class="btn primary" id="aShare">Поделиться отчётом</button>' +
+        '<button class="btn" id="aSave">Сохранить .txt</button></div>';
+    }
+    out.innerHTML = h;
+
+    out.querySelectorAll('.ai-copy').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const f = res.findings[parseInt(b.getAttribute('data-ci'), 10)];
+        copyText(f.fix);
+        toast('Команда скопирована');
+      });
+    });
+    const sh = document.getElementById('aShare');
+    if (sh) sh.addEventListener('click', function () {
+      shareText(window.ConfigAudit.report(res, { date: new Date().toISOString().slice(0, 10) }), 'Аудит конфигурации RouterOS');
+    });
+    const sv = document.getElementById('aSave');
+    if (sv) sv.addEventListener('click', function () {
+      const name = 'routeros-audit-' + new Date().toISOString().slice(0, 10) + '.txt';
+      const saved = saveTextFile(name, window.ConfigAudit.report(res, { date: new Date().toISOString().slice(0, 10) }));
+      if (saved === 'blob') toast('Сохранено: ' + name);
+    });
+  }
+
+  function bindAudit() {
+    const go = document.getElementById('aGo');
+    if (!go) return;
+    const inp = document.getElementById('aIn');
+    const saved = store.get('audit');
+    if (saved && inp) inp.value = saved;
+    go.addEventListener('click', auditRender);
+    document.getElementById('aSample').addEventListener('click', function () {
+      inp.value = AUDIT_SAMPLE;
+      auditRender();
+    });
+    document.getElementById('aClear').addEventListener('click', function () {
+      inp.value = '';
+      store.set('audit', '');
+      document.getElementById('aOut').innerHTML = '';
+    });
+  }
+
+  /* ================= диагностика по симптому ================= */
+  function diagView() {
+    const list = window.DIAG || [];
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Диагностика</span></div>';
+    html += '<h1 class="art-title">Диагностика по симптому</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Выберите, что не работает — получите порядок проверки с командами, которые можно сразу скопировать в терминал.</div>';
+    html += '<div class="tools-grid">' + list.map(function (d) {
+      return '<a class="tool-card" href="#/diag/' + d.id + '"><span class="tc-ico">' + svg(d.ic || 'svc', 20) + '</span>' +
+        '<b>' + esc(d.t) + '</b><span>' + d.steps.length + ' шагов проверки</span></a>';
+    }).join('') + '</div></div>';
+    return html;
+  }
+
+  function diagDetailView(d) {
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/diag">Диагностика</a><span class="sep">/</span><span>' + esc(d.t) + '</span></div>';
+    html += '<h1 class="art-title">' + esc(d.t) + '</h1>';
+    html += '<div class="hint" style="margin:-6px 0 10px">' + esc(d.why || '') + '</div>';
+    html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Порядок проверки</h3>' +
+      '<ol class="diag-steps">' + d.steps.map(function (s, i) {
+        return '<li class="diag-step"><div class="ds-t">' + esc(s.t) + '</div>' +
+          (s.cmd ? '<div class="cfg"><div class="cfg-h"><span>терминал</span><span class="cfg-btns"><button class="copy">копировать</button></span></div><pre>' + esc(s.cmd) + '</pre></div>' : '') +
+          (s.art && BY_ID[s.art] ? '<a class="ai-link" href="#/' + s.art + '">Подробнее: ' + esc(BY_ID[s.art].t) + '</a>' : '') +
+          '</li>';
+      }).join('') + '</ol></section>';
+    html += '<div class="wz-actions"><a class="btn" href="#/' + (d.art || '') + '">Связанная статья</a>' +
+      '<button class="btn" id="dShare">Поделиться чек-листом</button></div></div>';
+    return html;
+  }
+
+  function diagText(d) {
+    const out = [d.t, ''];
+    d.steps.forEach(function (s, i) {
+      out.push((i + 1) + '. ' + s.t);
+      if (s.cmd) s.cmd.split('\n').forEach(function (c) { out.push('   ' + c); });
+    });
+    out.push('');
+    out.push('Чек-лист из приложения «MikroTik · Учебник Winbox 4».');
+    return out.join('\n');
+  }
+
+  function bindDiagDetail(d) {
+    const sh = document.getElementById('dShare');
+    if (sh) sh.addEventListener('click', function () { shareText(diagText(d), 'Диагностика: ' + d.t); });
+  }
+
+  /* ================= глоссарий и порты ================= */
+  function glossaryView() {
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Глоссарий</span></div>';
+    html += '<h1 class="art-title">Глоссарий и порты</h1>';
+    html += '<div class="hint" style="margin:-6px 0 10px">Термины RouterOS и сетевые порты — с быстрым поиском. Начните вводить слово.</div>';
+    html += '<section class="card"><input class="inp" id="gSearch" placeholder="Найти термин: vlan, nat, dhcp, 443…"></section>';
+    html += '<div id="gOut"></div></div>';
+    return html;
+  }
+
+  function glossaryRender() {
+    const out = document.getElementById('gOut');
+    const q = (document.getElementById('gSearch') || { value: '' }).value.trim().toLowerCase();
+    if (!out) return;
+    const terms = (window.GLOSSARY || []).filter(function (x) {
+      return !q || (x.t + ' ' + x.d).toLowerCase().indexOf(q) >= 0;
+    });
+    const ports = (window.PORTS || []).filter(function (x) {
+      return !q || (x.port + ' ' + x.proto + ' ' + x.t + ' ' + x.note).toLowerCase().indexOf(q) >= 0;
+    });
+
+    let h = '';
+    if (!terms.length && !ports.length) {
+      h = '<div class="card"><div class="empty">Ничего не нашлось. Попробуйте короче: «vlan», «dns», «500».</div></div>';
+      out.innerHTML = h;
+      return;
+    }
+    if (terms.length) {
+      h += '<section class="card"><h3 class="card-h">' + svg('book', 15) + 'Термины · ' + terms.length + '</h3>' +
+        terms.map(function (x) {
+          return '<div class="gl-row"><b>' + esc(x.t) + '</b><span>' + esc(x.d) + '</span>' +
+            (x.art && BY_ID[x.art] ? ' <a class="ai-link" href="#/' + x.art + '">статья</a>' : '') + '</div>';
+        }).join('') + '</section>';
+    }
+    if (ports.length) {
+      h += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'Порты · ' + ports.length + '</h3>' +
+        '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Порт</th><th>Протокол</th><th>Служба</th><th>Заметка</th></tr></thead><tbody>' +
+        ports.map(function (x) {
+          return '<tr><td class="mono">' + esc(x.port) + '</td><td>' + esc(x.proto) + '</td><td>' + esc(x.t) + '</td><td>' + esc(x.note) + '</td></tr>';
+        }).join('') + '</tbody></table></div></section>';
+    }
+    out.innerHTML = h;
+  }
+
+  function bindGlossary() {
+    const s = document.getElementById('gSearch');
+    if (!s) return;
+    s.addEventListener('input', glossaryRender);
+    glossaryRender();
   }
 
   /* ================= самопроверка ================= */
@@ -2279,6 +2699,36 @@
 
   function stopTick() { if (runTick) { clearInterval(runTick); runTick = null; } }
 
+  function runReportText(a, st) {
+    const steps = a.steps || [];
+    const done = runDone(st);
+    const lines = [];
+    lines.push('Отчёт по объекту');
+    lines.push('Тема: ' + a.t);
+    lines.push('Дата: ' + new Date().toLocaleString('ru-RU'));
+    lines.push('Выполнено: ' + done + ' из ' + steps.length);
+    if (st.start) {
+      lines.push('Начато: ' + new Date(st.start).toLocaleString('ru-RU'));
+      lines.push('Затрачено: ' + runClock(st.start));
+    }
+    lines.push('');
+    lines.push('Шаги:');
+    steps.forEach(function (s, i) {
+      const t = typeof s === 'string' ? s : s.t;
+      lines.push((st.d[i] ? '[x] ' : '[ ] ') + t);
+    });
+    let notes = {};
+    try { notes = JSON.parse(store.get('notes') || '{}') || {}; } catch (e) { notes = {}; }
+    if (notes[a.id]) {
+      lines.push('');
+      lines.push('Заметки:');
+      lines.push(notes[a.id]);
+    }
+    lines.push('');
+    lines.push('Отчёт сформирован в приложении «MikroTik · Учебник Winbox 4».');
+    return lines.join('\n');
+  }
+
   function runView(a) {
     const st = runState(a.id);
     if (!st.start) { st.start = Date.now(); runSave(a.id, st); }
@@ -2304,6 +2754,7 @@
 
     html += '<div class="wz-actions">' +
       '<button class="btn" id="runReset">Сбросить</button>' +
+      '<button class="btn" id="runReport">Отчёт</button>' +
       '<a class="btn" href="#/' + a.id + '">Открыть статью</a>' +
       '<button class="btn primary" id="runFinish">' + (done === steps.length && steps.length ? 'Готово ✓' : 'Отметить прочитанной') + '</button>' +
       '</div>';
@@ -2353,6 +2804,16 @@
       toast('Статья отмечена прочитанной');
     });
 
+    const rep = document.getElementById('runReport');
+    if (rep) rep.addEventListener('click', function () {
+      const text = runReportText(a, st);
+      const name = 'report-' + a.id + '-' + new Date().toISOString().slice(0, 10) + '.txt';
+      const saved = saveTextFile(name, text);
+      if (saved === 'blob') toast('Отчёт сохранён: ' + name);
+      else if (saved === 'bridge') toast('Отчёт сохраняется в Загрузки');
+      else shareText(text, 'Отчёт по объекту: ' + a.t);
+    });
+
     stopTick();
     const clk = document.getElementById('runClock');
     if (clk) {
@@ -2399,16 +2860,39 @@
     const TOOL_TITLES = {
       tools: 'Инструменты', wizard: 'Мастер конфигурации', subnet: 'Калькулятор подсетей',
       vlsm: 'VLSM-планировщик', diff: 'Сравнить конфиги', quiz: 'Самопроверка',
-      backup: 'Данные и резервная копия'
+      audit: 'Аудит конфига', diag: 'Диагностика по симптому', glossary: 'Глоссарий и порты',
+      harden: 'Защита от взлома', backup: 'Данные и резервная копия'
     };
     if (TOOL_TITLES[id]) {
-      const VIEWS = { tools: toolsView, wizard: wizardView, subnet: subnetView, vlsm: vlsmView, diff: diffView, quiz: quizView, backup: backupView };
+      const VIEWS = {
+        tools: toolsView, wizard: wizardView, subnet: subnetView, vlsm: vlsmView, diff: diffView,
+        quiz: quizView, audit: auditView, diag: diagView, glossary: glossaryView, harden: hardenView,
+        backup: backupView
+      };
       content.innerHTML = VIEWS[id]();
       content.scrollTop = 0;
       markActive(null);
-      const BINDS = { wizard: bindWizard, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz, backup: bindBackup };
+      const BINDS = {
+        wizard: bindWizard, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
+        audit: bindAudit, glossary: bindGlossary, harden: bindHarden, backup: bindBackup
+      };
       if (BINDS[id]) BINDS[id]();
       document.title = TOOL_TITLES[id] + ' · MikroTik';
+      return;
+    }
+
+    if (id.indexOf('diag/') === 0) {
+      const did = id.slice(5);
+      const sym = (window.DIAG || []).filter(function (x) { return x.id === did; })[0];
+      if (!sym) {
+        content.innerHTML = '<div class="wrap"><div class="empty">Симптом не найден.<br><br><a class="badge" href="#/diag">К диагностике</a></div></div>';
+        return;
+      }
+      content.innerHTML = diagDetailView(sym);
+      content.scrollTop = 0;
+      markActive(null);
+      bindDiagDetail(sym);
+      document.title = sym.t + ' · MikroTik';
       return;
     }
 
