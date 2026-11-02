@@ -234,6 +234,27 @@
       html += card('Где применяется', 'iface', '<ul class="clean">' +
         a.usage.map(function (u) { return '<li>' + inline(u) + '</li>'; }).join('') + '</ul>');
     }
+    if (a.pros || a.cons) {
+      html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Плюсы и минусы</h3>' +
+        '<div class="pc">' +
+        '<div class="pc-col plus"><b>Плюсы</b><ul>' +
+        (a.pros || []).map(function (x) { return '<li>' + inline(x) + '</li>'; }).join('') + '</ul></div>' +
+        '<div class="pc-col minus"><b>Минусы</b><ul>' +
+        (a.cons || []).map(function (x) { return '<li>' + inline(x) + '</li>'; }).join('') + '</ul></div>' +
+        '</div></section>';
+    }
+
+    if (a.table) {
+      html += '<section class="card"><h3 class="card-h">' + svg('book', 15) +
+        (a.table.title || 'Сравнение') + '</h3><div class="tbl-wrap"><table class="tbl"><thead><tr>' +
+        (a.table.head || []).map(function (h) { return '<th>' + esc(h) + '</th>'; }).join('') +
+        '</tr></thead><tbody>' +
+        (a.table.rows || []).map(function (r) {
+          return '<tr>' + r.map(function (c) { return '<td>' + inline(c) + '</td>'; }).join('') + '</tr>';
+        }).join('') +
+        '</tbody></table></div></section>';
+    }
+
     if (a.warn) html += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div><b>Важно.</b> ' + inline(a.warn) + '</div></div>';
     if (a.danger) html += '<div class="warn danger"><span class="wi">' + warnIcon() + '</span><div><b>Осторожно.</b> ' + inline(a.danger) + '</div></div>';
 
@@ -468,15 +489,26 @@
     const newer = cmpVer(latest, cur) > 0;
 
     if (newer) {
+      const native = !!(window.AndroidBridge && window.AndroidBridge.downloadAndInstall);
       box.className = 'upd new';
       box.innerHTML = 'Доступна новая версия: <b class="ver">v' + esc(latest) + '</b><br>' +
         'У вас установлена <span class="ver">v' + esc(cur) + '</span>.<br>' +
         '<span style="font-size:12.5px">' + esc(rel.name || '') + '</span>' +
         '<div class="upd-actions">' +
-        (apk ? '<a class="btn primary" href="' + esc(apk.browser_download_url) + '">Скачать APK ' + esc(latest) + '</a>' : '') +
+        (apk ? (native
+          ? '<button class="btn primary" id="dlBtn">Скачать и установить v' + esc(latest) + '</button>'
+          : '<a class="btn primary" href="' + esc(apk.browser_download_url) + '">Скачать APK ' + esc(latest) + '</a>') : '') +
         '<a class="btn" href="' + esc(rel.html_url) + '">Страница релиза ↗</a>' +
         '</div>' +
-        '<div style="font-size:12px;margin-top:8px;opacity:.85">Новая версия подписана тем же ключом — установится поверх, данные и настройки сохранятся.</div>';
+        '<div style="font-size:12px;margin-top:8px;opacity:.85">' +
+        (native
+          ? 'Файл скачается внутри приложения и сразу передастся установщику — браузер не откроется. После установки файл удаляется.'
+          : 'Новая версия подписана тем же ключом — установится поверх, данные и настройки сохранятся.') +
+        '</div>';
+      const dl = $('#dlBtn');
+      if (dl && apk) {
+        dl.addEventListener('click', function () { startDownload(apk.browser_download_url, latest); });
+      }
     } else {
       box.className = 'upd ok';
       box.innerHTML = 'У вас последняя версия — <b class="ver">v' + esc(cur) + '</b>.<br>' +
@@ -484,6 +516,71 @@
     }
     store.set('updChecked', String(Date.now()));
   }
+
+  /* ---------- скачивание и установка силами приложения ---------- */
+  function startDownload(url, ver) {
+    const box = $('#updBox');
+    if (!box) return;
+    box.className = 'upd new';
+    box.innerHTML = 'Скачиваем обновление <b class="ver">v' + esc(ver) + '</b>…' +
+      '<div class="upd-bar"><i id="updBar" style="width:0%"></i></div>' +
+      '<div id="updStatus" style="font-size:12.5px;margin-top:7px">Подготовка…</div>';
+    try {
+      window.AndroidBridge.downloadAndInstall(url, ver);
+    } catch (e) {
+      renderUpdateError(e);
+    }
+  }
+
+  /* сюда приходят сообщения из нативного слоя */
+  window.__updateProgress = function (state, message) {
+    const box = $('#updBox');
+    if (!box) return;
+    const bar = $('#updBar');
+    const st = $('#updStatus');
+
+    if (state === 'progress') {
+      const p = parseInt(message, 10) || 0;
+      if (bar) bar.style.width = p + '%';
+      if (st) st.textContent = 'Загрузка… ' + p + '%';
+      return;
+    }
+    if (state === 'downloading') {
+      if (st) st.textContent = message || 'Скачиваем обновление…';
+      return;
+    }
+    if (state === 'installing') {
+      if (bar) bar.style.width = '100%';
+      if (st) st.textContent = 'Передаём файл системному установщику…';
+      return;
+    }
+    if (state === 'done') {
+      box.className = 'upd ok';
+      box.innerHTML = '<b class="ver">Файл готов</b><br>' +
+        'Подтвердите установку в системном окне «Обновить приложение?».<br>' +
+        '<span style="font-size:12.5px">После установки приложение запустится уже новой версией, ' +
+        'а скачанный APK удалится автоматически.</span>' +
+        '<div class="upd-actions"><a class="btn" href="' + RELEASES_URL + '">Все релизы ↗</a></div>';
+      return;
+    }
+    if (state === 'permission') {
+      box.className = 'upd err';
+      box.innerHTML = '<b>Нужно разрешение</b><br>' + esc(message || '') +
+        '<div class="upd-actions"><button class="btn primary" id="permBtn">Открыть настройки</button></div>';
+      const b = $('#permBtn');
+      if (b) b.addEventListener('click', function () {
+        if (window.AndroidBridge && window.AndroidBridge.openInstallSettings) {
+          window.AndroidBridge.openInstallSettings();
+        }
+      });
+      return;
+    }
+    if (state === 'error') {
+      box.className = 'upd err';
+      box.innerHTML = 'Не удалось скачать обновление: <b>' + esc(message || 'нет сети') + '</b>' +
+        '<div class="upd-actions"><a class="btn" href="' + RELEASES_URL + '">Скачать вручную ↗</a></div>';
+    }
+  };
 
   function renderUpdateError(err) {
     const box = $('#updBox');

@@ -7,6 +7,7 @@ import android.graphics.Color;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.view.KeyEvent;
 import android.view.Window;
 import android.view.WindowManager;
@@ -91,6 +92,9 @@ public class MainActivity extends Activity {
 
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
 
+        // удаляем APK, оставшиеся от предыдущих попыток обновления
+        UpdateInstaller.cleanup(this);
+
         if (savedInstanceState != null) {
             web.restoreState(savedInstanceState);
         } else {
@@ -128,6 +132,59 @@ public class MainActivity extends Activity {
             }).start();
         }
 
+        /** Скачать APK и передать его системному установщику (без браузера). */
+        @JavascriptInterface
+        public void downloadAndInstall(final String url, final String version) {
+            if (url == null || !(url.startsWith("https://") || url.startsWith("http://"))) {
+                postUpdate("error", "Некорректная ссылка на обновление");
+                return;
+            }
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O
+                    && !getPackageManager().canRequestPackageInstalls()) {
+                postUpdate("permission", "Разрешите установку приложений из этого источника");
+                openInstallSettings();
+                return;
+            }
+            UpdateInstaller.start(MainActivity.this, url, version, new UpdateInstaller.Callback() {
+                @Override
+                public void onProgress(final int percent, long done, long total) {
+                    postUpdate("progress", String.valueOf(percent));
+                }
+
+                @Override
+                public void onState(final String state, final String message) {
+                    postUpdate(state, message);
+                }
+            });
+        }
+
+        /** Экран «Установка неизвестных приложений» для нашего пакета. */
+        @JavascriptInterface
+        public void openInstallSettings() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                try {
+                    startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
+                            Uri.parse("package:" + getPackageName())));
+                    return;
+                } catch (Exception ignored) {
+                }
+            }
+            try {
+                startActivity(new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        Uri.parse("package:" + getPackageName())));
+            } catch (Exception ignored) {
+            }
+        }
+
+        /** true, если система уже разрешает установку пакетов этому приложению. */
+        @JavascriptInterface
+        public boolean canInstallPackages() {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                return getPackageManager().canRequestPackageInstalls();
+            }
+            return true;
+        }
+
         @JavascriptInterface
         public void openUrl(String url) {
             if (url != null && (url.startsWith("https://") || url.startsWith("http://"))) {
@@ -147,6 +204,19 @@ public class MainActivity extends Activity {
                 return "{}";
             }
         }
+    }
+
+    /** Сообщение в JS: window.__updateProgress(state, message). */
+    private void postUpdate(final String state, final String message) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (web == null) return;
+                String js = "window.__updateProgress && window.__updateProgress("
+                        + JSONObject.quote(state) + "," + JSONObject.quote(message) + ");";
+                web.evaluateJavascript(js, null);
+            }
+        });
     }
 
     private String httpGet(String urlStr) {

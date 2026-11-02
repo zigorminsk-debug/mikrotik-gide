@@ -39,6 +39,7 @@
     { g: 'Tools', items: ['Ping', 'Traceroute', 'Torch', 'Profiler', 'Sniffer', 'Netwatch', 'Graphing',
       'Bandwidth Test', 'Traffic Generator', 'Email', 'Wake on LAN', 'RoMON', 'Fetch', 'Speed Test'] },
     { g: 'WiFi', items: ['WiFi', 'Security', 'Access List', 'Registration', 'CAPsMAN', 'Provisioning'] },
+    { g: 'WireGuard', items: ['WireGuard', 'Peers'] },
     { g: 'Certificates', items: ['Certificates'] }
   ];
 
@@ -433,14 +434,15 @@
   }
 
   function openZoom(block, spec) {
-    const host = block.querySelector('.scene-host');
-    const src = host && host.querySelector('.scene-scale');
+    const src = block.querySelector('.scene-host .scene-scale');
     if (!src) return;
 
     const clone = src.cloneNode(true);
-    clone.style.transform = 'scale(1)';
+    clone.style.transform = 'none';
+    clone.style.margin = '0';
 
     const layer = el('div', 'zoom-layer');
+
     const head = el('div', 'zoom-head');
     const title = (spec && (spec.cap || spec.win)) || 'Схема Winbox 4';
     head.innerHTML = '<span class="title">' + esc(title) + '</span>';
@@ -453,62 +455,159 @@
     bMinus.type = bPlus.type = bFit.type = 'button';
     bMinus.setAttribute('aria-label', 'Уменьшить');
     bPlus.setAttribute('aria-label', 'Увеличить');
-    bFit.setAttribute('aria-label', 'По ширине экрана');
+    bFit.setAttribute('aria-label', 'Вписать по ширине экрана');
     ctl.appendChild(bMinus); ctl.appendChild(pct); ctl.appendChild(bPlus); ctl.appendChild(bFit);
 
     const bClose = el('button', 'icon-btn', '✕');
     bClose.type = 'button';
     bClose.setAttribute('aria-label', 'Закрыть');
-
     head.appendChild(ctl);
     head.appendChild(bClose);
 
-    const body = el('div', 'zoom-body');
-    const inner = el('div', 'zoom-inner');
-    inner.appendChild(clone);
-    body.appendChild(inner);
+    const stage = el('div', 'zoom-stage');
+    const canvas = el('div', 'zoom-canvas');
+    const box = el('div', 'zoom-box');
+    box.appendChild(clone);
+    canvas.appendChild(box);
+    stage.appendChild(canvas);
 
-    const tip = el('div', 'zoom-tip', 'Прокрутите схему вбок · кнопки − / + меняют масштаб · ⇔ вписывает по ширине');
+    const tip = el('div', 'zoom-tip',
+      'Один палец — прокрутка · щипок двумя пальцами — масштаб · двойной тап — увеличить');
+
     layer.appendChild(head);
-    layer.appendChild(body);
+    layer.appendChild(stage);
     layer.appendChild(tip);
     document.body.appendChild(layer);
     document.body.style.overflow = 'hidden';
 
-    const base = clone.querySelector('.wb, .wb-term');
-    const natural = (base && base.offsetWidth) || 1000;
-    const naturalH = (base && base.offsetHeight) || 420;
-    const MAXK = 2.6;
+    const MAXK = 3;
+    let natW = Math.round(clone.offsetWidth) || 1000;
+    let natH = Math.round(clone.offsetHeight) || 420;
+    let k = 1, padL = 0, padT = 0;
 
-    // минимальный масштаб = «схема ровно по ширине экрана»,
-    // поэтому вокруг картинки никогда не появляются белые поля
     function fitK() {
-      const avail = (body.clientWidth || window.innerWidth) - 12;
-      return Math.min(MAXK, Math.max(0.25, Math.round((avail / natural) * 1000) / 1000));
+      const sw = stage.clientWidth || window.innerWidth;
+      return Math.min(MAXK, Math.max(0.2, (sw - 8) / natW));
     }
 
-    let k = fitK();
-
+    /* размеры и положение считаем сами — без flex-центрирования,
+       чтобы схема гарантированно занимала экран и не уезжала в угол */
     function apply() {
-      clone.style.transform = 'scale(' + k + ')';
-      inner.style.width = Math.ceil(natural * k) + 'px';
-      inner.style.height = Math.ceil(naturalH * k) + 'px';
+      const sw = stage.clientWidth, sh = stage.clientHeight;
+      const w = natW * k, h = natH * k;
+      const cw = Math.max(sw, Math.ceil(w));
+      const ch = Math.max(sh, Math.ceil(h));
+      canvas.style.width = cw + 'px';
+      canvas.style.height = ch + 'px';
+      padL = Math.max(0, (cw - w) / 2);
+      padT = Math.max(0, (ch - h) / 2);
+      box.style.width = natW + 'px';
+      box.style.height = natH + 'px';
+      box.style.transform = 'scale(' + k + ')';
+      box.style.left = padL.toFixed(1) + 'px';
+      box.style.top = padT.toFixed(1) + 'px';
       pct.textContent = Math.round(k * 100) + '%';
       const f = fitK();
       bMinus.disabled = k <= f + 0.001;
       bPlus.disabled = k >= MAXK - 0.001;
-      bFit.classList.toggle('on', Math.abs(k - f) < 0.006);
+      bFit.classList.toggle('on', Math.abs(k - f) < 0.008);
+    }
+
+    /* масштаб вокруг точки (px, py) внутри сцены */
+    function zoomAt(kNew, px, py) {
+      const nx = (stage.scrollLeft + px - padL) / k;
+      const ny = (stage.scrollTop + py - padT) / k;
+      k = Math.min(MAXK, Math.max(fitK(), kNew));
+      apply();
+      stage.scrollLeft = Math.max(0, nx * k + padL - px);
+      stage.scrollTop = Math.max(0, ny * k + padT - py);
     }
 
     function step(d) {
-      const f = fitK();
-      k = Math.min(MAXK, Math.max(f, Math.round((k + d) * 100) / 100));
-      apply();
+      zoomAt(Math.round((k + d) * 100) / 100, stage.clientWidth / 2, stage.clientHeight / 2);
     }
-
     bMinus.addEventListener('click', function () { step(-0.15); });
     bPlus.addEventListener('click', function () { step(0.15); });
-    bFit.addEventListener('click', function () { k = fitK(); apply(); });
+    bFit.addEventListener('click', function () {
+      k = fitK(); apply();
+      stage.scrollLeft = 0; stage.scrollTop = 0;
+    });
+
+    /* ---------- жесты ---------- */
+    let pan = null, pinch = null, lastTap = 0, tapX = 0, tapY = 0;
+
+    function d2(t) {
+      const dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+      return Math.hypot(dx, dy);
+    }
+    function mid(t) {
+      const r = stage.getBoundingClientRect();
+      return {
+        x: (t[0].clientX + t[1].clientX) / 2 - r.left,
+        y: (t[0].clientY + t[1].clientY) / 2 - r.top
+      };
+    }
+
+    stage.addEventListener('touchstart', function (e) {
+      if (e.touches.length === 2) {
+        pinch = { d: d2(e.touches) || 1, k: k };
+        pan = null;
+        e.preventDefault();
+      } else if (e.touches.length === 1) {
+        pan = {
+          x: e.touches[0].clientX, y: e.touches[0].clientY,
+          sl: stage.scrollLeft, st: stage.scrollTop, moved: 0
+        };
+        const now = Date.now();
+        if (now - lastTap < 320 &&
+            Math.abs(e.touches[0].clientX - tapX) < 30 &&
+            Math.abs(e.touches[0].clientY - tapY) < 30) {
+          // двойной тап: вписать ⇄ увеличить вокруг точки нажатия
+          const rect = stage.getBoundingClientRect();
+          const f = fitK();
+          if (k > f + 0.05) {
+            k = f; apply();
+            stage.scrollLeft = 0; stage.scrollTop = 0;
+          } else {
+            zoomAt(f * 2, e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top);
+          }
+          lastTap = 0;
+          return;
+        }
+        lastTap = now;
+        tapX = e.touches[0].clientX;
+        tapY = e.touches[0].clientY;
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchmove', function (e) {
+      if (e.touches.length === 2 && pinch) {
+        e.preventDefault();
+        const d = d2(e.touches);
+        const m = mid(e.touches);
+        zoomAt(pinch.k * (d / pinch.d), m.x, m.y);
+      } else if (e.touches.length === 1 && pan) {
+        e.preventDefault();
+        const dx = e.touches[0].clientX - pan.x;
+        const dy = e.touches[0].clientY - pan.y;
+        pan.moved = Math.max(pan.moved, Math.abs(dx) + Math.abs(dy));
+        stage.scrollLeft = pan.sl - dx;
+        stage.scrollTop = pan.st - dy;
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchend', function (e) {
+      if (e.touches.length === 0) { pinch = null; pan = null; }
+      else if (e.touches.length === 1 && pinch) { pinch = null; }
+    });
+
+    /* колесо мыши (для превью в браузере) */
+    stage.addEventListener('wheel', function (e) {
+      if (!e.ctrlKey && Math.abs(e.deltaY) < 2) return;
+      e.preventDefault();
+      const r = stage.getBoundingClientRect();
+      zoomAt(k * (e.deltaY > 0 ? 0.92 : 1.08), e.clientX - r.left, e.clientY - r.top);
+    }, { passive: false });
 
     function close() {
       document.removeEventListener('keydown', onKey);
@@ -520,14 +619,25 @@
     function onKey(e) { if (e.key === 'Escape') close(); }
     function onResize() {
       const f = fitK();
-      if (k < f) { k = f; }           // после поворота экрана снова вписываем
+      if (k < f) k = f;
       apply();
     }
     bClose.addEventListener('click', close);
     document.addEventListener('keydown', onKey);
     window.addEventListener('resize', onResize);
     window.addEventListener('orientationchange', onResize);
-    apply();
+
+    /* первый расчёт — после того как слой получил размеры */
+    function boot() {
+      natW = Math.round(clone.offsetWidth) || natW;
+      natH = Math.round(clone.offsetHeight) || natH;
+      if (stage.clientWidth < 20) { requestAnimationFrame(boot); return; }
+      k = fitK();
+      apply();
+      stage.scrollLeft = 0;
+      stage.scrollTop = 0;
+    }
+    requestAnimationFrame(boot);
   }
 
   function mount(container, specs) {
