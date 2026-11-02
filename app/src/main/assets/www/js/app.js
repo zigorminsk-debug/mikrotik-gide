@@ -1102,8 +1102,10 @@
   function buildIndex() {
     SEARCH_INDEX = FLAT.map(function (a) {
       const steps = (a.steps || []).map(function (s) { return typeof s === 'string' ? s : (s.t + ' ' + (s.d || '')); }).join(' ');
+      const cfg = a.config ? (Array.isArray(a.config) ? a.config.join(' ') : String(a.config)) : '';
+      const cmds = (a.check || []).map(function (c) { return c.c || ''; }).join(' ');
       const text = [a.t, a.path, a.purpose, (a.usage || []).join(' '), steps,
-        (a.mistakes || []).join(' '), (a.tags || []).join(' ')].join(' ').toLowerCase();
+        (a.mistakes || []).join(' '), (a.tags || []).join(' '), cfg, cmds].join(' ').toLowerCase();
       return { a: a, text: text };
     });
   }
