@@ -27,7 +27,7 @@ window.DATA.push({
       scenes: [
         {
           path: 'IP → Firewall → Filter Rules', win: 'Firewall', tab: 'Filter Rules',
-          tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
           cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 68 }, { t: 'Action', w: 124 }, { t: 'Connection State', w: 118 }, { t: 'In. Interface List', w: 116 }, { t: 'Comment', w: 230 }],
           rows: [
             ['0', 'input', { v: 'accept', c: 'ok' }, 'established,related', '', 'established'],
@@ -74,7 +74,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Firewall → NAT', win: 'Firewall', tab: 'NAT',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
         cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 68 }, { t: 'Protocol', w: 66 }, { t: 'Dst. Port', w: 68 }, { t: 'In. Interface List', w: 112 }, { t: 'Action', w: 88 }, { t: 'To Addresses', w: 120 }, { t: 'To Ports', w: 70 }],
         rows: [
           ['0', 'srcnat', '', '', '', { v: 'masquerade', c: 'ok' }, '', ''],
@@ -116,7 +116,7 @@ window.DATA.push({
       scenes: [
         {
           path: 'IP → Firewall → Filter Rules', win: 'Firewall', tab: 'Filter Rules',
-          tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
           cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 70 }, { t: 'Action', w: 70 }, { t: 'In. Interface', w: 108 }, { t: 'Out. Interface', w: 108 }, { t: 'Comment', w: 220 }],
           rows: [
             ['0', 'forward', { v: 'drop', c: 'no', m: 1 }, { v: 'vlan20-guest', m: 2 }, { v: 'bridge-lan', m: 3 }, 'guest → LAN запрещён'],
@@ -233,7 +233,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Firewall → Mangle', win: 'Firewall', tab: 'Mangle',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Connections'],
         cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 80 }, { t: 'Per Connection Classifier', w: 190 }, { t: 'Action', w: 130 }, { t: 'New Conn. Mark', w: 120 }, { t: 'New Routing Mark', w: 120 }],
         rows: [
           ['0', { v: 'prerouting', m: 1 }, { v: 'both-addresses:2/0', m: 2 }, { v: 'mark-connection', m: 3 }, { v: 'conn-wan1', m: 4 }, ''],
@@ -518,7 +518,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Firewall → Address Lists', win: 'Address Lists', tab: 'Address Lists',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
         cols: [{ t: 'List', w: 120 }, { t: 'Address', w: 150 }, { t: 'Timeout', w: 90 }, { t: 'Creation Time', w: 150 }, { t: 'Dynamic', w: 70 }],
         rows: [
           [{ v: 'blacklist', m: 1 }, { v: '45.148.10.7', m: 2 }, { v: '23h59m', m: 3 }, 'nov/02/2026 09:45', 'true'],
@@ -554,7 +554,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Firewall → Filter Rules', win: 'Firewall', tab: 'Filter Rules',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
         cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 70 }, { t: 'Action', w: 70 }, { t: 'Src. Address List', w: 130 }, { t: 'Dst. Address List', w: 130 }, { t: 'Comment', w: 200 }],
         rows: [
           ['0', 'forward', { v: 'accept', c: 'ok' }, { v: 'tenants', m: 1 }, '', 'тенанты в интернет'],

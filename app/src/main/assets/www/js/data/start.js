@@ -103,7 +103,7 @@ window.DATA.push({
         },
         {
           path: 'IP → Firewall → Filter Rules', win: 'Firewall', tab: 'Filter Rules',
-          tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
           cols: [{ t: '#', w: 30 }, { t: 'Chain', w: 74 }, { t: 'Action', w: 68 },
             { t: 'Src. Address', w: 108 }, { t: 'Dst. Port', w: 70 }, { t: 'In. Interface', w: 92 },
             { t: 'Bytes', w: 74 }, { t: 'Comment', w: 168 }],
@@ -153,7 +153,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Firewall → Filter Rules', win: 'Firewall', tab: 'Filter Rules',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
         tools: [{ t: '+', id: 'add', m: 1 }, { t: '−', id: 'del' }, { t: '✓', id: 'en' }, { t: '✕', id: 'dis' },
           { t: '⇅', id: 'sort' }, { t: '⌕', id: 'find' }],
         cols: [{ t: '#', w: 30 }, { t: 'Chain', w: 80 }, { t: 'Action', w: 74 }, { t: 'Bytes', w: 90 }, { t: 'Comment', w: 240 }],

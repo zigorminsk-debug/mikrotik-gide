@@ -477,7 +477,7 @@
       { t: 'Проверка', d: 'Счётчики правил в Filter (колонка Bytes) должны расти. Если правило не считает — трафик идёт другим путём.' }
     ],
     scenes: [{
-      path: 'IP → Firewall → Filter Rules', win: 'Firewall', tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw'], tab: 'Filter Rules',
+      path: 'IP → Firewall → Filter Rules', win: 'Firewall', tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW'], tab: 'Filter Rules',
       tools: [{ t: '+', id: 'add', m: 1 }, { t: '−' }, { t: '✓' }, { t: '✕' }, { t: '⌕' }],
       cols: [{ t: '#', w: 30 }, { t: 'Chain', w: 80 }, { t: 'Protocol', w: 80 }, { t: 'Dst. Port', w: 86 }, { t: 'In. Interface', w: 110 }, { t: 'Action', w: 90 }],
       rows: [

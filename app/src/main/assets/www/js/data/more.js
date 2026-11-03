@@ -110,7 +110,7 @@
     ],
     scenes: [{
       path: 'IP → Firewall → Filter Rules', win: 'Winbox 4', tab: 'Filter Rules',
-      tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+      tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
       cols: [{ t: '#', w: 30 }, { t: 'Chain', w: 80 }, { t: 'Action', w: 76 }, { t: 'Bytes', w: 90 }, { t: 'Comment', w: 250 }],
       rows: [
         ['0', 'input', 'accept', '12.4 GiB', 'established'],

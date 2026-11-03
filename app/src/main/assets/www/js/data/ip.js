@@ -258,7 +258,7 @@ window.DATA.push({
       scenes: [
         {
           path: 'IP → Firewall → Filter Rules', win: 'Firewall', tab: 'Filter Rules',
-          tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
           tools: [{ t: '+', id: 'add', m: 1 }, { t: '−' }, { t: '✓' }, { t: '✕' }, { t: '⇅' }, { t: '⌕' }],
           cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 70 }, { t: 'Action', w: 124 }, { t: 'Connection State', w: 120 },
             { t: 'In. Interface List', w: 118 }, { t: 'Bytes', w: 78 }, { t: 'Comment', w: 200 }],
@@ -331,7 +331,7 @@ window.DATA.push({
       scenes: [
         {
           path: 'IP → Firewall → NAT', win: 'Firewall', tab: 'NAT',
-          tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
           cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 66 }, { t: 'Protocol', w: 66 }, { t: 'Dst. Port', w: 66 },
             { t: 'In. Interface List', w: 110 }, { t: 'Action', w: 92 }, { t: 'To Addresses', w: 118 }, { t: 'Comment', w: 150 }],
           rows: [
@@ -397,7 +397,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Firewall → Mangle', win: 'Firewall', tab: 'Mangle',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
         cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 90 }, { t: 'Action', w: 130 }, { t: 'New Connection Mark', w: 130 },
           { t: 'New Packet Mark', w: 118 }, { t: 'Comment', w: 170 }],
         rows: [
@@ -431,8 +431,8 @@ window.DATA.push({
         { t: 'Проверка', d: 'IP → Firewall → Connections: число записей не должно расти лавинообразно.' }
       ],
       scenes: [{
-        path: 'IP → Firewall → Raw', win: 'Firewall', tab: 'Raw',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+        path: 'IP → Firewall → Raw', win: 'Firewall', tab: 'RAW',
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
         cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 90 }, { t: 'Action', w: 80 }, { t: 'Src. Address List', w: 130 }, { t: 'Connection State', w: 120 }, { t: 'Bytes', w: 80 }],
         rows: [
           ['0', 'prerouting', { v: 'drop', c: 'no', m: 1 }, { v: 'blacklist', m: 2 }, '', '18.2 GiB'],
@@ -464,7 +464,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Firewall → Connections', win: 'Connections', tab: 'Connections',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Tracking', 'Address Lists'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Connections', 'Tracking', 'Address Lists'],
         cols: [{ t: 'Src. Address', w: 130 }, { t: 'Dst. Address', w: 130 }, { t: 'Protocol', w: 70 }, { t: 'Dst. Port', w: 70 }, { t: 'Bytes', w: 96 }, { t: 'Connection Mark', w: 120 }],
         rows: [
           ['192.168.88.24', '142.250.74.14:443', 'tcp', '443', { v: '84.2 MiB', m: 1 }, 'conn-wan1'],
@@ -495,7 +495,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IP → Firewall → Address Lists', win: 'Address Lists', tab: 'Address Lists',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections', 'Address Lists'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
         tools: [{ t: '+', id: 'add', m: 1 }, { t: '−' }, { t: '✓' }, { t: '✕' }],
         cols: [{ t: 'List', w: 130 }, { t: 'Address', w: 160 }, { t: 'Timeout', w: 90 }, { t: 'Creation Time', w: 150 }, { t: 'Dynamic', w: 70 }],
         rows: [
@@ -1078,7 +1078,7 @@ window.DATA.push({
       ],
       scenes: [{
         path: 'IPv6 → Firewall → Filter Rules', win: 'IPv6 Firewall', tab: 'Filter Rules',
-        tabs: ['Filter Rules', 'NAT', 'Mangle', 'Raw', 'Connections'],
+        tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Connections'],
         cols: [{ t: '#', w: 28 }, { t: 'Chain', w: 76 }, { t: 'Action', w: 74 }, { t: 'Protocol', w: 86 }, { t: 'Connection State', w: 128 }, { t: 'Comment', w: 190 }],
         rows: [
           ['0', 'input', { v: 'accept', c: 'ok' }, '', 'established,related', 'accept established'],
