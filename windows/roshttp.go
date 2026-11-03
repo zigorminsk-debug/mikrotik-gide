@@ -88,3 +88,163 @@ func (s *server) handleRouterSaved(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "метод не поддерживается", http.StatusMethodNotAllowed)
 	}
 }
+
+// handleRouterApply — сравнение («что изменится») и применение конфига.
+// dry=true только сравнивает с текущим состоянием, ничего не меняя.
+func (s *server) handleRouterApply(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "нужен POST", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		Address     string `json:"address"`
+		User        string `json:"user"`
+		Password    string `json:"password"`
+		Text        string `json:"text"`
+		Dry         bool   `json:"dry"`
+		StopOnError bool   `json:"stopOnError"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 2<<20)).Decode(&req); err != nil {
+		writeJSON(w, map[string]interface{}{"ok": false, "error": "не разобрал запрос: " + err.Error()})
+		return
+	}
+	if strings.TrimSpace(req.Text) == "" {
+		writeJSON(w, map[string]interface{}{"ok": false, "error": "пустой конфиг"})
+		return
+	}
+	addr := normalizeAddress(req.Address)
+	if req.Dry {
+		snap, ok := loadSnapshot(addr)
+		if !ok {
+			fresh, err := collectSnapshot(addr, req.User, req.Password)
+			if err == nil {
+				snap, ok = fresh, true
+			}
+		}
+		items := planConfig(req.Text, menusOf(snap))
+		counts := map[string]int{}
+		for _, it := range items {
+			counts[it.Kind]++
+		}
+		writeJSON(w, map[string]interface{}{
+			"ok":         true,
+			"dry":        true,
+			"plan":       items,
+			"counts":     counts,
+			"snapshotAt": snapshotTime(snap),
+			"snapshotOk": ok,
+		})
+		return
+	}
+	results, err := rosApply(addr, req.User, req.Password, req.Text, req.StopOnError)
+	if err != nil {
+		writeJSON(w, map[string]interface{}{"ok": false, "error": err.Error()})
+		return
+	}
+	counts := map[string]int{}
+	for _, res := range results {
+		counts[res.Status]++
+	}
+	writeJSON(w, map[string]interface{}{
+		"ok":      true,
+		"results": results,
+		"counts":  counts,
+	})
+}
+
+// handleRouterSnapshot — прочитать текущее состояние роутера и сохранить его.
+func (s *server) handleRouterSnapshot(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "нужен POST", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		Address  string `json:"address"`
+		User     string `json:"user"`
+		Password string `json:"password"`
+		ReadOnly bool   `json:"readOnly"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&req); err != nil {
+		writeJSON(w, map[string]interface{}{"ok": false, "error": "не разобрал запрос: " + err.Error()})
+		return
+	}
+	addr := normalizeAddress(req.Address)
+	if req.ReadOnly {
+		if snap, ok := loadSnapshot(addr); ok {
+			writeJSON(w, map[string]interface{}{"ok": true, "snapshot": snap, "cached": true})
+			return
+		}
+	}
+	snap, err := collectSnapshot(addr, req.User, req.Password)
+	if err != nil {
+		writeJSON(w, map[string]interface{}{"ok": false, "error": err.Error()})
+		return
+	}
+	writeJSON(w, map[string]interface{}{"ok": true, "snapshot": snap})
+}
+
+// handleRouterUpdates — проверка и установка обновлений RouterOS / прошивки.
+func (s *server) handleRouterUpdates(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "нужен POST", http.StatusMethodNotAllowed)
+		return
+	}
+	var req struct {
+		Address  string `json:"address"`
+		User     string `json:"user"`
+		Password string `json:"password"`
+		Action   string `json:"action"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<16)).Decode(&req); err != nil {
+		writeJSON(w, map[string]interface{}{"ok": false, "error": "не разобрал запрос: " + err.Error()})
+		return
+	}
+	addr := normalizeAddress(req.Address)
+	switch req.Action {
+	case "", "check":
+		upd, err := checkRouterUpdates(addr, req.User, req.Password)
+		if err != nil {
+			writeJSON(w, map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		writeJSON(w, map[string]interface{}{"ok": true, "updates": upd})
+	case "routeros":
+		msg, err := installRouterOS(addr, req.User, req.Password)
+		if err != nil {
+			writeJSON(w, map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		writeJSON(w, map[string]interface{}{"ok": true, "message": msg})
+	case "firmware":
+		msg, err := upgradeFirmware(addr, req.User, req.Password)
+		if err != nil {
+			writeJSON(w, map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		writeJSON(w, map[string]interface{}{"ok": true, "message": msg})
+	case "reboot":
+		msg, err := rebootRouter(addr, req.User, req.Password)
+		if err != nil {
+			writeJSON(w, map[string]interface{}{"ok": false, "error": err.Error()})
+			return
+		}
+		writeJSON(w, map[string]interface{}{"ok": true, "message": msg})
+	default:
+		writeJSON(w, map[string]interface{}{"ok": false, "error": "неизвестное действие: " + req.Action})
+	}
+}
+
+// menusOf достаёт меню из снимка (или пустую карту).
+func menusOf(s *rosSnapshot) map[string][]map[string]string {
+	if s == nil || s.Menus == nil {
+		return map[string][]map[string]string{}
+	}
+	return s.Menus
+}
+
+func snapshotTime(s *rosSnapshot) string {
+	if s == nil {
+		return ""
+	}
+	return s.Updated
+}

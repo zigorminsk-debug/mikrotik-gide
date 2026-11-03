@@ -27,7 +27,13 @@ import (
 type rosConn struct {
 	conn net.Conn
 	br   *bufio.Reader
+	// время ожидания ответа; некоторые команды (check-for-updates) отвечают
+	// дольше обычного, поэтому таймаут можно поднять
+	readTimeout time.Duration
 }
+
+// setTimeout поднимает время ожидания ответа для долгих команд.
+func (c *rosConn) setTimeout(d time.Duration) { c.readTimeout = d }
 
 // rosWordLength кодирует длину слова протокола API.
 func rosWordLength(n int) []byte {
@@ -104,7 +110,11 @@ func (c *rosConn) sendSentence(words ...string) error {
 // Таймаут ставится на каждое чтение: один общий дедлайн на соединение
 // обрывал опрос, если роутер отвечал по частям дольше нескольких секунд.
 func (c *rosConn) readSentence() ([]string, error) {
-	_ = c.conn.SetReadDeadline(time.Now().Add(15 * time.Second))
+	wait := c.readTimeout
+	if wait <= 0 {
+		wait = 15 * time.Second
+	}
+	_ = c.conn.SetReadDeadline(time.Now().Add(wait))
 	return readSentenceFrom(c.br)
 }
 
