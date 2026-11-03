@@ -326,6 +326,167 @@
         { l: 'ARP', k: 'select' },
         { l: 'Comment', k: 'text' }
       ]
+    },
+    'netwatch entry': {
+      title: 'Netwatch Entry',
+      fields: [
+        { l: 'Host', k: 'text', core: 1 },
+        { l: 'Type', k: 'select', core: 1 },
+        { l: 'Interval', k: 'text', core: 1 },
+        { l: 'Timeout', k: 'text' },
+        { l: 'Port', k: 'text' },
+        { l: 'Up', k: 'text' },
+        { l: 'Down', k: 'text' },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'l2tp server': {
+      title: 'L2TP Server',
+      fields: [
+        { l: 'Enabled', k: 'check', core: 1 },
+        { l: 'Max MTU', k: 'text', core: 1 },
+        { l: 'Max MRU', k: 'text' },
+        { l: 'Keepalive Timeout', k: 'text' },
+        { l: 'Use IPsec', k: 'select', core: 1 },
+        { l: 'IPsec Secret', k: 'text' },
+        { l: 'Allow Fast Path', k: 'check' },
+        { l: 'Default Profile', k: 'select' }
+      ]
+    },
+    'pptp server': {
+      title: 'PPTP Server',
+      fields: [
+        { l: 'Enabled', k: 'check', core: 1 },
+        { l: 'Authentication', k: 'select', core: 1 },
+        { l: 'Default Profile', k: 'select' },
+        { l: 'Keepalive Timeout', k: 'text' }
+      ]
+    },
+    'sstp server': {
+      title: 'SSTP Server',
+      fields: [
+        { l: 'Enabled', k: 'check', core: 1 },
+        { l: 'Default Profile', k: 'select', core: 1 },
+        { l: 'Certificate', k: 'select' },
+        { l: 'Authentication', k: 'select' }
+      ]
+    },
+    'ovpn server': {
+      title: 'OVPN Server',
+      fields: [
+        { l: 'Enabled', k: 'check', core: 1 },
+        { l: 'Port', k: 'text', core: 1 },
+        { l: 'Mode', k: 'select' },
+        { l: 'Netmask', k: 'text' },
+        { l: 'Max MTU', k: 'text' },
+        { l: 'Certificate', k: 'select' },
+        { l: 'Require Client Certificate', k: 'check' },
+        { l: 'Authentication', k: 'select' },
+        { l: 'Default Profile', k: 'select' }
+      ]
+    },
+    'backup': {
+      title: 'Backup',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Password', k: 'text' },
+        { l: 'Confirm Password', k: 'text' },
+        { l: "Don't Encrypt", k: 'check' }
+      ]
+    },
+    'snmp': {
+      title: 'SNMP',
+      fields: [
+        { l: 'Enabled', k: 'check', core: 1 },
+        { l: 'Contact', k: 'text' },
+        { l: 'Location', k: 'text' },
+        { l: 'Trap Community', k: 'text' },
+        { l: 'Trap Version', k: 'select' },
+        { l: 'Trap Generators', k: 'text' },
+        { l: 'Authentication', k: 'select' }
+      ]
+    },
+    'sniffer': {
+      title: 'Sniffer',
+      fields: [
+        { l: 'Interface', k: 'select', core: 1 },
+        { l: 'File Name', k: 'text' },
+        { l: 'File Limit', k: 'text' },
+        { l: 'Memory Limit', k: 'text' },
+        { l: 'Filter', k: 'text' },
+        { l: 'Streaming Enabled', k: 'check' },
+        { l: 'Streaming Server', k: 'text' }
+      ]
+    },
+    'pppoe client': {
+      title: 'PPPoE Client',
+      tabs: ['General', 'Dial Out', 'Status', 'Traffic'],
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Interface', k: 'select', core: 1 },
+        { l: 'User', k: 'text', core: 1 },
+        { l: 'Password', k: 'text', core: 1 },
+        { l: 'Service', k: 'text' },
+        { l: 'AC Name', k: 'text' },
+        { l: 'Keepalive Timeout', k: 'text' },
+        { l: 'Add Default Route', k: 'check' },
+        { l: 'Use Peer DNS', k: 'check' },
+        { l: 'Disabled', k: 'check' }
+      ]
+    },
+    'bridge': {
+      title: 'Bridge',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'MTU', k: 'text' },
+        { l: 'L2 MTU', k: 'text' },
+        { l: 'ARP', k: 'select' },
+        { l: 'Admin MAC', k: 'text' },
+        { l: 'Protocol Mode', k: 'select' },
+        { l: 'VLAN Filtering', k: 'check' },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'vlan': {
+      title: 'VLAN',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Interface', k: 'select', core: 1 },
+        { l: 'VLAN ID', k: 'text', core: 1 },
+        { l: 'MTU', k: 'text' },
+        { l: 'ARP', k: 'select' },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'address': {
+      title: 'Address',
+      fields: [
+        { l: 'Address', k: 'text', core: 1 },
+        { l: 'Network', k: 'text', core: 1 },
+        { l: 'Interface', k: 'select', core: 1 },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'dhcp client': {
+      title: 'DHCP Client',
+      fields: [
+        { l: 'Interface', k: 'select', core: 1 },
+        { l: 'Use Peer DNS', k: 'check' },
+        { l: 'Use Peer NTP', k: 'check' },
+        { l: 'Add Default Route', k: 'check' },
+        { l: 'Disabled', k: 'check' }
+      ]
+    },
+    'user': {
+      title: 'User',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Group', k: 'select', core: 1 },
+        { l: 'Password', k: 'text' },
+        { l: 'Confirm Password', k: 'text' },
+        { l: 'Allowed Address', k: 'text' },
+        { l: 'Comment', k: 'text' }
+      ]
     }
   };
 
@@ -427,7 +588,14 @@
         if (!o.type && c.k && c.k !== 'text') o.type = c.k;
         list.push(o);
       });
-      fields.forEach(function (fd) { if (used.indexOf(fd) < 0 && list.indexOf(fd) < 0) list.push(fd); });
+      /* поля, которых в настоящем окне нет, не рисуем — они попадают в отладку,
+         чтобы авторы статей поправили подписи */
+      fields.forEach(function (fd) {
+        if (used.indexOf(fd) < 0 && list.indexOf(fd) < 0) {
+          if (!window.__win4dropped) window.__win4dropped = [];
+          window.__win4dropped.push(key + ': ' + fd.l);
+        }
+      });
       fields = list;
       if (!src.tabs && cat.tabs) out.tabs = cat.tabs.slice();
       if (!src.title) out.title = cat.title;
@@ -451,6 +619,7 @@
 
     fields.forEach(function (fd) {
       const v = fd.v == null ? '' : String(fd.v).trim();
+      if (CHECK_RE.test(fd.l)) fd.type = 'check';
       if (!fd.type) fd.type = guessType(fd);
       if (fd.type === 'check') {
         if (!('v' in fd) || v === '') fd.v = !/^disabled$/i.test(fd.l);
