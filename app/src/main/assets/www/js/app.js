@@ -2189,6 +2189,18 @@
     if (res.warnings && res.warnings.length) {
       h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div>' + res.warnings.map(esc).join('<br>') + '</div></div>';
     }
+    const tgt = res.target || {};
+    if (tgt.known) {
+      h += '<div class="hint" style="margin:0 0 8px">Цель конфига: <b>RouterOS ' + esc(tgt.version) + '</b>' +
+        (tgt.board ? ' · ' + esc(tgt.board) : '') +
+        (tgt.firmware ? ' · прошивка RouterBOOT ' + esc(tgt.firmware) : '') +
+        (tgt.major ? ' · ветка ' + esc(String(tgt.major)) + '.x' : '') + '</div>';
+    } else {
+      h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div>' +
+        'Версия роутера не указана — команды собраны по правилам RouterOS 7.x. ' +
+        'Опросите роутер в карточке «Версия роутера» (Windows-версия) или впишите версию вручную: ' +
+        'тогда в скрипт попадёт проверка версии, а для 6.x — совместимые команды Wi-Fi.</div></div>';
+    }
     h += '<div class="cfg"><div class="cfg-h"><span>' + esc(res.title || 'RouterOS 7') + '</span>' +
       '<span class="cfg-btns"><button class="copy">копировать</button>' +
       '<button class="share" data-share="cfg">поделиться</button>' +
