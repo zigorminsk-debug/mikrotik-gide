@@ -38,73 +38,82 @@ DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.2
 DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
-DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 === chr-console.log (хвост) ===
 === процессы ===
-runner      3838  200  0.7 3267228 116644 ?      Sl   07:08  19:08 qemu-system-x86_64 -m 1536 -smp 4 -machine pc -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=virtio -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device virtio-net-pci,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -serial file:/tmp/wb/chr-console.log -daemonize -pidfile /tmp/wb/qemu.pid
-runner      3849  0.0  0.5 230136 83740 ?        S    07:08   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      3868  0.1  0.5 859576 91136 ?        Sl   07:08   0:00 /tmp/wb/winbox/./WinBox
+runner      3660  199  0.7 3300552 120288 ?      Sl   07:23  25:55 qemu-system-x86_64 -m 1536 -smp 4 -machine pc -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device virtio-net-pci,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -serial file:/tmp/wb/chr-console.log -daemonize -pidfile /tmp/wb/qemu.pid
+runner      3821  0.0  0.5 226508 82840 ?        S    07:27   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3840  0.1  0.5 859612 91116 ?        Sl   07:27   0:00 /tmp/wb/winbox/./WinBox
 === файлы ===
-total 2192
--rw-r--r-- 1 runner runner 58867 Nov  3 07:09 01-login.png
--rw-r--r-- 1 runner runner 58187 Nov  3 07:09 02-after-connect.png
--rw-r--r-- 1 runner runner 58187 Nov  3 07:07 03-interfaces.png
--rw-r--r-- 1 runner runner 58187 Nov  3 07:07 03-ip-firewall.png
--rw-r--r-- 1 runner runner 58187 Nov  3 07:07 03-ip.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:11 09-guest-100.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:11 09-guest-120.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:11 09-guest-140.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:12 09-guest-160.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:12 09-guest-180.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:09 09-guest-20.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:12 09-guest-200.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:13 09-guest-220.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:13 09-guest-240.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:14 09-guest-260.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:14 09-guest-280.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:14 09-guest-300.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:15 09-guest-320.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:15 09-guest-340.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:16 09-guest-360.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:16 09-guest-380.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:09 09-guest-40.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:16 09-guest-400.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:17 09-guest-420.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:17 09-guest-440.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:17 09-guest-460.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:18 09-guest-480.png
--rw-r--r-- 1 runner runner  2157 Nov  3 07:10 09-guest-60.png
--rw-r--r-- 1 runner runner  2144 Nov  3 07:10 09-guest-80.png
--rw-r--r-- 1 runner runner 58187 Nov  3 07:07 10-wait-10.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:11 10-wait-100.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:11 10-wait-120.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:11 10-wait-140.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:12 10-wait-160.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:12 10-wait-180.png
--rw-r--r-- 1 runner runner 58187 Nov  3 07:09 10-wait-20.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:12 10-wait-200.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:13 10-wait-220.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:13 10-wait-240.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:14 10-wait-260.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:14 10-wait-280.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:14 10-wait-300.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:15 10-wait-320.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:15 10-wait-340.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:16 10-wait-360.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:16 10-wait-380.png
--rw-r--r-- 1 runner runner 58187 Nov  3 07:09 10-wait-40.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:16 10-wait-400.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:17 10-wait-420.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:17 10-wait-440.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:17 10-wait-460.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:18 10-wait-480.png
--rw-r--r-- 1 runner runner 58187 Nov  3 07:10 10-wait-60.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:10 10-wait-80.png
--rw-r--r-- 1 runner runner 62160 Nov  3 07:18 11-desktop.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:18 20-click-top.png
--rw-r--r-- 1 runner runner 62138 Nov  3 07:18 21-click-mid.png
--rw-r--r-- 1 runner runner    58 Nov  3 07:18 geometry.txt
--rw-r--r-- 1 runner runner  3623 Nov  3 07:18 report.txt
--rw-r--r-- 1 runner runner   349 Nov  3 07:09 xwininfo-1.txt
--rw-r--r-- 1 runner runner   349 Nov  3 07:18 xwininfo-2.txt
--rw-r--r-- 1 runner runner   349 Nov  3 07:18 xwininfo-3.txt
+total 2232
+-rw-r--r-- 1 runner runner 58867 Nov  3 07:27 01-login.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 07:27 02-after-connect.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 07:23 03-interfaces.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 07:23 03-ip-firewall.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 07:23 03-ip.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:25 08-chr-boot-100.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:25 08-chr-boot-120.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:26 08-chr-boot-140.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:26 08-chr-boot-160.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:26 08-chr-boot-180.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:24 08-chr-boot-20.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:27 08-chr-boot-200.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:24 08-chr-boot-40.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:24 08-chr-boot-60.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:25 08-chr-boot-80.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:29 09-guest-100.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:29 09-guest-120.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:30 09-guest-140.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:30 09-guest-160.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:30 09-guest-180.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:27 09-guest-20.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:31 09-guest-200.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:31 09-guest-220.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:32 09-guest-240.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:32 09-guest-260.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:32 09-guest-280.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:33 09-guest-300.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:33 09-guest-320.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:33 09-guest-340.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:34 09-guest-360.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:34 09-guest-380.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:28 09-guest-40.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:35 09-guest-400.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:35 09-guest-420.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:35 09-guest-440.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:36 09-guest-460.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:36 09-guest-480.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 07:28 09-guest-60.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 07:29 09-guest-80.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 07:23 10-wait-10.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:29 10-wait-100.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:29 10-wait-120.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:30 10-wait-140.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:30 10-wait-160.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:30 10-wait-180.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 07:27 10-wait-20.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:31 10-wait-200.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:31 10-wait-220.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:32 10-wait-240.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:32 10-wait-260.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:32 10-wait-280.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:33 10-wait-300.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:33 10-wait-320.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:33 10-wait-340.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:34 10-wait-360.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:34 10-wait-380.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 07:28 10-wait-40.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:35 10-wait-400.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:35 10-wait-420.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:35 10-wait-440.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:36 10-wait-460.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:36 10-wait-480.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 07:28 10-wait-60.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:29 10-wait-80.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:36 11-desktop.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:36 20-click-top.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:36 21-click-mid.png
+-rw-r--r-- 1 runner runner    58 Nov  3 07:36 geometry.txt
+-rw-r--r-- 1 runner runner  3543 Nov  3 07:36 report.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 07:27 xwininfo-1.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 07:36 xwininfo-2.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 07:36 xwininfo-3.txt
