@@ -49,6 +49,9 @@ public class MainActivity extends Activity {
 
     private static final String START_URL = "file:///android_asset/www/index.html";
     private static final String EXTRA_HASH = "hash";
+    /** текст .rsc, полученный из другого приложения, ждёт загрузки страницы */
+    private String pendingSharedText = null;
+    private boolean pageReady = false;
     private static final String RELEASE_API =
             "https://api.github.com/repos/zigorminsk-debug/mikrotik-gide/releases/latest";
 
@@ -104,6 +107,13 @@ public class MainActivity extends Activity {
                 openExternally(Uri.parse(url));
                 return true;
             }
+
+            @Override
+            public void onPageFinished(WebView view, String url) {
+                super.onPageFinished(view, url);
+                pageReady = true;
+                flushSharedConfig();
+            }
         });
 
         web.addJavascriptInterface(new Bridge(), "AndroidBridge");
@@ -117,6 +127,7 @@ public class MainActivity extends Activity {
             web.loadUrl(START_URL);
         }
         openFromShortcut(getIntent());
+        openSharedConfig(getIntent());
         registerBackCallback();
     }
 
@@ -125,6 +136,7 @@ public class MainActivity extends Activity {
         super.onNewIntent(intent);
         setIntent(intent);
         openFromShortcut(intent);
+        openSharedConfig(intent);
     }
 
     /** Переход на нужный экран из ярлыка (долгое нажатие на иконку приложения). */
@@ -135,6 +147,55 @@ public class MainActivity extends Activity {
         if (!hash.startsWith("/")) hash = "/" + hash;
         web.loadUrl(START_URL + "#" + hash);
         intent.removeExtra(EXTRA_HASH);
+    }
+
+    /** Забрать конфиг из ACTION_VIEW (.rsc) или ACTION_SEND (текст). */
+    private void openSharedConfig(Intent intent) {
+        if (intent == null) return;
+        String action = intent.getAction();
+        String text = null;
+        if (Intent.ACTION_SEND.equals(action)) {
+            text = intent.getStringExtra(Intent.EXTRA_TEXT);
+        } else if (Intent.ACTION_VIEW.equals(action)) {
+            Uri data = intent.getData();
+            if (data != null) text = readTextUri(data);
+        }
+        if (text == null || text.trim().isEmpty()) return;
+        if (text.length() > 400000) text = text.substring(0, 400000);
+        pendingSharedText = text;
+        intent.setAction(null);
+        flushSharedConfig();
+    }
+
+    /** Прочитать текстовый файл по content:// или file:// адресу. */
+    private String readTextUri(Uri uri) {
+        java.io.InputStream is = null;
+        try {
+            is = getContentResolver().openInputStream(uri);
+            if (is == null) return null;
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = is.read(buf)) > 0) bos.write(buf, 0, n);
+            return new String(bos.toByteArray(), StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return null;
+        } finally {
+            if (is != null) {
+                try { is.close(); } catch (Exception ignored) { }
+            }
+        }
+    }
+
+    /** Отдать текст странице, когда она уже загружена и мост готов. */
+    private void flushSharedConfig() {
+        if (pendingSharedText == null || web == null || !pageReady) return;
+        String text = pendingSharedText;
+        pendingSharedText = null;
+        String js = "window.AppOpenRsc && window.AppOpenRsc(" + JSONObject.quote(text) + ");";
+        try {
+            web.evaluateJavascript(js, null);
+        } catch (Exception ignored) { }
     }
 
     private void openExternally(Uri u) {
@@ -276,6 +337,19 @@ public class MainActivity extends Activity {
          * Сохранить текст в «Загрузки» (конфиг .rsc, CSV, резервная копия JSON).
          * На Android 10+ — через MediaStore, на более старых — в папку приложения.
          */
+        /** Данные для виджета: последняя статья, прогресс чтения. */
+        @JavascriptInterface
+        public void setWidget(final String title, final String hash, final int pct) {
+            try {
+                getSharedPreferences(WidgetProvider.PREFS, Context.MODE_PRIVATE).edit()
+                        .putString("title", title == null ? "" : title)
+                        .putString("hash", hash == null ? "" : hash)
+                        .putInt("pct", pct)
+                        .apply();
+                WidgetProvider.refresh(MainActivity.this);
+            } catch (Exception ignored) { }
+        }
+
         @JavascriptInterface
         public void saveText(final String rawName, final String text) {
             if (text == null) return;

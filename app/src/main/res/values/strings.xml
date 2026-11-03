@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">MikroTik Winbox 4</string>
+    <string name="open_rsc">Открыть конфиг в учебнике</string>
+    <string name="widget_desc">Продолжить чтение: последняя статья и процент прогресса</string>
     <string name="sc_wizard">Мастер конфигурации</string>
     <string name="sc_wizard_long">Собрать конфиг RouterOS по ответам</string>
     <string name="sc_harden">Защита от взлома</string>

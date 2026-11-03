@@ -192,6 +192,7 @@
   const SIDE_LINKS = [
     { href: '#/harden', ic: 'svc', t: 'Защита от взлома', sub: 'чек-лист по меню Winbox' },
     { href: '#/tools', ic: 'gear', t: 'Инструменты', sub: 'мастер, калькуляторы, квиз' },
+    { href: '#/starred', ic: 'svc', t: 'Избранное и заметки', sub: 'мои статьи, заметки, прочитанное' },
     { href: '#/backup', ic: 'down', t: 'Мои данные', sub: 'резервная копия и перенос' },
     { href: '#/about', ic: 'info', t: 'О программе', sub: 'build ' + (window.APP_VERSION || 'dev') }
   ];
@@ -409,6 +410,7 @@
       toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню Winbox — проверить роутер', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'вставьте /export — 24 проверки с оценкой', 'task') +
       toolCard('#/diag', 'Диагностика', 'если что-то не работает — пошагово', 'start') +
+      toolCard('#/starred', 'Избранное и заметки', 'всё отмеченное и записанное', 'svc') +
       '</div>';
 
     const last = lastRead();
@@ -910,7 +912,9 @@
       '<button class="btn primary" id="resetBtn">Сбросить</button></div>' +
       '</div>';
 
-    html += '<a class="list-row" href="#/backup"><span class="n">' + svg('down', 13) + '</span>' +
+    html += '<a class="list-row" href="#/starred"><span class="n">' + svg('svc', 13) + '</span>' +
+      '<b>Избранное и заметки</b><span>' + starredFavs().length + ' статей, ' + starredNotes().length + ' заметок</span></a>' +
+      '<a class="list-row" href="#/backup"><span class="n">' + svg('down', 13) + '</span>' +
       '<b>Данные и резервная копия</b><span>заметки, прогресс, чек-листы</span></a>' +
       '<a class="list-row" href="#/about"><span class="n">' + svg('info', 13) + '</span>' +
       '<b>О программе и история релизов</b><span>→</span></a>';
@@ -1519,6 +1523,10 @@
       toolCard('#/diff', 'Сравнить конфиги', 'Два экспорта — что изменилось', 'task') +
       toolCard('#/quiz', 'Самопроверка', '111 вопросов по RouterOS с разбором ошибок', 'book') +
       toolCard('#/models', 'Порты моделей', 'hEX, hAP ax3, RB4011, CRS328 — где WAN, PoE и SFP', 'iface') +
+      toolCard('#/starred', 'Избранное и заметки', 'Всё отмеченное, записанное и прочитанное', 'svc') +
+      toolCard('#/cheats', 'Шпаргалки', '7 наборов команд: база, firewall, NAT, VLAN, WireGuard', 'book') +
+      toolCard('#/wifi', 'Каналы Wi-Fi', 'Ширина канала, пересечения, команда для RouterOS', 'iface') +
+      toolCard('#/keys', 'Пароли и ключи', 'Wi-Fi и admin пароли, ключи WireGuard', 'svc') +
       toolCard('#/glossary', 'Глоссарий и порты', 'Термины RouterOS и таблица портов с поиском', 'bridge') +
       toolCard('#/backup', 'Данные и резервная копия', 'Заметки, прогресс, чек-листы — экспорт и импорт', 'down') +
       '</div>';
@@ -2671,6 +2679,456 @@
     else shareText(html, 'Библиотека MikroTik');
   }
 
+  /* ================= шпаргалки ================= */
+  function cheatsView() {
+    const list = window.CHEATS || [];
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Шпаргалки</span></div>';
+    html += '<h1 class="art-title">Шпаргалки</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Короткие наборы команд, которые нужны чаще всего. Копируются целиком и вставляются в New Terminal.</div>';
+    html += '<div class="tools-grid">' + list.map(function (c) {
+      return '<a class="tool-card" href="#/cheats/' + c.id + '"><span class="tc-ic">' + svg(c.ic || 'book', 18) + '</span>' +
+        '<b>' + esc(c.t) + '</b><span>' + esc(c.d) + '</span></a>';
+    }).join('') + '</div></div>';
+    return html;
+  }
+
+  function cheatDetailView(c) {
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/cheats">Шпаргалки</a><span class="sep">/</span><span>' + esc(c.t) + '</span></div>';
+    html += '<h1 class="art-title">' + esc(c.t) + '</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">' + esc(c.d) + '</div>';
+
+    (c.blocks || []).forEach(function (b) {
+      html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + esc(b.h) + '</h3>' +
+        '<div class="cfg"><div class="cfg-h"><span>RouterOS 7</span>' +
+        '<span class="cfg-btns"><button class="copy">копировать</button>' +
+        '<button class="share" data-share="cfg">поделиться</button></span></div>' +
+        '<pre>' + hlCfg(b.c) + '</pre></div></section>';
+    });
+
+    if (c.tips && c.tips.length) {
+      html += '<section class="card"><h3 class="card-h">' + svg('info', 15) + 'На что обратить внимание</h3>' +
+        '<ul class="clean">' + c.tips.map(function (t) { return '<li>' + inline(t) + '</li>'; }).join('') + '</ul></section>';
+    }
+
+    html += '<div class="wz-actions"><button class="btn primary" id="chShare">Поделиться шпаргалкой</button>' +
+      '<a class="btn" href="#/cheats">Все шпаргалки</a>' +
+      '<a class="btn" href="#/wizard">Собрать конфиг мастером</a></div></div>';
+    return html;
+  }
+
+  function bindCheatDetail(c) {
+    const sh = document.getElementById('chShare');
+    if (sh) sh.addEventListener('click', function () {
+      const text = [c.t, c.d].concat((c.blocks || []).map(function (b) { return b.h + ':\n' + b.c; })).join('\n\n');
+      shareText(text, c.t);
+    });
+  }
+
+  /* ================= Wi-Fi: каналы и ширина ================= */
+  const WF24 = (function () { const a = []; for (let c = 1; c <= 13; c++) a.push({ ch: c, f: 2412 + 5 * (c - 1) }); return a; })();
+  const WF5 = [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165]
+    .map(function (c) { return { ch: c, f: 5000 + 5 * c, dfs: c >= 52 && c <= 144 }; });
+  const WF_REC = { '2.4': [1, 6, 11], '5': [36, 40, 44, 48, 149, 153, 157, 161] };
+  const WF_SPEED = { 20: 90, 40: 180, 80: 400 };
+
+  function wfState() {
+    const band = store.get('wfb') === '5' ? '5' : '2.4';
+    const widths = band === '5' ? [20, 40, 80] : [20, 40];
+    let width = parseInt(store.get('wfw'), 10) || 20;
+    if (widths.indexOf(width) < 0) width = 20;
+    const list = band === '5' ? WF5 : WF24;
+    let ch = parseInt(store.get('wfch'), 10);
+    if (!list.some(function (x) { return x.ch === ch; })) ch = band === '5' ? 36 : 6;
+    return { band: band, widths: widths, width: width, list: list, ch: ch };
+  }
+
+  function wfOverlaps(list, item, width) {
+    const a1 = item.f - width / 2, a2 = item.f + width / 2;
+    return list.filter(function (x) {
+      if (x.ch === item.ch) return false;
+      const b1 = x.f - width / 2, b2 = x.f + width / 2;
+      return a1 < b2 && b1 < a2;
+    }).map(function (x) { return x.ch; });
+  }
+
+  function wifiView() {
+    const st = wfState();
+    const cur = st.list.filter(function (x) { return x.ch === st.ch; })[0] || st.list[0];
+    const ov = wfOverlaps(st.list, cur, st.width);
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Каналы Wi-Fi</span></div>';
+    html += '<h1 class="art-title">Каналы Wi-Fi</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Какая ширина канала нужна, какие каналы не пересекаются и какую команду вставить в RouterOS. Шире — быстрее, но больше помех соседям.</div>';
+
+    html += '<div class="chips">' +
+      ['2.4', '5'].map(function (b) {
+        return '<button class="chip' + (st.band === b ? ' on' : '') + '" data-wfb="' + b + '">' + (b === '5' ? '5 ГГц' : '2.4 ГГц') + '</button>';
+      }).join('') + '</div>';
+
+    html += '<div class="chips">' + st.widths.map(function (w) {
+      return '<button class="chip' + (st.width === w ? ' on' : '') + '" data-wfw="' + w + '">' + w + ' МГц ≈ ' + WF_SPEED[w] + ' Мбит/с</button>';
+    }).join('') + '</div>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'Канал ' + cur.ch + ' · ' + cur.f + ' МГц · ' + st.width + ' МГц</h3>' +
+      '<div class="hint" style="margin:-4px 0 10px">Занимает полосу ' + (cur.f - st.width / 2) + '–' + (cur.f + st.width / 2) + ' МГц. ' +
+      (ov.length ? 'Пересекается с каналами: <b>' + ov.join(', ') + '</b>.' : 'Ни с одним каналом этого диапазона не пересекается — лучший выбор.') +
+      (cur.dfs ? ' Канал DFS: радар может потребовать уйти с него.' : '') + '</div>' +
+      '<div class="cfg"><div class="cfg-h"><span>RouterOS 7 · новое Wi-Fi (hAP ax)</span><span class="cfg-btns"><button class="copy">копировать</button></span></div>' +
+      '<pre>' + hlCfg('/interface wifi set [find] channel.frequency=' + cur.f + ' channel.width=' + st.width + 'mhz') + '</pre></div>' +
+      '<div class="cfg" style="margin-top:10px"><div class="cfg-h"><span>старое wireless (hAP ac, hEX с CAP)</span><span class="cfg-btns"><button class="copy">копировать</button></span></div>' +
+      '<pre>' + hlCfg('/interface wireless set [find] frequency=' + cur.f + ' channel-width=' + st.width + 'mhz') + '</pre></div>' +
+      '</section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('book', 15) + 'Все каналы ' + (st.band === '5' ? '5 ГГц' : '2.4 ГГц') + '</h3>' +
+      '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Канал</th><th>МГц</th><th>Полоса</th><th>Пересекается</th></tr></thead><tbody>' +
+      st.list.map(function (x) {
+        const o = wfOverlaps(st.list, x, st.width);
+        const rec = WF_REC[st.band].indexOf(x.ch) >= 0;
+        const cls = (x.ch === st.ch ? 'wf-on ' : '') + (rec ? 'wf-rec' : '');
+        return '<tr class="' + cls + '" data-wfch="' + x.ch + '"><td class="mono"><b>' + x.ch + '</b>' +
+          (rec ? ' <span class="wf-star">★</span>' : '') + (x.dfs ? ' <span class="wf-dfs">DFS</span>' : '') + '</td>' +
+          '<td class="mono">' + x.f + '</td>' +
+          '<td class="mono">' + (x.f - st.width / 2) + '–' + (x.f + st.width / 2) + '</td>' +
+          '<td>' + (o.length ? o.join(', ') : '<span class="wf-free">свободен</span>') + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div class="hint" style="margin-top:10px">★ — каналы, которые не пересекаются при ширине 20 МГц: ' +
+      WF_REC[st.band].join(', ') + '. В 2.4 ГГц ширина 40 МГц «съедает» почти весь диапазон — включайте её только если рядом нет соседей.</div>' +
+      '</section></div>';
+    return html;
+  }
+
+  function bindWifi() {
+    document.querySelectorAll('[data-wfb]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        store.set('wfb', b.getAttribute('data-wfb'));
+        store.del('wfch');
+        store.del('wfw');
+        route();
+      });
+    });
+    document.querySelectorAll('[data-wfw]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        store.set('wfw', b.getAttribute('data-wfw'));
+        route();
+      });
+    });
+    document.querySelectorAll('[data-wfch]').forEach(function (tr) {
+      tr.addEventListener('click', function () {
+        store.set('wfch', tr.getAttribute('data-wfch'));
+        route();
+      });
+    });
+  }
+
+  /* ================= генератор паролей и ключей ================= */
+  function rndBytes(n) {
+    const a = new Uint8Array(n);
+    if (window.crypto && crypto.getRandomValues) crypto.getRandomValues(a);
+    else for (let i = 0; i < n; i++) a[i] = Math.floor(Math.random() * 256);
+    return a;
+  }
+  function bytesToB64(bytes) {
+    let bin = '';
+    for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+    return btoa(bin);
+  }
+  function b64urlToB64(u) {
+    let s = String(u || '').replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    return s;
+  }
+  const PW_SETS = {
+    lower: 'abcdefghijkmnopqrstuvwxyz',
+    upper: 'ABCDEFGHJKLMNPQRSTUVWXYZ',
+    digit: '23456789',
+    sym: '!@#$%^&*-_=+?'
+  };
+  function genPassword(len, opts) {
+    const pool = [];
+    ['lower', 'upper', 'digit', 'sym'].forEach(function (k) { if (opts[k]) pool.push(PW_SETS[k]); });
+    if (!pool.length) pool.push(PW_SETS.lower, PW_SETS.digit);
+    const all = pool.join('');
+    const out = [];
+    pool.forEach(function (set) { out.push(set[rndBytes(1)[0] % set.length]); });
+    while (out.length < len) out.push(all[rndBytes(1)[0] % all.length]);
+    for (let i = out.length - 1; i > 0; i--) {
+      const j = rndBytes(1)[0] % (i + 1);
+      const t = out[i]; out[i] = out[j]; out[j] = t;
+    }
+    return out.slice(0, len).join('');
+  }
+  function wgPrivateKey() {
+    const b = rndBytes(32);
+    b[0] &= 248;
+    b[31] = (b[31] & 127) | 64;
+    return bytesToB64(b);
+  }
+
+  function keysState() {
+    const st = {
+      len: parseInt(store.get('kLen'), 10) || 16,
+      lower: store.get('kLow') !== '0',
+      upper: store.get('kUp') === '1',
+      digit: store.get('kDig') !== '0',
+      sym: store.get('kSym') === '1',
+      pwd: store.get('kPwd') || '',
+      wgPriv: store.get('kWgPriv') || '',
+      wgPub: store.get('kWgPub') || '',
+      wgPsk: store.get('kWgPsk') || ''
+    };
+    if (!st.pwd) { st.pwd = genPassword(st.len, st); store.set('kPwd', st.pwd); }
+    if (!st.wgPriv) { st.wgPriv = wgPrivateKey(); store.set('kWgPriv', st.wgPriv); }
+    if (!st.wgPsk) { st.wgPsk = bytesToB64(rndBytes(32)); store.set('kWgPsk', st.wgPsk); }
+    return st;
+  }
+
+  function keysView() {
+    const st = keysState();
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Пароли и ключи</span></div>';
+    html += '<h1 class="art-title">Пароли и ключи</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Генерируется на телефоне, никуда не отправляется. Символы 0/O/1/l исключены, чтобы не путать при вводе с телефона.</div>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Пароль Wi-Fi и admin</h3>' +
+      '<div class="pw-out"><code id="pwOut">' + esc(st.pwd) + '</code>' +
+      '<button class="btn" id="pwCopy">копировать</button></div>' +
+      '<div class="chips" style="margin-top:12px">' + [12, 16, 20, 24, 32].map(function (n) {
+        return '<button class="chip' + (st.len === n ? ' on' : '') + '" data-klen="' + n + '">' + n + ' симв.</button>';
+      }).join('') + '</div>' +
+      '<div class="kw-opts">' +
+      ['lower', 'upper', 'digit', 'sym'].map(function (k) {
+        const names = { lower: 'строчные', upper: 'ЗАГЛАВНЫЕ', digit: 'цифры', sym: 'символы !@#' };
+        return '<label class="chk-line"><input type="checkbox" data-kopt="' + k + '"' + (st[k] ? ' checked' : '') + '> ' + names[k] + '</label>';
+      }).join('') + '</div>' +
+      '<div class="wz-actions"><button class="btn primary" id="pwNew">Новый пароль</button></div></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'WireGuard</h3>' +
+      '<div class="hint" style="margin:-4px 0 10px">Приватный ключ — вставляйте в конфиг роутера или клиента, публичный — на другой стороне. Общий ключ (PSK) добавляет второй слой шифрования.</div>' +
+      '<div class="wg-row"><span class="wg-l">Приватный ключ</span><code id="wgPriv">' + esc(st.wgPriv) + '</code><button class="btn" data-copywg="wgPriv">копировать</button></div>' +
+      '<div class="wg-row"><span class="wg-l">Публичный ключ</span><code id="wgPub">' + esc(st.wgPub || '— нажмите «Обновить» —') + '</code><button class="btn" data-copywg="wgPub">копировать</button></div>' +
+      '<div class="wg-row"><span class="wg-l">Общий ключ PSK</span><code id="wgPsk">' + esc(st.wgPsk) + '</code><button class="btn" data-copywg="wgPsk">копировать</button></div>' +
+      '<div class="wz-actions"><button class="btn primary" id="wgNew">Новая пара ключей</button>' +
+      '<button class="btn" id="wgPubCalc">Обновить публичный</button></div>' +
+      '<div class="hint" style="margin-top:8px">Публичный ключ считается на устройстве через X25519. Если браузер не поддерживает — узнайте его на роутере: <code class="inl">/interface/wireguard/print</code>.</div>' +
+      '</section></div>';
+    return html;
+  }
+
+  function keysPublicKey() {
+    const st = keysState();
+    if (!(window.crypto && crypto.subtle && crypto.subtle.importKey)) { toast('Нужен современный WebView'); return; }
+    crypto.subtle.generateKey({ name: 'X25519' }, true, ['deriveBits'])
+      .then(function (pair) {
+        return Promise.all([crypto.subtle.exportKey('jwk', pair.privateKey), crypto.subtle.exportKey('jwk', pair.publicKey)]);
+      })
+      .then(function (keys) {
+        const privB64 = b64urlToB64(keys[0].d);
+        const pubB64 = b64urlToB64(keys[1].x);
+        store.set('kWgPriv', privB64);
+        store.set('kWgPub', pubB64);
+        const a = document.getElementById('wgPriv'), b = document.getElementById('wgPub');
+        if (a) a.textContent = privB64;
+        if (b) b.textContent = pubB64;
+        toast('Пара ключей готова');
+      })
+      .catch(function () { toast('Не поддерживается — смотрите ключ на роутере'); });
+  }
+
+  function bindKeys() {
+    const st = keysState();
+    function regen() {
+      const cur = keysState();
+      const pwd = genPassword(cur.len, cur);
+      store.set('kPwd', pwd);
+      const out = document.getElementById('pwOut');
+      if (out) out.textContent = pwd;
+    }
+    document.querySelectorAll('[data-klen]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        store.set('kLen', b.getAttribute('data-klen'));
+        route();
+      });
+    });
+    document.querySelectorAll('[data-kopt]').forEach(function (c) {
+      c.addEventListener('change', function () {
+        const map = { lower: 'kLow', upper: 'kUp', digit: 'kDig', sym: 'kSym' };
+        const k = c.getAttribute('data-kopt');
+        store.set(map[k], c.checked ? '1' : '0');
+        route();
+      });
+    });
+    const nb = document.getElementById('pwNew');
+    if (nb) nb.addEventListener('click', regen);
+    const cp = document.getElementById('pwCopy');
+    if (cp) cp.addEventListener('click', function () { copyText(st.pwd); toast('Пароль скопирован'); });
+    document.querySelectorAll('[data-copywg]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const el = document.getElementById(b.getAttribute('data-copywg'));
+        if (el) { copyText(el.textContent); toast('Ключ скопирован'); }
+      });
+    });
+    const wn = document.getElementById('wgNew');
+    if (wn) wn.addEventListener('click', function () {
+      store.set('kWgPriv', wgPrivateKey());
+      store.set('kWgPub', '');
+      store.set('kWgPsk', bytesToB64(rndBytes(32)));
+      route();
+      toast('Новые ключи');
+    });
+    const wc = document.getElementById('wgPubCalc');
+    if (wc) wc.addEventListener('click', keysPublicKey);
+  }
+
+  /* ================= избранное и заметки ================= */
+  function starredFavs() { return favs().filter(function (id) { return BY_ID[id]; }); }
+  function starredNotes() {
+    const all = notesAll();
+    return Object.keys(all)
+      .filter(function (id) { return BY_ID[id] && String(all[id] || '').trim(); })
+      .map(function (id) { return { a: BY_ID[id], text: String(all[id]) }; });
+  }
+  function starredRead() {
+    const m = readMap();
+    return Object.keys(m).filter(function (id) { return BY_ID[id]; })
+      .map(function (id) { return BY_ID[id]; })
+      .sort(function (x, y) { return FLAT.indexOf(x) - FLAT.indexOf(y); });
+  }
+
+  function stItem(a, extra) {
+    const meta = [a._group ? a._group.name : '', a.path || ''].filter(Boolean).join(' · ');
+    return '<div class="st-item" data-text="' + esc((a.t + ' ' + meta + ' ' + (extra || '')).toLowerCase()) + '">' +
+      '<a class="st-main" href="#/' + a.id + '">' +
+      '<span class="st-ico">' + svg(a._group ? a._group.ic : 'book', 15) + '</span>' +
+      '<span class="st-body"><b>' + esc(a.t) + '</b><span>' + esc(meta) + '</span></span>' +
+      '</a>' +
+      (extra ? '<p class="st-snip">' + esc(extra) + '</p>' : '') +
+      '<div class="st-actions">' + (extra
+        ? '<button class="st-btn" data-delnote="' + a.id + '">удалить заметку</button>'
+        : '') +
+      '<button class="st-btn" data-unfav="' + a.id + '">убрать из избранного</button>' +
+      '</div></div>';
+  }
+
+  function starredView() {
+    const tab = store.get('stv') || 'fav';
+    const favIds = starredFavs();
+    const notes = starredNotes();
+    const read = starredRead();
+    const list = tab === 'note' ? notes : (tab === 'read' ? read : favIds.map(function (id) { return { a: BY_ID[id], text: '' }; }));
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Избранное и заметки</span></div>';
+    html += '<h1 class="art-title">Избранное и заметки</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Всё, что вы отметили ★, написали в заметках и уже прочитали — в одном месте. Список можно выгрузить в HTML и отправить коллеге.</div>';
+
+    html += '<div class="chips">' +
+      '<button class="chip' + (tab === 'fav' ? ' on' : '') + '" data-stab="fav">Избранное · ' + favIds.length + '</button>' +
+      '<button class="chip' + (tab === 'note' ? ' on' : '') + '" data-stab="note">Заметки · ' + notes.length + '</button>' +
+      '<button class="chip' + (tab === 'read' ? ' on' : '') + '" data-stab="read">Прочитано · ' + read.length + '</button>' +
+      '</div>';
+
+    html += '<div class="st-tools">' +
+      '<input class="inp" id="stq" type="search" placeholder="Фильтр по названию или заметке" autocomplete="off" spellcheck="false">' +
+      '</div>';
+
+    if (!list.length) {
+      html += '<div class="empty">' + (tab === 'fav'
+        ? 'Пока пусто. Открывайте статьи и отмечайте нужные звёздочкой ★ в заголовке — они появятся здесь.'
+        : tab === 'note'
+          ? 'Заметок нет. В конце каждой статьи есть блок «Моя заметка» — он сохраняется на устройстве.'
+          : 'Ещё ничего не прочитано. Начните с <a class="badge" href="#/start-first-login">первого входа в роутер</a> или с <a class="badge" href="#/course">курса за 7 дней</a>.') + '</div>';
+    } else {
+      html += '<div class="st-list">' + list.map(function (x) {
+        return stItem(x.a, x.text);
+      }).join('') + '</div>';
+      html += '<div class="st-empty" id="stEmpty" hidden>Ничего не найдено по фильтру.</div>';
+    }
+
+    html += '<div class="wz-actions">' +
+      '<button class="btn primary" id="stExport">Выгрузить в HTML</button>' +
+      '<button class="btn" id="stShare">Поделиться списком</button>' +
+      '</div>';
+    html += '<div class="hint" style="margin-top:10px">Данные хранятся только на этом устройстве. Перенос — через «Мои данные» → резервная копия.</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function starredHtml() {
+    const ver = window.APP_VERSION || 'dev';
+    const parts = [];
+    parts.push('<!doctype html><html lang="ru"><head><meta charset="utf-8">');
+    parts.push('<meta name="viewport" content="width=device-width,initial-scale=1">');
+    parts.push('<title>MikroTik · мои статьи и заметки</title>');
+    parts.push('<style>' + EXPORT_CSS + '</style></head><body>');
+    parts.push('<h1>Мои статьи и заметки</h1>');
+    parts.push('<div class="meta">Версия ' + esc(ver) + ' · выгружено ' + new Date().toLocaleString('ru-RU') + '</div>');
+    const favIds = starredFavs(), notes = starredNotes();
+    parts.push('<h2>Избранное (' + favIds.length + ')</h2>');
+    parts.push(favIds.length ? '<ul>' + favIds.map(function (id) {
+      const a = BY_ID[id];
+      return '<li><b>' + esc(a.t) + '</b> — ' + esc(a._group ? a._group.name : '') +
+        (a.path ? ', ' + esc(a.path) : '') + '</li>';
+    }).join('') + '</ul>' : '<p class="meta">Пусто.</p>');
+    parts.push('<h2>Заметки (' + notes.length + ')</h2>');
+    parts.push(notes.length ? notes.map(function (x) {
+      return '<h3>' + esc(x.a.t) + '</h3><p class="p">' + esc(x.text) + '</p>';
+    }).join('') : '<p class="meta">Пусто.</p>');
+    parts.push('<p class="meta">Выгружено из приложения «MikroTik · Учебник Winbox 4».</p></body></html>');
+    return parts.join('\n');
+  }
+
+  function exportStarred(share) {
+    const html = starredHtml();
+    if (share) { shareText('Избранное: ' + starredFavs().length + ' статей, заметок: ' + starredNotes().length, 'Мои статьи и заметки'); return; }
+    const name = 'mikrotik-my-notes-' + todayISO() + '.html';
+    const saved = saveTextFile(name, html);
+    if (saved === 'blob') toast('Сохранено: ' + name);
+    else if (saved === 'bridge') toast('Файл сохраняется в Загрузки');
+    else shareText(html, 'Мои статьи и заметки');
+  }
+
+  function bindStarred() {
+    document.querySelectorAll('[data-stab]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        store.set('stv', b.getAttribute('data-stab'));
+        route();
+      });
+    });
+    const q = document.getElementById('stq');
+    if (q) q.addEventListener('input', function () {
+      const v = q.value.trim().toLowerCase();
+      let shown = 0;
+      document.querySelectorAll('.st-item').forEach(function (el) {
+        const hit = !v || (el.getAttribute('data-text') || '').indexOf(v) >= 0;
+        el.hidden = !hit;
+        if (hit) shown++;
+      });
+      const em = document.getElementById('stEmpty');
+      if (em) em.hidden = shown > 0;
+    });
+    document.querySelectorAll('[data-unfav]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        toggleFav(b.getAttribute('data-unfav'));
+        route();
+        toast('Убрано из избранного');
+      });
+    });
+    document.querySelectorAll('[data-delnote]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        notesSet(b.getAttribute('data-delnote'), '');
+        route();
+        toast('Заметка удалена');
+      });
+    });
+    const ex = document.getElementById('stExport');
+    if (ex) ex.addEventListener('click', function () { exportStarred(false); });
+    const sh = document.getElementById('stShare');
+    if (sh) sh.addEventListener('click', function () { exportStarred(true); });
+  }
+
   /* ================= чек-лист защиты от взлома ================= */
   const HARDEN_RISK = { critical: 'обязательно', high: 'важно', medium: 'желательно' };
 
@@ -2969,6 +3427,19 @@
     });
   }
 
+  /* Приём .rsc из других приложений: «Открыть с помощью» / «Поделиться» */
+  window.AppOpenRsc = function (text) {
+    const t = String(text == null ? '' : text);
+    if (!t.trim()) return;
+    try {
+      store.set('audit', t);
+      window.__autoAudit = true;
+      if (location.hash.indexOf('#/audit') === 0) route();
+      else location.hash = '#/audit';
+      toast('Конфиг получен — проверяем');
+    } catch (e) { }
+  };
+
   function bindAudit() {
     const go = document.getElementById('aGo');
     if (!go) return;
@@ -2976,6 +3447,10 @@
     const saved = store.get('audit');
     if (saved && inp) inp.value = saved;
     go.addEventListener('click', auditRender);
+    if (saved && window.__autoAudit) {
+      window.__autoAudit = false;
+      setTimeout(auditRender, 60);
+    }
     document.getElementById('aSample').addEventListener('click', function () {
       inp.value = AUDIT_SAMPLE;
       auditRender();
@@ -3117,13 +3592,31 @@
     return { q: q.q, a: opts, c: c, e: q.e, r: q.r };
   }
 
-  function quizStart(count, exam) {
+  function quizStart(count, exam, groupId) {
     stopQuizTimer();
-    const pool = (window.QUIZ || []).slice();
+    let pool = (window.QUIZ || []).slice();
+    if (groupId) {
+      pool = pool.filter(function (q) {
+        const a = BY_ID[q.r];
+        return a && a._group && a._group.id === groupId;
+      });
+    }
     shuffle(pool);
     const n = count || 10;
     const list = (n >= pool.length ? pool : pool.slice(0, n)).map(quizShuffleOptions);
-    QZ = { list: list, i: 0, ans: [], picked: null, done: false, exam: !!exam, left: exam ? 20 * 60 : 0 };
+    QZ = { list: list, i: 0, ans: [], picked: null, done: false, exam: !!exam,
+      left: exam ? 20 * 60 : 0, group: groupId || null };
+  }
+
+  function quizGroupList() {
+    const cnt = {};
+    (window.QUIZ || []).forEach(function (q) {
+      const a = BY_ID[q.r];
+      if (!a || !a._group) return;
+      cnt[a._group.id] = (cnt[a._group.id] || 0) + 1;
+    });
+    return GROUPS.filter(function (g) { return (cnt[g.id] || 0) >= 3; })
+      .map(function (g) { return { id: g.id, name: g.name, n: cnt[g.id] }; });
   }
 
   function quizScore() {
@@ -3145,14 +3638,24 @@
         '<button class="btn" data-qn="25">25 вопросов</button>' +
         '<button class="btn" data-qn="' + total + '">Все ' + total + '</button>' +
         '<button class="btn" data-qn="exam">Экзамен: 30 вопросов · 20 мин</button>' +
-        '</div></section></div>';
+        '</div>';
+      const groups = quizGroupList();
+      if (groups.length) {
+        html += '<div class="qz-groups"><div class="qz-gl">Или тест по разделу:</div><div class="chips">' +
+          groups.map(function (g) {
+            return '<button class="chip" data-qg="' + g.id + '">' + esc(g.name) + ' · ' + g.n + '</button>';
+          }).join('') + '</div></div>';
+      }
+      html += '</section></div>';
       return html;
     }
 
     if (!QZ.done) {
       const cur = QZ.list[QZ.i];
       const picked = QZ.picked;
-      html += '<div class="qz-top"><span>Вопрос ' + (QZ.i + 1) + ' из ' + QZ.list.length + (QZ.exam ? ' · экзамен' : '') + '</span>' +
+      const gname = QZ.group && BY_ID[(QZ.list[0] || {}).r] && BY_ID[QZ.list[0].r]._group ? BY_ID[QZ.list[0].r]._group.name : '';
+      html += '<div class="qz-top"><span>Вопрос ' + (QZ.i + 1) + ' из ' + QZ.list.length +
+        (QZ.exam ? ' · экзамен' : (gname ? ' · ' + esc(gname) : '')) + '</span>' +
         '<span>' + (QZ.exam ? '⏱ <b id="qzTimer">' + qzClock(QZ.left) + '</b>' : 'Верно: ' + quizScore()) +
         ' · <button class="lnk" id="qzModes">сменить набор</button></span></div>' +
         '<div class="upd-bar"><i style="width:' + Math.round((QZ.i / QZ.list.length) * 100) + '%"></i></div>';
@@ -3211,6 +3714,12 @@
   }
 
   function bindQuiz() {
+    document.querySelectorAll('[data-qg]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        quizStart(10, false, b.getAttribute('data-qg'));
+        route();
+      });
+    });
     document.querySelectorAll('[data-qn]').forEach(function (b) {
       b.addEventListener('click', function () {
         const v = b.getAttribute('data-qn');
@@ -3229,7 +3738,8 @@
     if (rs) rs.addEventListener('click', function () {
       const wasExam = !!(QZ && QZ.exam);
       const n = QZ && QZ.list ? QZ.list.length : 10;
-      quizStart(wasExam ? 30 : n, wasExam);
+      const grp = QZ && QZ.group;
+      quizStart(wasExam ? 30 : n, wasExam, grp);
       rerender();
     });
     document.querySelectorAll('.qz-opt').forEach(function (b) {
@@ -3460,13 +3970,15 @@
       vlsm: 'VLSM-планировщик', diff: 'Сравнить конфиги', quiz: 'Самопроверка',
       audit: 'Аудит конфига', diag: 'Диагностика по симптому', glossary: 'Глоссарий и порты',
       harden: 'Защита от взлома', course: 'Курс за 7 дней', models: 'Порты моделей',
+      starred: 'Избранное и заметки', wifi: 'Каналы Wi-Fi', keys: 'Пароли и ключи', cheats: 'Шпаргалки',
       backup: 'Данные и резервная копия'
     };
     if (TOOL_TITLES[id]) {
       const VIEWS = {
         tools: toolsView, wizard: wizardView, subnet: subnetView, vlsm: vlsmView, diff: diffView,
         quiz: quizView, audit: auditView, diag: diagView, glossary: glossaryView, harden: hardenView,
-        course: courseView, models: modelsView, backup: backupView
+        course: courseView, models: modelsView, starred: starredView, wifi: wifiView,
+        keys: keysView, cheats: cheatsView, backup: backupView
       };
       content.innerHTML = VIEWS[id]();
       content.scrollTop = 0;
@@ -3474,10 +3986,25 @@
       const BINDS = {
         wizard: bindWizard, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
         audit: bindAudit, glossary: bindGlossary, harden: bindHarden, course: bindCourse,
-        models: bindModels, backup: bindBackup
+        models: bindModels, starred: bindStarred, wifi: bindWifi, keys: bindKeys, backup: bindBackup
       };
       if (BINDS[id]) BINDS[id]();
       document.title = TOOL_TITLES[id] + ' · MikroTik';
+      return;
+    }
+
+    if (id.indexOf('cheats/') === 0) {
+      const cid = id.slice(7);
+      const c = (window.CHEATS || []).filter(function (x) { return x.id === cid; })[0];
+      if (!c) {
+        content.innerHTML = '<div class="wrap"><div class="empty">Шпаргалка не найдена.<br><br><a class="badge" href="#/cheats">К шпаргалкам</a></div></div>';
+        return;
+      }
+      content.innerHTML = cheatDetailView(c);
+      content.scrollTop = 0;
+      markActive(null);
+      bindCheatDetail(c);
+      document.title = c.t + ' · MikroTik';
       return;
     }
 
@@ -3520,10 +4047,21 @@
     content.scrollTop = 0;
     markActive(id);
     markRead(id);
+    widgetSync(a);
     store.set('last', JSON.stringify({ id: id, at: Date.now() }));
     syncFavBtn();
     hydrate(a);
     document.title = a.t + ' · MikroTik Winbox 4';
+  }
+
+  /** Обновить виджет на главном экране Android: «Продолжить: …» и процент чтения. */
+  function widgetSync(a) {
+    try {
+      if (!window.AndroidBridge || typeof window.AndroidBridge.setWidget !== 'function') return;
+      const total = FLAT.length || 1;
+      const pct = Math.round(Object.keys(readMap()).length * 100 / total);
+      window.AndroidBridge.setWidget(a.t, a.id, pct);
+    } catch (e) { }
   }
 
   /* звезда «в избранное» */
