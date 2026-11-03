@@ -126,7 +126,7 @@ jobs:
           xdotool getwindowgeometry --shell "$WID" > docs/shots/geometry.txt 2>&1 || true
           xwininfo -root -tree > docs/shots/xwininfo.txt || true
 
-      - name: Снять окна Winbox 4 по одному
+      - name: Снять окна Winbox 4
         run: |
           set -x
           cd "$GITHUB_WORKSPACE"
@@ -140,46 +140,37 @@ jobs:
             done
             echo "$best"
           }
-          biggest_with_geo() {
-            WID=$(biggest)
-            eval "$(xdotool getwindowgeometry --shell "$WID")"
-          }
           start_winbox() {
-            pkill -f 'winbox/./WinBox' 2>/dev/null || true
-            pkill -f '/WinBox$' 2>/dev/null || true
-            sleep 2
+            pkill -f 'WinBox' 2>/dev/null || true
+            sleep 3
             ( cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software \
                 QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 \
                 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 & )
-            sleep 10
+            sleep 11
           }
+          # подключаемся двойным щелчком по строке CHR в списке соседей
           connect_chr() {
-            biggest_with_geo
+            WID=$(biggest); eval "$(xdotool getwindowgeometry --shell "$WID")"
             xdotool windowactivate --sync "$WID" || true
             sleep 1
-            xdotool mousemove $((X + 661)) $((Y + 282)) click 1
-            sleep 1
-            xdotool key --clearmodifiers ctrl+a
-            xdotool type --delay 30 '127.0.0.1'
-            sleep 1
-            xdotool key Return
-            for i in $(seq 1 10); do
+            xdotool mousemove $((X + 382)) $((Y + 119)) click --repeat 2 --delay 120 1
+            for i in $(seq 1 12); do
               sleep 3
               NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
               case "$NAME" in admin@*) break;; esac
             done
-            # диалог «Change Password Now» — закрываем
+            echo "  подключение: $(xdotool getwindowname "$WID" 2>/dev/null)" >> docs/shots/report.txt
+            # диалог «Change Password Now» — Cancel
             xdotool mousemove $((X + 665)) $((Y + 404)) click 1
             sleep 2
           }
           shot() { import -window root "docs/shots/$1.png" || true; sleep 0.4; }
 
-          # args: имя  dy_дерева  dy_подменю  new(0/1)
           capture() {
             name=$1; tdy=$2; sdy=$3; newbtn=${4:-0}
             start_winbox
             connect_chr
-            biggest_with_geo
+            WID=$(biggest); eval "$(xdotool getwindowgeometry --shell "$WID")"
             xdotool mousemove $((X + 80)) $((Y + tdy)) click 1
             sleep 2
             if [ -n "$sdy" ] && [ "$sdy" != "-" ]; then
@@ -190,24 +181,21 @@ jobs:
               xdotool mousemove $((X + 182)) $((Y + 164)) click 1
               sleep 3
             fi
-            shot "$name"
+            shot "raw-$name"
+            convert "docs/shots/raw-$name.png" -crop 1200x700+200+200 +repage "docs/shots/win-$name.png" 2>/dev/null || true
+            rm -f "docs/shots/raw-$name.png"
           }
 
-          capture 31-quickset      50  -   0
-          capture 32-wifi          72  -   0
-          capture 33-interfaces    95  -   0
-          capture 34-wireguard    122  -   0
-          capture 35-bridge       146  -   0
-          capture 36-ppp          170  -   0
-          capture 37-queues       353  -   0
-          capture 38-files        398  -   0
-          capture 40-ip-address    238 53   0
-          capture 41-ip-dhcpserver 238 122  0
-          capture 42-ip-dns        238 144  0
-          capture 43-ip-firewall   238 168  0
-          capture 44-ip-routes     238 399  0
-          capture 45-ip-services   238 492  0
-          capture 46-fw-new        238 168  1
+          capture quickset      50  -   0
+          capture interfaces    95  -   0
+          capture wireguard    122  -   0
+          capture bridge       146  -   0
+          capture firewall     238 168  0
+          capture ip-address   238 53   0
+          capture ip-dns       238 144  0
+          capture ip-routes    238 399  0
+          capture ip-services  238 492  0
+          capture fw-new       238 168  1
           xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
 
       - name: Отчёт и скриншоты в ветку
