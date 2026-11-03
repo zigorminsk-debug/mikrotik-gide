@@ -56,7 +56,7 @@ jobs:
         run: |
           set -euxo pipefail
           cd /tmp/wb
-          qemu-system-x86_64 -m 768 -smp 2 -machine pc \
+          qemu-system-x86_64 -m 1536 -smp 4 -machine pc -accel tcg,thread=multi \
             -drive file=chr.qcow2,format=qcow2,if=virtio \
             -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
             -device virtio-net-pci,netdev=n0 \
@@ -97,7 +97,7 @@ jobs:
         run: |
           set -x
           mkdir -p docs/shots
-          WID=$(xdotool search --name 'WinBox' | head -1)
+          WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
           echo "WID=$WID" >> docs/shots/report.txt
           xdotool windowactivate --sync "$WID" || true
           sleep 1
@@ -109,26 +109,28 @@ jobs:
       - name: Дождаться рабочего стола и снять его
         run: |
           set -x
-          for i in 10 20 30 45 60 80 100 120; do
-            sleep_step=$(( i - ${prev:-0} )); prev=$i
-            sleep "$sleep_step"
-            WID=$(xdotool search --name 'WinBox' | head -1)
+          WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
+          for i in $(seq 1 24); do
+            sleep 20
             NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
-            echo "t=${i}s window=\"$NAME\"" >> docs/shots/report.txt
-            import -window root "docs/shots/10-wait-$i.png" || true
+            echo "t=$((i*20))s window=\"$NAME\"" >> docs/shots/report.txt
+            import -window root "docs/shots/10-wait-$((i*20)).png" || true
             if [ "$NAME" != "WinBox 4.4" ] && [ -n "$NAME" ]; then
-              echo "подключились на ${i}c: $NAME" >> docs/shots/report.txt
+              echo "подключились на $((i*20))c: $NAME" >> docs/shots/report.txt
               break
             fi
+            # проверяем, отвечает ли служба winbox у CHR
+            (echo > /dev/tcp/127.0.0.1/8291) >/dev/null 2>&1 && echo "  порт 8291 отвечает" >> docs/shots/report.txt || true
           done
-          WID=$(xdotool search --name 'WinBox' | head -1)
+          WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
           xdotool getwindowgeometry --shell "$WID" > docs/shots/geometry.txt 2>&1 || true
           xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
+          import -window root docs/shots/11-desktop.png || true
 
       - name: Проба клика по дереву разделов
         run: |
           set -x
-          WID=$(xdotool search --name 'WinBox' | head -1)
+          WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
           xdotool windowactivate --sync "$WID" || true
           eval "$(xdotool getwindowgeometry --shell "$WID")"
           echo "окно X=$X Y=$Y W=$WIDTH H=$HEIGHT" >> docs/shots/report.txt
