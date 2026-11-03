@@ -1134,3 +1134,17 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 .qz-groups{margin-top:14px}
 .qz-gl{font-size:calc(12px * var(--fsm, 1));color:var(--txt-mute);margin-bottom:8px}
 .qz-groups .chip{font-size:calc(12.5px * var(--fsm, 1))}
+
+/* =============== мастер: шаблоны и маршруты =============== */
+.tpl-save{display:flex;gap:8px;flex-wrap:wrap}
+.tpl-save .inp{flex:1 1 180px;min-width:0}
+.tpl-chip{display:inline-flex;align-items:center}
+.tpl-chip .chip{border-top-right-radius:0;border-bottom-right-radius:0}
+.tpl-del{
+  font:inherit;border:1px solid var(--line);border-left:none;background:var(--panel-2);
+  color:var(--txt-mute);border-radius:0 999px 999px 0;padding:6px 9px;line-height:1;
+}
+.tpl-del:active{color:var(--red);border-color:var(--red)}
+.route-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.route-row .inp{flex:1 1 100px;min-width:0}
+.route-row .r-dist{flex:0 0 74px}

@@ -43,7 +43,13 @@
     syslog: false, syslogHost: '192.168.88.10',
     nat: true, protect: true,
     autobackup: false,
-    tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org'
+    tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org',
+    author: '',            // объект или автор конфига — попадёт в шапку
+    leaseTime: '1d',       // время аренды DHCP
+    wifiCountry: 'belarus', wifiCh24: 6, wifiCh5: 36, wifiWidth: 20, wifiTxPower: '',
+    routes: [],            // [{dst, gw, distance}] — статические маршруты
+    mail: false, mailServer: 'smtp.yandex.ru', mailPort: 587, mailFrom: 'router@example.com',
+    mailTo: 'admin@example.com', mailUser: '', mailPass: ''
   };
 
   /* типовые модели: подставляют порты и наличие Wi-Fi */
@@ -76,6 +82,16 @@
     hub: {
       name: 'VPN-хаб',
       set: { identity: 'vpn-hub', wan: 'static', guest: false, wifi: false, wg: true, l2tp: true, ipv6: 'off' }
+    },
+    cctv: {
+      name: 'Видеонаблюдение',
+      set: { identity: 'cctv-gw', wan: 'dhcp', guest: false, wifi: false, wg: true,
+        protect: true, harden: true, autobackup: true }
+    },
+    school: {
+      name: 'Школа / класс',
+      set: { identity: 'school-gw', wan: 'dhcp', guest: true, wifi: true, wg: false,
+        ipv6: 'off', protect: true, qos: true, wanDown: 200, wanUp: 200 }
     }
   };
 
@@ -146,6 +162,16 @@
   }
 
   /* ---------------- проверка ответов ---------------- */
+  function ch24Freq(n) { return 2412 + 5 * ((parseInt(n, 10) || 1) - 1); }
+  function ch5Freq(n) { return 5000 + 5 * (parseInt(n, 10) || 36); }
+  function cidrOk(v) {
+    const t = String(v || '').trim();
+    const m = t.match(/^(\d+\.\d+\.\d+\.\d+)\/(\d{1,2})$/);
+    if (!m) return false;
+    const p = parseInt(m[2], 10);
+    return p >= 0 && p <= 32 && ipOk(m[1]);
+  }
+
   function validate(rawOpts) {
     const o = rawOpts || {};
     const issues = [];
@@ -204,6 +230,44 @@
       err('l2tpPsk', 'IPsec PSK — минимум 8 символов');
     }
     const wanPortV = clean(opt(o, 'wanPort')) || 'ether1';
+
+    if (opt(o, 'wifi')) {
+      const ch24 = parseInt(opt(o, 'wifiCh24'), 10);
+      const ch5 = parseInt(opt(o, 'wifiCh5'), 10);
+      const width = parseInt(opt(o, 'wifiWidth'), 10) || 20;
+      if (!(ch24 >= 1 && ch24 <= 13)) err('wifiCh24', 'Канал 2.4 ГГц должен быть 1–13');
+      if (!(ch5 >= 32 && ch5 <= 177)) err('wifiCh5', 'Канал 5 ГГц должен быть 32–177');
+      if ([20, 40, 80].indexOf(width) < 0) err('wifiWidth', 'Ширина канала: 20, 40 или 80 МГц');
+      if (!clean(opt(o, 'wifiCountry'))) err('wifiCountry', 'Укажите страну — от неё зависят разрешённые каналы и мощность');
+      if (width === 40 && ch24 >= 1 && ch24 <= 13) warn('wifiCh24', 'Ширина 40 МГц в 2.4 ГГц перекрывает почти весь диапазон — оставьте 20');
+    }
+
+    (o.routes || []).forEach(function (r, i) {
+      if (!r) return;
+      const empty = !clean(r.dst) && !clean(r.gw);
+      if (empty) return;
+      if (!cidrOk(r.dst)) err('routes', 'Маршрут ' + (i + 1) + ': адрес сети должен быть вида 10.20.0.0/16');
+      if (!ipOk(clean(r.gw))) err('routes', 'Маршрут ' + (i + 1) + ': шлюз должен быть IP-адресом');
+      const d = parseInt(r.distance, 10);
+      if (r.distance && !(d >= 1 && d <= 255)) err('routes', 'Маршрут ' + (i + 1) + ': дистанция 1–255');
+      if (cidrOk(r.dst) && lanNet) {
+        const rn = networkOf(r.dst.split('/')[0], +r.dst.split('/')[1]);
+        if (rn && rn.cidr === lanNet.cidr) warn('routes', 'Маршрут ' + (i + 1) + ' совпадает с сетью LAN — он не понадобится');
+      }
+    });
+
+    if (opt(o, 'mail')) {
+      const port = parseInt(opt(o, 'mailPort'), 10);
+      if (!clean(opt(o, 'mailServer'))) err('mailServer', 'Укажите SMTP-сервер');
+      if (!(port >= 1 && port <= 65535)) err('mailPort', 'Порт SMTP должен быть 1–65535');
+      const from = clean(opt(o, 'mailFrom')), to = clean(opt(o, 'mailTo'));
+      if (!/.+@.+\..+/.test(from)) err('mailFrom', 'Адрес отправителя выглядит некорректно');
+      if (!/.+@.+\..+/.test(to)) err('mailTo', 'Адрес получателя выглядит некорректно');
+      if (clean(opt(o, 'mailUser')) && !clean(opt(o, 'mailPass'))) warn('mailPass', 'Логин указан без пароля — сервер может отклонить отправку');
+    }
+
+    const lease = clean(opt(o, 'leaseTime')) || '1d';
+    if (!/^\d+[smhdw]?$/.test(lease)) err('leaseTime', 'Время аренды DHCP: 30m, 12h, 1d, 1w');
     if (opt(o, 'guest') && clean(opt(o, 'guestPort')) === wanPortV) {
       err('guestPort', 'Гостевой порт не может совпадать с портом WAN');
     }
@@ -324,6 +388,19 @@
     const snmpOn = !!opt(o, 'snmp');
     const syslogOn = !!opt(o, 'syslog');
     const wan2Port = clean(opt(o, 'wan2Port')) || 'lte1';
+    const routes = (o.routes || []).filter(function (r) {
+      return r && cidrOk(r.dst) && ipOk(clean(r.gw));
+    }).map(function (r) {
+      const d = parseInt(r.distance, 10);
+      return { dst: clean(r.dst), gw: clean(r.gw), distance: d >= 1 && d <= 255 ? d : 1 };
+    });
+    const mailOn = !!opt(o, 'mail');
+    const mailTo = clean(opt(o, 'mailTo'));
+    const authorLine = clean(opt(o, 'author'));
+    const leaseTime = clean(opt(o, 'leaseTime')) || '1d';
+    const mailSend = function (subject, body) {
+      return '/tool e-mail send to=' + q(mailTo) + ' subject=' + q(subject) + ' body=' + q(body);
+    };
 
     const segs = (o.segments || []).map(function (sg) {
       const parts = String(sg.ip || '').split('/');
@@ -362,6 +439,8 @@
     push('# ' + identity + ' — конфиг собран мастером приложения «MikroTik · Учебник Winbox 4»',
       '# RouterOS 7.x. Вставьте целиком в New Terminal.',
       '# Перед вставкой сохраните текущий конфиг: /export file=before-change');
+    if (authorLine) push('# Объект / автор: ' + authorLine);
+    push('# Собрано: ' + new Date().toLocaleString('ru-RU') + ' · разделов: предпросмотр ниже');
     if (errors.length) {
       push('# ВНИМАНИЕ: есть незаполненные или некорректные поля — исправьте их перед вставкой:');
       errors.forEach(function (e) { push('#   · ' + e); });
@@ -418,6 +497,10 @@
         downCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=10';
         upCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=1';
       }
+      if (mailOn) {
+        downCmd += '; ' + mailSend('WAN1 down', 'Основной канал упал, включён резервный маршрут.');
+        upCmd += '; ' + mailSend('WAN1 up', 'Основной канал восстановлен.');
+      }
       push('/tool netwatch add host=' + (ipOk(opt(o, 'wan2Check')) ? clean(opt(o, 'wan2Check')) : '8.8.8.8') +
         ' interval=30s comment="wan1 failover" down-script=' + q(downCmd) + ' up-script=' + q(upCmd),
         '# Если канал оживёт, netwatch вернёт основному маршруту дистанцию 1.');
@@ -433,18 +516,29 @@
         const from = base + (lanPrefix >= 25 ? 2 : 10);
         const to = base + (inf.hosts > 200 ? 250 : Math.min(254, inf.hosts + 1));
         push('/ip pool add name=lan-pool ranges=' + from + '-' + to,
-          '/ip dhcp-server add name=dhcp-lan interface=' + bridge + ' address-pool=lan-pool lease-time=1d',
+          '/ip dhcp-server add name=dhcp-lan interface=' + bridge + ' address-pool=lan-pool lease-time=' + leaseTime,
           '/ip dhcp-server network add address=' + inf.cidr + ' gateway=' + lanIp + ' dns-server=' + lanIp);
       }
     }
     push('/ip dns set servers=' + clean(opt(o, 'dns')) + ' allow-remote-requests=yes');
+
+    if (routes.length) {
+      sec('Статические маршруты');
+      push('# Для сетей за другим роутером или второго шлюза. Дистанция по умолчанию 1.');
+      routes.forEach(function (r) {
+        push('/ip route add dst-address=' + r.dst + ' gateway=' + r.gw +
+          (r.distance && r.distance !== 1 ? ' distance=' + r.distance : '') +
+          ' comment=' + q('static ' + r.dst));
+      });
+    }
 
     if (guestOn) {
       sec('Гостевая сеть (VLAN 20)');
       const gIp = clean(opt(o, 'guestIp'));
       push('/ip address add address=' + gIp + '/' + (+opt(o, 'guestPrefix')) + ' interface=' + guestIface,
         '/ip pool add name=guest-pool ranges=' + gIp.replace(/\.\d+$/, '.100') + '-' + gIp.replace(/\.\d+$/, '.200'),
-        '/ip dhcp-server add name=dhcp-guest interface=' + guestIface + ' address-pool=guest-pool lease-time=1h',
+        '/ip dhcp-server add name=dhcp-guest interface=' + guestIface + ' address-pool=guest-pool lease-time=' +
+        (leaseTime === '1d' ? '1h' : leaseTime),
         '/ip dhcp-server network add address=' + netCidr(gIp, +opt(o, 'guestPrefix')) + ' gateway=' + gIp +
         ' dns-server=' + clean(opt(o, 'dns')).split(',')[0]);
     }
@@ -493,6 +587,20 @@
         '/interface wifi',
         'add name=wifi-lan master-interface=wifi1 ssid=' + q(opt(o, 'wifiSsid')) + ' security=sec-lan',
         '/interface bridge port add bridge=' + bridge + ' interface=wifi-lan');
+      const country = clean(opt(o, 'wifiCountry')) || 'belarus';
+      const width = parseInt(opt(o, 'wifiWidth'), 10) || 20;
+      const ch24 = parseInt(opt(o, 'wifiCh24'), 10) || 6;
+      const ch5 = parseInt(opt(o, 'wifiCh5'), 10) || 36;
+      push('', '# Страна и каналы: от страны зависят разрешённые частоты и мощность',
+        '/interface wifi set wifi1 country=' + country);
+      const txp = clean(opt(o, 'wifiTxPower'));
+      if (txp) push('/interface wifi set wifi1 tx-power=' + txp);
+      push('/interface wifi set wifi1 channel.frequency=' + ch24Freq(ch24) + ' channel.width=' + width + 'mhz');
+      push('# 5 ГГц (второй радиоинтерфейс, у hAP ax2/ax3 это wifi2):',
+        '# /interface wifi set wifi2 channel.frequency=' + ch5Freq(ch5) + ' channel.width=' + (width === 20 ? 80 : width) + 'mhz');
+      if (width === 40 && ch24 >= 1 && ch24 <= 13) {
+        push('# ВНИМАНИЕ: 40 МГц в 2.4 ГГц занимает почти весь диапазон — лучше 20 МГц.');
+      }
       if (guestOn) {
         push('/interface wifi security add name=sec-guest authentication-types=wpa2-psk passphrase=' + q(opt(o, 'wifiGuestPass')),
           '/interface wifi add name=wifi-guest master-interface=wifi1 ssid=' + q(opt(o, 'wifiGuestSsid')) + ' security=sec-guest',
@@ -664,6 +772,21 @@
         '# FastTrack обходит очереди: если шейпинг не срабатывает, исключите нужный трафик из fasttrack-connection.');
     }
 
+    if (mailOn) {
+      sec('Уведомления на e-mail');
+      push('/tool e-mail set server=' + q(opt(o, 'mailServer')) + ' port=' + (parseInt(opt(o, 'mailPort'), 10) || 587) +
+        ' from=' + q(opt(o, 'mailFrom')) + ' tls=yes' +
+        (clean(opt(o, 'mailUser')) ? ' user=' + q(opt(o, 'mailUser')) + ' password=' + q(opt(o, 'mailPass')) : ''));
+      if (!failoverOn) {
+        push('/tool netwatch add host=' + (ipOk(opt(o, 'wan2Check')) ? clean(opt(o, 'wan2Check')) : '8.8.8.8') +
+          ' interval=1m comment="internet watch" down-script=' +
+          q(mailSend('Internet down', 'Роутер ' + identity + ' не видит внешний адрес.')) +
+          ' up-script=' + q(mailSend('Internet up', 'Роутер ' + identity + ' снова в сети.')));
+      }
+      push('# Проверка отправки:', '# ' + mailSend('RouterOS test', 'Письмо от ' + identity));
+      push('# Пароль SMTP останется в конфиге — используйте отдельный ящик только для роутера.');
+    }
+
     if (snmpOn || syslogOn) {
       sec('Мониторинг');
       if (snmpOn) {
@@ -729,6 +852,8 @@
         ipv6: ipv6Mode === 'off' ? 0 : 1,
         segments: segs.length,
         leases: leases.length,
+        routes: routes.length,
+        notify: mailOn ? 1 : 0,
         services: (failoverOn ? 1 : 0) + (hotspotOn ? 1 : 0) + (qosOn ? 1 : 0) + (snmpOn ? 1 : 0) +
           (syslogOn ? 1 : 0) + (hardenOn ? 1 : 0)
       }

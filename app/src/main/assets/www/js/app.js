@@ -1559,6 +1559,13 @@
   }
 
   function wizStore(o) { store.set('wiz', JSON.stringify(o)); }
+  function wizTpls() {
+    try {
+      const v = JSON.parse(store.get('wizTpls') || '[]');
+      return Array.isArray(v) ? v.filter(function (t) { return t && t.name && t.data; }) : [];
+    } catch (e) { return []; }
+  }
+  function wizTplsSave(list) { store.set('wizTpls', JSON.stringify(list.slice(0, 12))); }
 
   function wizField(id, label, value, hint, wide) {
     return '<label class="wz-row' + (wide ? ' wide' : '') + '"><span class="wz-l">' + esc(label) + '</span>' +
@@ -1602,6 +1609,15 @@
       '<button class="btn s-del" type="button" aria-label="Удалить">✕</button></div>';
   }
 
+  function routeRow(r, i) {
+    r = r || {};
+    return '<div class="route-row" data-ri="' + i + '">' +
+      '<input class="inp r-dst mono" value="' + esc(r.dst || '') + '" placeholder="10.20.0.0/16">' +
+      '<input class="inp r-gw mono" value="' + esc(r.gw || '') + '" placeholder="192.168.88.2">' +
+      '<input class="inp r-dist mono" value="' + esc(r.distance || '') + '" placeholder="дист.">' +
+      '<button class="btn r-del" type="button" aria-label="Удалить">✕</button></div>';
+  }
+
   function leaseRow(l, i) {
     l = l || {};
     return '<div class="lease-row" data-li="' + i + '">' +
@@ -1636,12 +1652,26 @@
       }).join('') + '</div>';
     }
 
+    const tpls = wizTpls();
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Мои шаблоны</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Сохраните заполненные ответы (например «Офис на Мира») и подставляйте их на новом роутере — или отдайте коллеге.</div>' +
+      '<div class="tpl-save"><input class="inp" id="tplName" placeholder="Название шаблона" maxlength="40">' +
+      '<button class="btn" id="tplSave" type="button">Сохранить ответы</button></div>' +
+      (tpls.length
+        ? '<div class="chips" style="margin-top:10px">' + tpls.map(function (t, i) {
+          return '<span class="tpl-chip"><button class="chip" data-tpl="' + i + '">' + esc(t.name) + '</button>' +
+            '<button class="tpl-del" data-tpldel="' + i + '" aria-label="Удалить шаблон">✕</button></span>';
+        }).join('') + '</div>'
+        : '<div class="hint" style="margin-top:8px">Сохранённых шаблонов пока нет.</div>') +
+      '</section>';
+
     const models = (window.ConfigWizard && window.ConfigWizard.models) ? window.ConfigWizard.models() : [];
     html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Роутер и WAN</h3>' +
       (models.length ? wizSelect('w-model', 'Модель роутера', o.model, models.map(function (m) {
         return { v: m.id, t: m.name };
       }), 'подставит порты и наличие Wi-Fi') : '') +
       wizField('w-identity', 'Имя роутера', o.identity) +
+      wizField('w-author', 'Объект / автор', o.author, 'попадёт в шапку конфига') +
       wizSelect('w-wan', 'Подключение к провайдеру', o.wan, [
         { v: 'dhcp', t: 'DHCP (автоматически)' },
         { v: 'static', t: 'Статический IP' },
@@ -1683,10 +1713,31 @@
       '<div class="wz-group' + (o.wifi ? '' : ' off') + '" data-g="wifi">' +
       wizField('w-wifiSsid', 'Имя сети (SSID)', o.wifiSsid) +
       wizField('w-wifiPass', 'Пароль Wi-Fi', o.wifiPass, 'минимум 8 символов') +
+      '<div class="wz-row"><span class="wz-l"></span><button class="btn" id="wizGenPass" type="button">Сгенерировать пароли Wi-Fi</button></div>' +
       '<div class="wz-group' + (o.guest ? '' : ' off') + '" data-g="guest">' +
       wizField('w-wifiGuestSsid', 'Гостевой SSID', o.wifiGuestSsid) +
       wizField('w-wifiGuestPass', 'Пароль гостевого Wi-Fi', o.wifiGuestPass) +
-      '</div></div></section>';
+      '</div>' +
+      wizSelect('w-wifiCountry', 'Страна (регуляторные правила)', o.wifiCountry, [
+        { v: 'belarus', t: 'Беларусь' },
+        { v: 'russia4', t: 'Россия' },
+        { v: 'ukraine', t: 'Украина' },
+        { v: 'lithuania', t: 'Литва' },
+        { v: 'latvia', t: 'Латвия' },
+        { v: 'estonia', t: 'Эстония' },
+        { v: 'poland', t: 'Польша' },
+        { v: 'kazakhstan', t: 'Казахстан' },
+        { v: 'etsi', t: 'ETSI (Европа)' }
+      ], 'влияет на разрешённые каналы и мощность') +
+      wizField('w-wifiCh24', 'Канал 2.4 ГГц', o.wifiCh24, '1, 6 и 11 не пересекаются') +
+      wizField('w-wifiCh5', 'Канал 5 ГГц', o.wifiCh5, '36–48 или 149–161') +
+      wizSelect('w-wifiWidth', 'Ширина канала', o.wifiWidth, [
+        { v: '20', t: '20 МГц — максимум совместимости' },
+        { v: '40', t: '40 МГц' },
+        { v: '80', t: '80 МГц — только 5 ГГц' }
+      ]) +
+      wizField('w-wifiTxPower', 'Мощность передатчика', o.wifiTxPower, 'пусто — авто; иначе dbm') +
+      '</div></section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('ip', 15) + 'IPv6</h3>' +
       wizSelect('w-ipv6', 'IPv6', o.ipv6, [
@@ -1727,6 +1778,11 @@
       '<div id="wizSegs">' + (o.segments || []).map(segRow).join('') + '</div>' +
       '<button class="btn" id="segAdd" type="button">+ Добавить сегмент</button></section>';
 
+    html += '<section class="card"><h3 class="card-h">' + svg('ip', 15) + 'Статические маршруты</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Сети за другим роутером, второй шлюз или отдельный маршрут через VPN. Дистанция 1 — основной, 2 — резервный.</div>' +
+      '<div id="wizRoutes">' + (o.routes || []).map(routeRow).join('') + '</div>' +
+      '<button class="btn" id="routeAdd" type="button">+ Добавить маршрут</button></section>';
+
     html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Резервирование адресов и имена</h3>' +
       '<div class="hint" style="margin:-4px 0 8px">Постоянный адрес для принтера, камеры или NAS — по MAC. Локальные имена работают через DNS роутера.</div>' +
       '<div id="wizLeases">' + (o.leases || []).map(leaseRow).join('') + '</div>' +
@@ -1754,6 +1810,32 @@
       wizField('w-syslogHost', 'IP сервера логов', o.syslogHost) +
       '</div>' +
       wizSwitch('w-harden', 'Базовая защита от взлома', o.harden, 'MAC-сервер, discovery, blacklist') +
+      '</section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Уведомления на e-mail</h3>' +
+      wizSwitch('w-mail', 'Письмо при падении канала', o.mail, 'SMTP + netwatch: узнаете о сбое раньше клиента') +
+      '<div class="wz-group' + (o.mail ? '' : ' off') + '" data-g="mail">' +
+      wizField('w-mailServer', 'SMTP-сервер', o.mailServer, 'например smtp.yandex.ru') +
+      wizField('w-mailPort', 'Порт', o.mailPort, '587 с TLS') +
+      wizField('w-mailFrom', 'От кого', o.mailFrom) +
+      wizField('w-mailTo', 'Кому', o.mailTo) +
+      wizField('w-mailUser', 'Логин SMTP', o.mailUser, 'можно оставить пустым') +
+      wizField('w-mailPass', 'Пароль SMTP', o.mailPass, 'останется в конфиге — отдельный ящик') +
+      '</div></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Время и аренда адресов</h3>' +
+      wizSelect('w-tz', 'Часовой пояс', o.tz, [
+        { v: 'Europe/Minsk', t: 'Минск (UTC+3)' },
+        { v: 'Europe/Moscow', t: 'Москва (UTC+3)' },
+        { v: 'Europe/Kiev', t: 'Киев (UTC+2/3)' },
+        { v: 'Europe/Warsaw', t: 'Варшава (UTC+1/2)' },
+        { v: 'Europe/Vilnius', t: 'Вильнюс (UTC+2/3)' },
+        { v: 'Europe/Riga', t: 'Рига (UTC+2/3)' },
+        { v: 'Asia/Almaty', t: 'Алматы (UTC+5/6)' },
+        { v: 'UTC', t: 'UTC' }
+      ], 'нужен для корректных логов и сертификатов') +
+      wizField('w-ntp', 'NTP-серверы', o.ntp, 'через запятую или пул') +
+      wizField('w-leaseTime', 'Время аренды DHCP', o.leaseTime, '1d, 12h, 1w') +
       '</section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Дополнительно</h3>' +
@@ -1838,6 +1920,23 @@
         });
         return out;
       })(),
+      author: g('w-author', ''),
+      wifiCountry: g('w-wifiCountry', 'belarus'), wifiCh24: g('w-wifiCh24', 6),
+      wifiCh5: g('w-wifiCh5', 36), wifiWidth: g('w-wifiWidth', 20), wifiTxPower: g('w-wifiTxPower', ''),
+      tz: g('w-tz', 'Europe/Minsk'), ntp: g('w-ntp', 'by.pool.ntp.org'),
+      leaseTime: g('w-leaseTime', '1d'),
+      mail: on('w-mail'), mailServer: g('w-mailServer', ''), mailPort: g('w-mailPort', 587),
+      mailFrom: g('w-mailFrom', ''), mailTo: g('w-mailTo', ''),
+      mailUser: g('w-mailUser', ''), mailPass: g('w-mailPass', ''),
+      routes: (function () {
+        const out = [];
+        document.querySelectorAll('#wizRoutes .route-row').forEach(function (r) {
+          const get = function (cls) { const el = r.querySelector(cls); return el ? el.value.trim() : ''; };
+          const rt = { dst: get('.r-dst'), gw: get('.r-gw'), distance: get('.r-dist') };
+          if (rt.dst || rt.gw) out.push(rt);
+        });
+        return out;
+      })(),
       model: g('w-model', 'generic'),
       failover: on('w-failover'), wan2Port: g('w-wan2Port', 'lte1'), wan2Check: g('w-wan2Check', '8.8.8.8'),
       harden: on('w-harden'),
@@ -1846,7 +1945,6 @@
       snmp: on('w-snmp'), snmpCommunity: g('w-snmpCommunity', 'mon-8f3c1a'), snmpHost: g('w-snmpHost', '192.168.88.0/24'),
       syslog: on('w-syslog'), syslogHost: g('w-syslogHost', '192.168.88.10'),
       nat: on('w-nat'), protect: on('w-protect'), autobackup: on('w-autobackup'),
-      tz: wizSaved().tz || 'Europe/Minsk', ntp: wizSaved().ntp || 'by.pool.ntp.org',
       preset: wizSaved().preset || ''
     };
   }
@@ -1873,8 +1971,9 @@
     let h = '<section class="card" style="margin-top:14px"><h3 class="card-h">' + svg('task', 15) + 'Готовый конфиг</h3>' +
       '<div class="hint" style="margin:-4px 0 10px">' + esc(res.title || '') + ' · строк: ' + (res.lines || 0) +
       ' · пробросов: ' + (c.forwards || 0) + ' · сегментов: ' + (c.segments || 0) +
-      ' · резервирований: ' + (c.leases || 0) + ' · сервисов: ' + (c.services || 0) +
-      ' · VPN: ' + (c.vpn || 0) + '</div>';
+      ' · резервирований: ' + (c.leases || 0) + ' · маршрутов: ' + (c.routes || 0) +
+      ' · сервисов: ' + (c.services || 0) + ' · VPN: ' + (c.vpn || 0) +
+      (c.notify ? ' · e-mail: вкл' : '') + '</div>';
     if (res.errors && res.errors.length) {
       h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div><b>Есть ошибки в полях:</b><br>' +
         res.errors.map(esc).join('<br>') + '</div></div>';
@@ -1961,6 +2060,7 @@
         if (key === 'qos') show = on('w-qos');
         if (key === 'snmp') show = on('w-snmp');
         if (key === 'syslog') show = on('w-syslog');
+        if (key === 'mail') show = on('w-mail');
         g.classList.toggle('off', !show);
       });
     };
@@ -1972,7 +2072,7 @@
         wizStore(wizCollect());
       });
     });
-    ['w-wan', 'w-ipv6'].forEach(function (id) {
+    ['w-wan', 'w-ipv6', 'w-tz', 'w-wifiCountry', 'w-wifiWidth', 'w-model'].forEach(function (id) {
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', function () { sync(); wizStore(wizCollect()); });
     });
@@ -1994,7 +2094,8 @@
     });
 
     /* сегменты, резервирования, DNS: удаление существующих строк */
-    [['#wizSegs .seg-row', '.s-del'], ['#wizLeases .lease-row', '.l-del'], ['#wizDns .dns-row', '.ds-del']].forEach(function (sel) {
+    [['#wizSegs .seg-row', '.s-del'], ['#wizLeases .lease-row', '.l-del'],
+      ['#wizDns .dns-row', '.ds-del'], ['#wizRoutes .route-row', '.r-del']].forEach(function (sel) {
       document.querySelectorAll(sel[0]).forEach(function (row) {
         const del = row.querySelector(sel[1]);
         if (del) del.addEventListener('click', function () {
@@ -2017,6 +2118,7 @@
         if (f) f.focus();
       });
     };
+    wire('routeAdd', 'wizRoutes', routeRow, '.r-del', '.r-dst');
     wire('segAdd', 'wizSegs', segRow, '.s-del', '.s-vid');
     wire('leaseAdd', 'wizLeases', leaseRow, '.l-del', '.l-mac');
     wire('dnsAdd', 'wizDns', dnsRow, '.ds-del', '.ds-name');
@@ -2043,6 +2145,19 @@
       });
     });
 
+    const gen = document.getElementById('wizGenPass');
+    if (gen) gen.addEventListener('click', function () {
+      const opts = { lower: true, upper: true, digit: true, sym: false };
+      const p1 = genPassword(16, opts);
+      const p2 = genPassword(16, opts);
+      const a = document.getElementById('w-wifiPass');
+      const b = document.getElementById('w-wifiGuestPass');
+      if (a) { a.value = p1; a.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (b) { b.value = p2; b.dispatchEvent(new Event('input', { bubbles: true })); }
+      wizStore(wizCollect());
+      toast('Пароли обновлены — запишите их');
+    });
+
     const check = document.getElementById('wizCheck');
     if (check) check.addEventListener('click', function () {
       const opts = wizCollect();
@@ -2066,6 +2181,37 @@
       wizStore(opts);
       const res = window.ConfigWizard ? window.ConfigWizard.generate(opts) : { text: '', warnings: ['Генератор не загружен'], lines: 0 };
       wizRenderOutput(res, opts);
+    });
+
+    const tplSave = document.getElementById('tplSave');
+    if (tplSave) tplSave.addEventListener('click', function () {
+      const nameEl = document.getElementById('tplName');
+      const name = (nameEl && nameEl.value.trim()) ||
+        ('Шаблон ' + new Date().toLocaleDateString('ru-RU'));
+      const list = wizTpls().filter(function (t) { return t.name !== name; });
+      list.unshift({ name: name, data: wizCollect(), at: Date.now() });
+      wizTplsSave(list);
+      route();
+      toast('Шаблон сохранён: ' + name);
+    });
+    document.querySelectorAll('[data-tpl]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const t = wizTpls()[parseInt(b.getAttribute('data-tpl'), 10)];
+        if (!t) return;
+        wizStore(t.data);
+        route();
+        toast('Шаблон: ' + t.name);
+      });
+    });
+    document.querySelectorAll('[data-tpldel]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const i = parseInt(b.getAttribute('data-tpldel'), 10);
+        const list = wizTpls();
+        list.splice(i, 1);
+        wizTplsSave(list);
+        route();
+        toast('Шаблон удалён');
+      });
     });
 
     sync();
