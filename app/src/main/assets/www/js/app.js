@@ -1525,6 +1525,7 @@
       toolCard('#/quiz', 'Самопроверка', '111 вопросов по RouterOS с разбором ошибок', 'book') +
       toolCard('#/models', 'Порты моделей', 'hEX, hAP ax3, RB4011, CRS328 — где WAN, PoE и SFP', 'iface') +
       toolCard('#/starred', 'Избранное и заметки', 'Всё отмеченное, записанное и прочитанное', 'svc') +
+      toolCard('#/examples', 'Примеры конфигов', '11 готовых схем: интернет, VLAN, VPN, Wi-Fi, IPTV', 'task') +
       toolCard('#/cheats', 'Шпаргалки', '7 наборов команд: база, firewall, NAT, VLAN, WireGuard', 'book') +
       toolCard('#/wifi', 'Каналы Wi-Fi', 'Ширина канала, пересечения, команда для RouterOS', 'iface') +
       toolCard('#/coverage', 'Мощность и покрытие', 'EIRP, радиус сигнала, сколько точек на площадь', 'iface') +
@@ -2768,7 +2769,7 @@
     if (a.steps && a.steps.length) {
       parts.push('<p><b>Порядок настройки:</b></p><ol>' + a.steps.map(function (st) {
         const t = typeof st === 'string' ? st : (st.t + (st.d ? ' — ' + st.d : ''));
-        const cmd = (typeof st === 'object' && st.cmd) ? '<pre>' + esc(st.cmd) + '</pre>' : '';
+        const cmd = (typeof st === 'object' && st.cmd) ? '<pre>' + hlCfg(st.cmd) + '</pre>' : '';
         return '<li>' + inline(t) + cmd + '</li>';
       }).join('') + '</ol>');
     }
@@ -3077,6 +3078,105 @@
   }
 
   /* ================= шпаргалки ================= */
+  /* ================= примеры конфигов ================= */
+  const EX_CAT = {
+    internet: 'Интернет и каналы',
+    wifi: 'Wi-Fi',
+    vlan: 'VLAN и коммутатор',
+    vpn: 'VPN и туннели',
+    security: 'Доступ и firewall',
+    services: 'Сервисы и multicast'
+  };
+
+  function examplesView() {
+    const all = window.EXAMPLES || [];
+    let cat = store.get('excat') || 'all';
+    if (cat !== 'all' && !EX_CAT[cat]) cat = 'all';
+    const list = all.filter(function (x) { return cat === 'all' || x.cat === cat; });
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Примеры конфигов</span></div>';
+    html += '<h1 class="art-title">Примеры конфигов</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Готовые схемы «задача → команды → проверка → грабли». Каждый блок копируется целиком и вставляется в Winbox → New Terminal.</div>';
+    html += '<div class="chips">' +
+      '<button class="chip' + (cat === 'all' ? ' on' : '') + '" data-excat="all">Все · ' + all.length + '</button>' +
+      Object.keys(EX_CAT).map(function (k) {
+        const n = all.filter(function (x) { return x.cat === k; }).length;
+        if (!n) return '';
+        return '<button class="chip' + (cat === k ? ' on' : '') + '" data-excat="' + k + '">' + esc(EX_CAT[k]) + ' · ' + n + '</button>';
+      }).join('') + '</div>';
+
+    if (!list.length) {
+      html += '<div class="empty">Пока пусто.</div>';
+    } else {
+      html += '<div class="tools-grid">' + list.map(function (x) {
+        return '<a class="tool-card" href="#/examples/' + x.id + '"><span class="tc-ic">' + svg(x.ic || 'task', 18) + '</span>' +
+          '<b>' + esc(x.t) + '</b><span>' + esc(x.d) + '</span></a>';
+      }).join('') + '</div>';
+    }
+    html += '</div>';
+    return html;
+  }
+
+  function bindExamples() {
+    document.querySelectorAll('[data-excat]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        store.set('excat', b.getAttribute('data-excat'));
+        route();
+      });
+    });
+  }
+
+  function exampleDetailView(ex) {
+    const art = ex.art ? FLAT.filter(function (a) { return a.id === ex.art; })[0] : null;
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/examples">Примеры</a><span class="sep">/</span><span>' + esc(ex.t) + '</span></div>';
+    html += '<h1 class="art-title">' + esc(ex.t) + '</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">' + esc(ex.d) + '</div>';
+    html += '<div class="chips" style="margin-bottom:12px"><span class="chip on">' + esc(EX_CAT[ex.cat] || 'Пример') + '</span>' +
+      '<span class="chip">' + (ex.blocks || []).length + ' шага</span></div>';
+
+    (ex.blocks || []).forEach(function (b, i) {
+      html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Шаг ' + (i + 1) + '. ' + esc(b.h) + '</h3>' +
+        '<div class="cfg"><div class="cfg-h"><span>RouterOS 7</span>' +
+        '<span class="cfg-btns"><button class="copy">копировать</button>' +
+        '<button class="share" data-share="cfg">поделиться</button></span></div>' +
+        '<pre>' + hlCfg(b.c) + '</pre></div></section>';
+    });
+
+    if (ex.check) {
+      html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'Проверка после вставки</h3>' +
+        '<div class="cfg"><div class="cfg-h"><span>New Terminal</span>' +
+        '<span class="cfg-btns"><button class="copy">копировать</button></span></div>' +
+        '<pre>' + hlCfg(ex.check) + '</pre></div></section>';
+    }
+
+    if (ex.tips && ex.tips.length) {
+      html += '<section class="card"><h3 class="card-h">' + svg('info', 15) + 'Что учесть</h3>' +
+        '<ul class="clean">' + ex.tips.map(function (t) { return '<li>' + inline(t) + '</li>'; }).join('') + '</ul></section>';
+    }
+
+    if (ex.pitfall) {
+      html += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div><b>Частая ошибка.</b> ' + inline(ex.pitfall) + '</div></div>';
+    }
+
+    html += '<div class="wz-actions">' +
+      '<button class="btn primary" id="exShare">Поделиться примером</button>' +
+      '<a class="btn" href="#/examples">Все примеры</a>' +
+      (art ? '<a class="btn" href="#/' + art.id + '">Статья: ' + esc(art.t) + '</a>' : '') +
+      '<a class="btn" href="#/wizard">Собрать мастером</a></div></div>';
+    return html;
+  }
+
+  function bindExampleDetail(ex) {
+    const sh = document.getElementById('exShare');
+    if (sh) sh.addEventListener('click', function () {
+      const text = [ex.t, ex.d].concat((ex.blocks || []).map(function (b) { return b.h + ':\n' + b.c; }));
+      if (ex.check) text.push('Проверка:\n' + ex.check);
+      shareText(text.join('\n\n'), ex.t);
+    });
+  }
+
   function cheatsView() {
     const list = window.CHEATS || [];
     let html = '<div class="wrap">';
@@ -4370,7 +4470,7 @@
       audit: 'Аудит конфига', diag: 'Диагностика по симптому', glossary: 'Глоссарий и порты',
       harden: 'Защита от взлома', course: 'Курс за 7 дней', models: 'Порты моделей',
       starred: 'Избранное и заметки', wifi: 'Каналы Wi-Fi', coverage: 'Мощность и покрытие',
-      keys: 'Пароли и ключи', cheats: 'Шпаргалки',
+      keys: 'Пароли и ключи', cheats: 'Шпаргалки', examples: 'Примеры конфигов',
       backup: 'Данные и резервная копия'
     };
     if (TOOL_TITLES[id]) {
@@ -4378,7 +4478,7 @@
         tools: toolsView, wizard: wizardView, subnet: subnetView, vlsm: vlsmView, diff: diffView,
         quiz: quizView, audit: auditView, diag: diagView, glossary: glossaryView, harden: hardenView,
         course: courseView, models: modelsView, starred: starredView, wifi: wifiView,
-        keys: keysView, coverage: coverageView, cheats: cheatsView, backup: backupView
+        keys: keysView, coverage: coverageView, cheats: cheatsView, examples: examplesView, backup: backupView
       };
       content.innerHTML = VIEWS[id]();
       content.scrollTop = 0;
@@ -4387,7 +4487,7 @@
         wizard: bindWizard, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
         audit: bindAudit, glossary: bindGlossary, harden: bindHarden, course: bindCourse,
         models: bindModels, starred: bindStarred, wifi: bindWifi, keys: bindKeys,
-        coverage: bindCoverage, backup: bindBackup
+        coverage: bindCoverage, examples: bindExamples, backup: bindBackup
       };
       if (BINDS[id]) BINDS[id]();
       document.title = TOOL_TITLES[id] + ' · MikroTik';
@@ -4406,6 +4506,21 @@
       markActive(null);
       bindCheatDetail(c);
       document.title = c.t + ' · MikroTik';
+      return;
+    }
+
+    if (id.indexOf('examples/') === 0) {
+      const eid = id.slice(9);
+      const ex = (window.EXAMPLES || []).filter(function (x) { return x.id === eid; })[0];
+      if (!ex) {
+        content.innerHTML = '<div class="wrap"><div class="empty">Пример не найден.<br><br><a class="badge" href="#/examples">К примерам</a></div></div>';
+        return;
+      }
+      content.innerHTML = exampleDetailView(ex);
+      content.scrollTop = 0;
+      markActive(null);
+      bindExampleDetail(ex);
+      document.title = ex.t + ' · MikroTik';
       return;
     }
 
