@@ -1517,6 +1517,7 @@
     html += '<div class="hint" style="margin:-6px 0 14px">Всё считается на устройстве и работает без интернета.</div>';
     html += '<div class="tools-grid">' +
       toolCard('#/wizard', 'Мастер конфигурации', 'WAN, LAN, IPv6, Wi-Fi, VPN, пробросы — готовый конфиг', 'gear') +
+      toolCard('#/router', 'Мой роутер', 'опрос версии и прошивки, применение конфига, обновления', 'system') +
       toolCard('#/course', 'Курс за 7 дней', 'План обучения с практикой и прогрессом', 'book') +
       toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню: доступ, firewall, сервисы, Wi-Fi', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'Вставьте /export — проверю firewall, NAT, DHCP, Wi-Fi', 'svc') +
@@ -1913,7 +1914,8 @@
     return html;
   }
 
-  let rosLast = null;   // последний опрошенный роутер — переживает перерисовку мастера
+  let rosLast = null;      // последний опрошенный роутер — переживает перерисовку мастера
+  let rosPassMemo = '';    // пароль только в памяти страницы: на диск не попадает
 
   function rosInfoHTML(info) {
     const rows = [
@@ -1964,6 +1966,7 @@
     const user = (document.getElementById('rosUser') || {}).value || 'admin';
     const pass = (document.getElementById('rosPass') || {}).value || '';
     const saved = btn ? btn.textContent : '';
+    rosPassMemo = pass;
     if (btn) { btn.textContent = 'Подключаюсь…'; btn.disabled = true; }
     rosOut('Пробую REST (443), затем API (8728) и api-ssl (8729)…');
     window.RosProbe.probe(addr, user, pass).then(function (info) {
@@ -2050,6 +2053,328 @@
           .catch(function (e) { rosOut('<b>Не удалось:</b> ' + rosExplain(e)); });
       });
     }).catch(function () { });
+  }
+
+
+  /* ------------------------------------------------------------------
+     Применение конфига прямо из программы: сравнение с роутером
+     («что изменится») и построчная отправка через API.
+     ------------------------------------------------------------------ */
+  function rosOutEl(id, html) {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = html;
+  }
+
+  /* адрес/логин/пароль: из полей страницы, иначе из последнего опроса */
+  function rosCreds() {
+    const val = function (id) {
+      const el = document.getElementById(id);
+      return el ? String(el.value || '').trim() : '';
+    };
+    return {
+      address: val('rosAddr') || (rosLast && rosLast.address) || '',
+      user: val('rosUser') || 'admin',
+      password: val('rosPass') || rosPassMemo || ''
+    };
+  }
+
+  function planHTML(plan) {
+    const icon = { create: '+', exists: '=', update: '~', read: '·', script: '»', other: '?' };
+    const title = {
+      create: 'создать', exists: 'уже есть', update: 'изменить',
+      read: 'чтение', script: 'скрипт', other: 'прочее'
+    };
+    return plan.slice(0, 300).map(function (it) {
+      return '<div><b>' + (icon[it.kind] || '?') + '</b> <span title="' + esc(title[it.kind] || '') + '">' +
+        esc(it.raw) + '</span>' +
+        (it.note ? ' <span style="opacity:.7">— ' + esc(it.note) + '</span>' : '') + '</div>';
+    }).join('');
+  }
+
+  function wizPlanRun(res) {
+    const c = rosCreds();
+    if (!c.address) {
+      rosOutEl('wizApplyOut', 'Сначала укажите адрес роутера в карточке «Версия роутера».');
+      return;
+    }
+    rosOutEl('wizApplyOut', 'Сравниваю конфиг с роутером…');
+    window.RosProbe.plan(c.address, c.user, c.password, res.text).then(function (j) {
+      const k = j.counts || {};
+      rosOutEl('wizApplyOut', '<b>Что изменится:</b> создать ' + (k.create || 0) + ' · уже есть ' +
+        (k.exists || 0) + ' · изменить ' + (k.update || 0) + ' · скрипт ' + (k.script || 0) +
+        (j.snapshotAt ? ' · состояние от ' + esc(j.snapshotAt) : '') +
+        '<div style="margin-top:6px">' + planHTML(j.plan || []) + '</div>');
+    }).catch(function (e) { rosOutEl('wizApplyOut', '<b>Не получилось:</b> ' + rosExplain(e)); });
+  }
+
+  function wizApplyRun(res, btn) {
+    const c = rosCreds();
+    if (!c.address) {
+      rosOutEl('wizApplyOut', 'Сначала укажите адрес роутера в карточке «Версия роутера».');
+      return;
+    }
+    if (!c.password) {
+      rosOutEl('wizApplyOut', 'Нужен пароль администратора — впишите его в карточке «Версия роутера».');
+      return;
+    }
+    const ok = typeof confirm === 'function'
+      ? confirm('Применить конфиг на ' + c.address + '?\n\nКоманды уйдут на роутер сразу. Часть из них может закрыть доступ по текущему подключению.')
+      : true;
+    if (!ok) return;
+    const was = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Применяю…'; btn.disabled = true; }
+    rosOutEl('wizApplyOut', 'Отправляю команды по одной…');
+    window.RosProbe.apply(c.address, c.user, c.password, res.text, false).then(function (j) {
+      if (btn) { btn.textContent = was; btn.disabled = false; }
+      const k = j.counts || {};
+      const rows = (j.results || []).filter(function (r) { return r.status !== 'ok'; });
+      rosOutEl('wizApplyOut', '<b>Готово:</b> выполнено ' + (k.ok || 0) + ' · уже было ' + (k.exists || 0) +
+        ' · ошибок ' + (k.error || 0) + ' · скрипт ' + (k.script || 0) + ' · пропущено ' + (k.skipped || 0) +
+        (rows.length ? '<div style="margin-top:6px">' + rows.map(function (r) {
+          return '<div>строка ' + r.line + ': ' + esc(r.raw || r.command || '') +
+            ' — <b>' + esc(r.status) + '</b> ' + esc(r.message || '') + '</div>';
+        }).join('') + '</div>' : '') +
+        '<div style="margin-top:8px">Проверьте: /ip address print, /ip service print, /interface bridge print.</div>');
+      toast('Конфиг применён на ' + c.address);
+      if (window.RosProbe && c.address) {
+        window.RosProbe.probe(c.address, c.user, c.password).catch(function () { });
+      }
+    }).catch(function (e) {
+      if (btn) { btn.textContent = was; btn.disabled = false; }
+      rosOutEl('wizApplyOut', '<b>Не получилось:</b> ' + rosExplain(e));
+    });
+  }
+
+  /* ------------------------------------------------------------------
+     Страница «Мой роутер»: подключение, сохранённые роутеры,
+     текущее состояние и обновления.
+     ------------------------------------------------------------------ */
+  function rosConnectCard() {
+    if (!(window.RosProbe && window.RosProbe.available())) {
+      return '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Роутер</h3>' +
+        '<div class="hint">Живое подключение к роутеру есть в Windows-версии программы: ' +
+        'из браузера нельзя открыть порт 8728. Версию и плату в Android-версии укажите вручную ' +
+        'в мастере — конфиг соберётся так же.</div></section>';
+    }
+    return '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Подключение к роутеру</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Адрес, логин и пароль нужны только на время запроса — пароль не сохраняется.</div>' +
+      '<div class="tpl-save">' +
+      '<input class="inp" id="rosAddr" placeholder="адрес" value="192.168.88.1" maxlength="40">' +
+      '<input class="inp" id="rosUser" placeholder="логин" value="admin" maxlength="40">' +
+      '<input class="inp" id="rosPass" type="password" placeholder="пароль" autocomplete="new-password" maxlength="64">' +
+      '</div>' +
+      '<div class="chips"><button class="chip" id="rosProbeBtn" type="button">Опросить</button>' +
+      '<button class="chip" id="rosFindBtn" type="button">Найти в сети</button>' +
+      '<button class="chip" id="rosSnapBtn" type="button">Прочитать состояние</button></div>' +
+      '<div id="rosOut" class="hint" style="margin-top:8px"></div></section>';
+  }
+
+  function routerView() {
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a>' +
+      '<span class="sep">/</span><span>Мой роутер</span></div>';
+    html += '<h1 class="art-title">Мой роутер</h1>';
+    html += '<div class="hint" style="margin:-6px 0 10px">Опрос версии и прошивки, применение собранного конфига, ' +
+      'снимок текущего состояния и обновления RouterOS — без Winbox и терминала.</div>';
+    html += rosConnectCard();
+    html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Сохранённые роутеры</h3>' +
+      '<div id="rosList" class="hint">Читаю список…</div></section>';
+    html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Текущее состояние</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">Снимок меню роутера: адреса, мосты, firewall, Wi-Fi, сервисы. ' +
+      'По нему мастер показывает, что уже настроено.</div>' +
+      '<div id="rosSnap" class="hint">Снимок ещё не читали.</div></section>';
+    html += '<section class="card"><h3 class="card-h">' + svg('down', 15) + 'Обновления</h3>' +
+      '<div class="chips"><button class="chip" id="rosUpdCheck" type="button">Проверить обновления</button></div>' +
+      '<div id="rosUpd" class="hint" style="margin-top:8px">RouterOS и прошивка RouterBOOT проверяются отдельно.</div></section>';
+    html += '</div>';
+    return html;
+  }
+
+  function rosSnapRender(snap) {
+    const el = document.getElementById('rosSnap');
+    if (!el) return;
+    if (!snap) { el.innerHTML = 'Снимок не получен.'; return; }
+    const counts = snap.counts || {};
+    const keys = Object.keys(snap.menus || {}).sort();
+    const summary = Object.keys(counts).filter(function (k) { return counts[k] > 0; })
+      .map(function (k) { return '<span class="chip" style="cursor:default">' + esc(k.replace(/^\//, '')) + ': ' + counts[k] + '</span>'; })
+      .join(' ');
+    el.innerHTML = '<b>Снимок от ' + esc(snap.updated || '') + '</b>' +
+      '<div class="chips" style="margin:6px 0">' + summary + '</div>' +
+      keys.map(function (path) {
+        const rows = snap.menus[path] || [];
+        if (!rows.length) return '';
+        return '<details style="margin:4px 0"><summary>' + esc(path) + ' — строк ' + rows.length + '</summary>' +
+          '<div class="hint" style="margin-top:4px">' + rows.slice(0, 60).map(function (r) {
+            const parts = [];
+            ['name', 'address', 'chain', 'action', 'interface', 'comment', 'dst-address', 'ssid'].forEach(function (k) {
+              if (r[k]) parts.push(k + '=' + r[k]);
+            });
+            return '<div>' + esc(parts.join(' ') || '(строка)') + '</div>';
+          }).join('') + '</div></details>';
+      }).join('');
+  }
+
+  function rosSavedList() {
+    const el = document.getElementById('rosList');
+    if (!el) return;
+    if (!(window.RosProbe && window.RosProbe.available())) {
+      el.innerHTML = 'Список сохранённых роутеров доступен в Windows-версии.';
+      return;
+    }
+    window.RosProbe.saved().then(function (res) {
+      if (!res.list.length) {
+        el.innerHTML = 'Пока пусто. Опросите роутер — он появится здесь с версией и прошивкой.';
+        return;
+      }
+      el.innerHTML = res.list.map(function (r) {
+        const t = [r.identity, r.version ? 'RouterOS ' + r.version : '', r.board,
+          r.firmware ? 'прошивка ' + r.firmware : '', r.updated].filter(Boolean).join(' · ');
+        return '<div class="wz-row"><span class="wz-l">' + esc(r.address) + '</span>' +
+          '<span class="wz-h" style="margin:0">' + esc(t) + '</span>' +
+          '<span class="chips" style="margin:4px 0 0"><button class="chip" data-rosuse="' + esc(r.address) + '" type="button">В мастер</button>' +
+          '<button class="chip" data-rossnap="' + esc(r.address) + '" type="button">Состояние</button>' +
+          '<button class="chip" data-rosupd="' + esc(r.address) + '" type="button">Обновления</button>' +
+          '<button class="chip" data-rosdel="' + esc(r.address) + '" type="button">Забыть</button></span></div>';
+      }).join('');
+      const fill = function (addr) {
+        const a = document.getElementById('rosAddr');
+        if (a) a.value = addr;
+        const p = document.getElementById('rosPass');
+        if (p) p.focus();
+      };
+      el.querySelectorAll('[data-rosuse]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          const addr = b.getAttribute('data-rosuse');
+          const rec = res.list.filter(function (x) { return x.address === addr; })[0];
+          if (rec && window.ConfigWizard) {
+            const cur = wizCollect();
+            let next = Object.assign({}, cur, {
+              rosVersion: rec.version || '', rosBoard: rec.board || '', rosFirmware: rec.firmware || ''
+            });
+            const model = window.RosProbe.modelFor({ board: rec.board, version: rec.version });
+            if (model) next = window.ConfigWizard.applyModel(next, model);
+            if (rec.wifi === 'wifi' || rec.wifi === 'legacy') {
+              next.wifi = true;
+              next.wifiKind = rec.wifi;
+            }
+            wizStore(next);
+          }
+          toast('Роутер ' + addr + ' подставлен в мастер');
+          location.hash = '#/wizard';
+        });
+      });
+      el.querySelectorAll('[data-rossnap]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          fill(b.getAttribute('data-rossnap'));
+          const btn = document.getElementById('rosSnapBtn');
+          if (btn) btn.click();
+        });
+      });
+      el.querySelectorAll('[data-rosupd]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          fill(b.getAttribute('data-rosupd'));
+          const btn = document.getElementById('rosUpdCheck');
+          if (btn) btn.click();
+        });
+      });
+      el.querySelectorAll('[data-rosdel]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          const addr = b.getAttribute('data-rosdel');
+          if (typeof confirm === 'function' && !confirm('Убрать ' + addr + ' из списка?')) return;
+          window.RosProbe.forget(addr).then(function () { rosSavedList(); }).catch(function (e) {
+            toast('Не удалось: ' + (e.message || e));
+          });
+        });
+      });
+    }).catch(function (e) {
+      el.innerHTML = 'Не удалось прочитать список: ' + esc(e.message || String(e));
+    });
+  }
+
+  function rosUpdatesRender(j) {
+    const el = document.getElementById('rosUpd');
+    if (!el) return;
+    const u = j.updates || {};
+    const rows = [];
+    rows.push('<div>RouterOS: установлено <b>' + esc(u.installed || '—') + '</b>' +
+      (u.latest ? ', доступно <b>' + esc(u.latest) + '</b>' : '') +
+      (u.routerosNew ? ' — есть обновление' : (u.latest ? ' — обновление не нужно' : '')) + '</div>');
+    if (u.status) rows.push('<div>Статус: ' + esc(u.status) + (u.channel ? ' · канал ' + esc(u.channel) : '') + '</div>');
+    if (u.firmware) {
+      rows.push('<div>Прошивка RouterBOOT: <b>' + esc(u.firmware) + '</b>' +
+        (u.firmwareNext ? ' → доступна ' + esc(u.firmwareNew) : ' — обновление не нужно') + '</div>');
+    }
+    if (u.note) rows.push('<div style="opacity:.75">' + esc(u.note) + '</div>');
+    let acts = '';
+    if (u.routerosNew) acts += '<button class="chip" id="rosUpdRos" type="button">Обновить RouterOS</button>';
+    if (u.firmwareNext) acts += '<button class="chip" id="rosUpdFw" type="button">Обновить прошивку</button>';
+    acts += '<button class="chip" id="rosReboot" type="button">Перезагрузить роутер</button>';
+    el.innerHTML = rows.join('') + '<div class="chips" style="margin-top:8px">' + acts + '</div>' +
+      '<div id="rosUpdOut" class="hint" style="margin-top:8px"></div>';
+
+    const run = function (action, question) {
+      const c = rosCreds();
+      if (!c.address || !c.password) {
+        rosOutEl('rosUpdOut', 'Заполните адрес и пароль в блоке «Подключение к роутеру».');
+        return;
+      }
+      if (typeof confirm === 'function' && !confirm(question)) return;
+      rosOutEl('rosUpdOut', 'Отправляю команду на роутер…');
+      window.RosProbe.updates(c.address, c.user, c.password, action).then(function (r) {
+        rosOutEl('rosUpdOut', '<b>' + esc(r.message || 'Готово') + '</b>');
+      }).catch(function (e) { rosOutEl('rosUpdOut', '<b>Не получилось:</b> ' + rosExplain(e)); });
+    };
+    const rosBtn = document.getElementById('rosUpdRos');
+    if (rosBtn) rosBtn.addEventListener('click', function () {
+      run('routeros', 'Обновить RouterOS? Роутер перезагрузится и будет недоступен 1–3 минуты.');
+    });
+    const fwBtn = document.getElementById('rosUpdFw');
+    if (fwBtn) fwBtn.addEventListener('click', function () {
+      run('firmware', 'Обновить прошивку RouterBOOT? После этого нужна перезагрузка роутера.');
+    });
+    const rbBtn = document.getElementById('rosReboot');
+    if (rbBtn) rbBtn.addEventListener('click', function () {
+      run('reboot', 'Перезагрузить роутер сейчас? Связь пропадёт на 1–2 минуты.');
+    });
+  }
+
+  function bindRouter() {
+    const snapBtn = document.getElementById('rosSnapBtn');
+    if (!snapBtn) return;
+    rosSavedList();
+    const probe = document.getElementById('rosProbeBtn');
+    if (probe) probe.addEventListener('click', function () { rosProbeRun(probe); });
+    const find = document.getElementById('rosFindBtn');
+    if (find) find.addEventListener('click', function () { rosFind(find); });
+    const pass = document.getElementById('rosPass');
+    if (pass) {
+      if (rosPassMemo) pass.value = rosPassMemo;
+      pass.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); if (probe) rosProbeRun(probe); }
+      });
+    }
+    snapBtn.addEventListener('click', function () {
+      const c = rosCreds();
+      if (!c.address) { rosOutEl('rosOut', 'Укажите адрес роутера.'); return; }
+      rosOutEl('rosOut', 'Читаю меню роутера…');
+      window.RosProbe.snapshot(c.address, c.user, c.password, false).then(function (j) {
+        rosOutEl('rosOut', 'Состояние прочитано: меню ' + Object.keys((j.snapshot || {}).counts || {}).length);
+        rosSnapRender(j.snapshot);
+      }).catch(function (e) { rosOutEl('rosOut', '<b>Не получилось:</b> ' + rosExplain(e)); });
+    });
+    const updBtn = document.getElementById('rosUpdCheck');
+    if (updBtn) updBtn.addEventListener('click', function () {
+      const c = rosCreds();
+      if (!c.address) { rosOutEl('rosUpd', 'Укажите адрес роутера в блоке подключения.'); return; }
+      rosOutEl('rosUpd', 'Спрашиваю роутер (может занять до 30 секунд)…');
+      window.RosProbe.updates(c.address, c.user, c.password, 'check').then(rosUpdatesRender)
+        .catch(function (e) {
+          rosOutEl('rosUpd', '<b>Не получилось:</b> ' + rosExplain(e) +
+            '<div style="margin-top:6px">Проверка требует доступа роутера в интернет и включённого API.</div>');
+        });
+    });
+    if (rosLast) rosOutEl('rosOut', rosInfoHTML(rosLast));
   }
 
   function wizCollect() {
@@ -2207,6 +2532,12 @@
       '<button class="share" id="wizSave">файл</button></span></div>' +
       '<pre>' + hlCfg(res.text || '') + '</pre></div>' +
       '<div class="hint" style="margin-top:10px">Вставьте в Winbox → New Terminal. Перед вставкой сохраните текущий конфиг: <code class="inl">/export file=before-change</code>.</div>' +
+      (window.RosProbe && window.RosProbe.available()
+        ? '<div class="chips" style="margin-top:10px">' +
+          '<button class="chip" id="wizApplyDry" type="button">Что изменится на роутере</button>' +
+          '<button class="chip" id="wizApplyGo" type="button">Применить на роутере</button></div>' +
+          '<div id="wizApplyOut" class="hint" style="margin-top:8px"></div>'
+        : '') +
       '</section>';
     out.innerHTML = h;
     const sv = document.getElementById('wizSave');
@@ -2216,6 +2547,10 @@
       if (saved === 'blob') toast('Файл сохранён: ' + name);
       else if (!saved) shareText(res.text, 'Конфиг RouterOS');
     });
+    const dryBtn = document.getElementById('wizApplyDry');
+    if (dryBtn) dryBtn.addEventListener('click', function () { wizPlanRun(res); });
+    const goBtn = document.getElementById('wizApplyGo');
+    if (goBtn) goBtn.addEventListener('click', function () { wizApplyRun(res, goBtn); });
     if (out.scrollIntoView) { try { out.scrollIntoView({ block: 'start' }); } catch (e) { } }
   }
 
@@ -2312,6 +2647,7 @@
         applyBtn.addEventListener('click', function () { rosApply(rosLast); });
       }
       if (!rosLast) rosSavedHint();
+      if (rosPassMemo && pass) pass.value = rosPassMemo;
     }
 
     const modelSel = document.getElementById('w-model');
@@ -4794,7 +5130,7 @@
       return;
     }
     const TOOL_TITLES = {
-      tools: 'Инструменты', wizard: 'Мастер конфигурации', subnet: 'Калькулятор подсетей',
+      tools: 'Инструменты', wizard: 'Мастер конфигурации', router: 'Мой роутер', subnet: 'Калькулятор подсетей',
       vlsm: 'VLSM-планировщик', diff: 'Сравнить конфиги', quiz: 'Самопроверка',
       audit: 'Аудит конфига', diag: 'Диагностика по симптому', glossary: 'Глоссарий и порты',
       harden: 'Защита от взлома', course: 'Курс за 7 дней', models: 'Порты моделей',
@@ -4804,7 +5140,7 @@
     };
     if (TOOL_TITLES[id]) {
       const VIEWS = {
-        tools: toolsView, wizard: wizardView, subnet: subnetView, vlsm: vlsmView, diff: diffView,
+        tools: toolsView, wizard: wizardView, router: routerView, subnet: subnetView, vlsm: vlsmView, diff: diffView,
         quiz: quizView, audit: auditView, diag: diagView, glossary: glossaryView, harden: hardenView,
         course: courseView, models: modelsView, starred: starredView, wifi: wifiView,
         keys: keysView, coverage: coverageView, cheats: cheatsView, examples: examplesView, backup: backupView
@@ -4813,7 +5149,7 @@
       content.scrollTop = 0;
       markActive(null);
       const BINDS = {
-        wizard: bindWizard, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
+        wizard: bindWizard, router: bindRouter, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
         audit: bindAudit, glossary: bindGlossary, harden: bindHarden, course: bindCourse,
         models: bindModels, starred: bindStarred, wifi: bindWifi, keys: bindKeys,
         coverage: bindCoverage, examples: bindExamples, backup: bindBackup

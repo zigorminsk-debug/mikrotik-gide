@@ -109,6 +109,46 @@
     });
   }
 
+  /* ------------------------------------------- состояние, план, применение */
+
+  /* Сравнить конфиг с текущим состоянием роутера (ничего не меняет). */
+  function plan(address, user, password, text) {
+    return request('/apply', { address: address, user: user, password: password, text: text, dry: true })
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || 'не удалось сравнить с роутером');
+        return j;
+      });
+  }
+
+  /* Применить конфиг на роутере построчно. */
+  function apply(address, user, password, text, stopOnError) {
+    return request('/apply', {
+      address: address, user: user, password: password,
+      text: text, dry: false, stopOnError: !!stopOnError
+    }).then(function (j) {
+      if (!j || !j.ok) throw new Error((j && j.error) || 'не удалось применить конфиг');
+      return j;
+    });
+  }
+
+  /* Прочитать текущее состояние (меню роутера) и сохранить снимок. */
+  function snapshot(address, user, password, readOnly) {
+    return request('/snapshot', { address: address, user: user, password: password, readOnly: !!readOnly })
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || 'не удалось прочитать состояние');
+        return j;
+      });
+  }
+
+  /* action: check | routeros | firmware | reboot */
+  function updates(address, user, password, action) {
+    return request('/updates', { address: address, user: user, password: password, action: action || 'check' })
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || 'не удалось узнать про обновления');
+        return j;
+      });
+  }
+
   /* -------------------------------------------------- подстройка под роутер */
 
   /* Плата RouterOS → id модели в мастере. Порядок важен: сначала точные. */
@@ -180,6 +220,10 @@
     available: available,
     profile: profile,
     probe: probe,
+    plan: plan,
+    apply: apply,
+    snapshot: snapshot,
+    updates: updates,
     discover: discover,
     saved: saved,
     forget: forget,
