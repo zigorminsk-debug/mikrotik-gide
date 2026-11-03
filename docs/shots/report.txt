@@ -27,9 +27,9 @@ t=780c  winbox-head=[]
 ждать по таймеру до 11 мин
 BIN=./WinBox
 connect 1: window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox]
-окно X=0 Y=0 W=1 H=1
+рабочее окно: X=200 Y=200 W=1200 H=700
 === время ===
-Tue Nov  3 08:24:32 UTC 2026
+Tue Nov  3 08:47:21 UTC 2026
 === qemu-img ===
 image: chr.qcow2
 file format: qcow2
@@ -87,27 +87,36 @@ PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/s
 WBOXSESS,INFO: newer version available for RouterOS:7.25
 WBOXSESS,INFO: first clock synced
 === процессы ===
-runner      3740 76.5  2.0 3315232 334000 ?      Sl   08:07  12:59 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      4242  0.3  0.4 223640 77308 ?        S    08:23   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      4253  1.3  0.6 947608 106980 ?       Sl   08:23   0:00 /tmp/wb/winbox/./WinBox
+runner      3741 25.1  2.0 3173940 343688 ?      Sl   08:29   4:25 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4233  0.2  0.4 223828 77616 ?        S    08:46   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4244  1.1  0.8 909656 133748 ?       Sl   08:46   0:00 /tmp/wb/winbox/./WinBox
 === файлы ===
-total 456
--rw-r--r-- 1 runner runner 58867 Nov  3 08:24 01-login.png
--rw-r--r-- 1 runner runner 69583 Nov  3 08:24 02-connect-1.png
--rw-r--r-- 1 runner runner  2135 Nov  3 08:10 08-chr-120.png
--rw-r--r-- 1 runner runner  2147 Nov  3 08:11 08-chr-210.png
--rw-r--r-- 1 runner runner  2147 Nov  3 08:08 08-chr-30.png
--rw-r--r-- 1 runner runner  2135 Nov  3 08:13 08-chr-300.png
--rw-r--r-- 1 runner runner  1075 Nov  3 08:15 08-chr-390.png
--rw-r--r-- 1 runner runner  1066 Nov  3 08:17 08-chr-480.png
--rw-r--r-- 1 runner runner  1075 Nov  3 08:18 08-chr-570.png
--rw-r--r-- 1 runner runner  1066 Nov  3 08:20 08-chr-660.png
--rw-r--r-- 1 runner runner  1075 Nov  3 08:22 08-chr-750.png
--rw-r--r-- 1 runner runner 69342 Nov  3 08:24 20-click-120.png
--rw-r--r-- 1 runner runner 69366 Nov  3 08:24 20-click-160.png
--rw-r--r-- 1 runner runner 69695 Nov  3 08:24 20-click-40.png
--rw-r--r-- 1 runner runner 69439 Nov  3 08:24 20-click-80.png
--rw-r--r-- 1 runner runner    58 Nov  3 08:24 geometry.txt
--rw-r--r-- 1 runner runner  3644 Nov  3 08:24 report.txt
--rw-r--r-- 1 runner runner   410 Nov  3 08:24 xwininfo-2.txt
--rw-r--r-- 1 runner runner   410 Nov  3 08:24 xwininfo.txt
+total 1324
+-rw-r--r-- 1 runner runner  62249 Nov  3 08:46 01-login.png
+-rw-r--r-- 1 runner runner  69837 Nov  3 08:46 02-connect-1.png
+-rw-r--r-- 1 runner runner   1066 Nov  3 08:32 08-chr-120.png
+-rw-r--r-- 1 runner runner   1075 Nov  3 08:33 08-chr-210.png
+-rw-r--r-- 1 runner runner   2147 Nov  3 08:30 08-chr-30.png
+-rw-r--r-- 1 runner runner   1066 Nov  3 08:35 08-chr-300.png
+-rw-r--r-- 1 runner runner   1075 Nov  3 08:37 08-chr-390.png
+-rw-r--r-- 1 runner runner   1066 Nov  3 08:39 08-chr-480.png
+-rw-r--r-- 1 runner runner   1075 Nov  3 08:41 08-chr-570.png
+-rw-r--r-- 1 runner runner    306 Nov  3 08:42 08-chr-660.png
+-rw-r--r-- 1 runner runner    306 Nov  3 08:44 08-chr-750.png
+-rw-r--r-- 1 runner runner  69826 Nov  3 08:46 30-desktop.png
+-rw-r--r-- 1 runner runner  59671 Nov  3 08:46 31-wifi-closed.png
+-rw-r--r-- 1 runner runner  59598 Nov  3 08:46 31-wifi.png
+-rw-r--r-- 1 runner runner  88835 Nov  3 08:46 32-interfaces.png
+-rw-r--r-- 1 runner runner  85006 Nov  3 08:46 33-wireguard.png
+-rw-r--r-- 1 runner runner  89868 Nov  3 08:46 34-bridge.png
+-rw-r--r-- 1 runner runner  94591 Nov  3 08:46 35-ppp.png
+-rw-r--r-- 1 runner runner 118701 Nov  3 08:47 36-queues.png
+-rw-r--r-- 1 runner runner  90137 Nov  3 08:47 37-files.png
+-rw-r--r-- 1 runner runner 112821 Nov  3 08:47 40-ip-menu.png
+-rw-r--r-- 1 runner runner  90017 Nov  3 08:47 41-ip-first.png
+-rw-r--r-- 1 runner runner  89621 Nov  3 08:47 50-settings.png
+-rw-r--r-- 1 runner runner  90526 Nov  3 08:47 51-after-settings.png
+-rw-r--r-- 1 runner runner     58 Nov  3 08:46 geometry.txt
+-rw-r--r-- 1 runner runner   3669 Nov  3 08:47 report.txt
+-rw-r--r-- 1 runner runner    410 Nov  3 08:47 xwininfo-2.txt
+-rw-r--r-- 1 runner runner    410 Nov  3 08:46 xwininfo.txt
