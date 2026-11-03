@@ -19,6 +19,9 @@
     pppoeUser: 'login', pppoePass: 'password',
     lanPorts: 'ether2-ether5',
     lanIp: '192.168.88.1', lanPrefix: 24,
+    devSeg: false,          // разделить устройства по подсетям (4 VLAN)
+    dsVlanPc: 10, dsVlanWifi: 30, dsVlanPhones: 40, dsVlanIot: 50,
+    dsWifiPc: 'PC-WiFi', dsWifiPhones: 'Phones', dsWifiIot: 'Printers',
     bridge: 'bridge-lan',
     dhcp: true, dns: '1.1.1.1,8.8.8.8',
     guest: true, guestPort: 'ether5', guestIp: '192.168.20.1', guestPrefix: 24,
@@ -70,6 +73,14 @@
     office: {
       name: 'Офис',
       set: { identity: 'office-gw', wan: 'dhcp', guest: true, wifi: true, wg: true, ipv6: 'off', protect: true }
+    },
+    office4: {
+      name: 'Офис: 4 подсети по устройствам',
+      set: {
+        identity: 'office-gw', wan: 'dhcp', guest: true, wifi: true, wg: true, ipv6: 'off', protect: true,
+        devSeg: true, model: 'ax3', lanPorts: 'ether2-ether4', guestPort: 'ether5',
+        dsWifiPc: 'PC-WiFi', dsWifiPhones: 'Phones', dsWifiIot: 'Printers'
+      }
     },
     cafe: {
       name: 'Гостевой Wi-Fi',
@@ -164,6 +175,44 @@
   /* ---------------- проверка ответов ---------------- */
   function ch24Freq(n) { return 2412 + 5 * ((parseInt(n, 10) || 1) - 1); }
   function ch5Freq(n) { return 5000 + 5 * (parseInt(n, 10) || 36); }
+
+  /* четыре равные подсети из LAN: /24 → 4 × /26 */
+  function ipInt(s) {
+    const p = String(s || '').split('.');
+    if (p.length !== 4) return null;
+    let n = 0;
+    for (let i = 0; i < 4; i++) {
+      const v = parseInt(p[i], 10);
+      if (!(v >= 0 && v <= 255)) return null;
+      n = n * 256 + v;
+    }
+    return n;
+  }
+
+  function intIp(n) {
+    n = n >>> 0;
+    return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+  }
+
+  function dsSplit(ip, prefix) {
+    const n = ipInt(ip);
+    const p0 = parseInt(prefix, 10);
+    if (n === null || !(p0 >= 8 && p0 <= 26)) return [];
+    const p = p0 + 2;
+    const block = Math.pow(2, 32 - p0);
+    const size = Math.pow(2, 32 - p);
+    const base = Math.floor(n / block) * block;
+    const out = [];
+    for (let i = 0; i < 4; i++) {
+      const net = base + i * size;
+      out.push({
+        net: intIp(net), prefix: p, cidr: intIp(net) + '/' + p,
+        gw: intIp(net + 1), from: intIp(net + 2), to: intIp(net + size - 2),
+        hosts: size - 2
+      });
+    }
+    return out;
+  }
   function cidrOk(v) {
     const t = String(v || '').trim();
     const m = t.match(/^(\d+\.\d+\.\d+\.\d+)\/(\d{1,2})$/);
@@ -207,6 +256,36 @@
       if (!(gp >= 8 && gp <= 30)) err('guestPrefix', 'Префикс гостевой сети от 8 до 30');
       const gNet = gp >= 8 && gp <= 30 ? networkOf(opt(o, 'guestIp'), gp) : null;
       if (lanNet && gNet && overlaps(lanNet, gNet)) err('guestIp', 'Гостевая сеть пересекается с LAN');
+    }
+
+    if (opt(o, 'devSeg')) {
+      const pfx = +opt(o, 'lanPrefix');
+      if (!(pfx >= 8 && pfx <= 26)) {
+        err('lanPrefix', 'Для четырёх подсетей нужен префикс LAN от /8 до /26 — иначе не хватит адресов');
+      }
+      const dsFields = [
+        ['dsVlanPc', 'Проводные компьютеры'],
+        ['dsVlanWifi', 'Ноутбуки и планшеты'],
+        ['dsVlanPhones', 'Телефоны'],
+        ['dsVlanIot', 'Принтеры и периферия']
+      ];
+      const used = {};
+      dsFields.forEach(function (f) {
+        const v = parseInt(clean(opt(o, f[0])), 10);
+        if (!(v >= 1 && v <= 4094)) { err(f[0], f[1] + ': VLAN ID от 1 до 4094'); return; }
+        if (used[v]) err(f[0], f[1] + ': VLAN ' + v + ' уже занят другим сегментом');
+        if (opt(o, 'guest') && v === 20) err(f[0], f[1] + ': VLAN 20 занят гостевой сетью — выберите другой');
+        if ((o.segments || []).some(function (sg) { return parseInt(sg && sg.vlanId, 10) === v; })) {
+          err(f[0], f[1] + ': VLAN ' + v + ' уже используется в дополнительных сегментах');
+        }
+        if (v === 1) warn(f[0], f[1] + ': VLAN 1 обычно управляющий — лучше 10 и выше');
+        used[v] = true;
+      });
+      if (!clean(opt(o, 'dsWifiPc')) || !clean(opt(o, 'dsWifiPhones')) || !clean(opt(o, 'dsWifiIot'))) {
+        err('dsWifiPc', 'Укажите имена трёх Wi-Fi сетей: ноутбуки, телефоны, принтеры');
+      }
+      if (!opt(o, 'wifi')) warn('devSeg', 'Wi-Fi выключен: подсети для ноутбуков, телефонов и принтеров останутся без беспроводного доступа');
+      if (opt(o, 'guest')) warn('devSeg', 'Гостевая сеть останется изолированной от рабочих подсетей — так и задумано');
     }
 
     if (opt(o, 'wifi')) {
@@ -405,6 +484,21 @@
     const mailTo = clean(opt(o, 'mailTo'));
     const authorLine = clean(opt(o, 'author'));
     const leaseTime = clean(opt(o, 'leaseTime')) || '1d';
+    const devSeg = !!opt(o, 'devSeg');
+    const dsVl = {
+      pc: parseInt(opt(o, 'dsVlanPc'), 10) || 10,
+      wifi: parseInt(opt(o, 'dsVlanWifi'), 10) || 30,
+      phone: parseInt(opt(o, 'dsVlanPhones'), 10) || 40,
+      iot: parseInt(opt(o, 'dsVlanIot'), 10) || 50
+    };
+    const dsSsid = {
+      pc: clean(opt(o, 'dsWifiPc')) || 'PC-WiFi',
+      phone: clean(opt(o, 'dsWifiPhones')) || 'Phones',
+      iot: clean(opt(o, 'dsWifiIot')) || 'Printers'
+    };
+    const dsNets = devSeg ? dsSplit(lanIp, lanPrefix) : [];
+    const dsOn = devSeg && dsNets.length === 4;
+    const l3Iface = dsOn ? 'vlan-' + dsVl.pc : bridge;
     const mailSend = function (subject, body) {
       return '/tool e-mail send to=' + q(mailTo) + ' subject=' + q(subject) + ' body=' + q(body);
     };
@@ -461,17 +555,27 @@
       'add interface=' + wanPort + ' list=WAN');
     push('', '/interface bridge add name=' + bridge);
     lanPorts.forEach(function (p) {
-      push('/interface bridge port add bridge=' + bridge + ' interface=' + p);
+      push('/interface bridge port add bridge=' + bridge + ' interface=' + p +
+        (dsOn ? ' pvid=' + dsVl.pc : ''));
     });
+    if (dsOn) {
+      push('', '# Проводные ПК — во VLAN ' + dsVl.pc + '; Wi-Fi сети получат свои VLAN в разделе Wi-Fi',
+        '/interface bridge vlan add bridge=' + bridge + ' tagged=' + bridge +
+        (lanPorts.length ? ' untagged=' + lanPorts.join(',') : '') + ' vlan-ids=' + dsVl.pc);
+      push('/interface vlan add name=vlan-' + dsVl.pc + ' vlan-id=' + dsVl.pc + ' interface=' + bridge,
+        '/interface vlan add name=vlan-' + dsVl.wifi + ' vlan-id=' + dsVl.wifi + ' interface=' + bridge,
+        '/interface vlan add name=vlan-' + dsVl.phone + ' vlan-id=' + dsVl.phone + ' interface=' + bridge,
+        '/interface vlan add name=vlan-' + dsVl.iot + ' vlan-id=' + dsVl.iot + ' interface=' + bridge);
+      [dsVl.pc, dsVl.wifi, dsVl.phone, dsVl.iot].forEach(function (v) {
+        push('/interface list member add interface=vlan-' + v + ' list=LAN');
+      });
+    }
     if (guestOn || segs.length) {
       if (guestOn) {
-        push('', '/interface bridge set ' + bridge + ' vlan-filtering=yes',
-          '/interface bridge vlan add bridge=' + bridge + ' tagged=' + bridge + ' untagged=' + guestPort + ' vlan-ids=20',
+        push('', '/interface bridge vlan add bridge=' + bridge + ' tagged=' + bridge + ' untagged=' + guestPort + ' vlan-ids=20',
           '/interface vlan add name=' + guestIface + ' vlan-id=20 interface=' + bridge,
           '/interface bridge port add bridge=' + bridge + ' interface=' + guestPort + ' pvid=20',
           '/interface list member add interface=' + guestIface + ' list=GUEST');
-      } else {
-        push('', '/interface bridge set ' + bridge + ' vlan-filtering=yes');
       }
     }
 
@@ -514,8 +618,13 @@
     }
 
     sec('LAN, DHCP и DNS');
-    push('/ip address add address=' + netCidr(lanIp, lanPrefix) + ' interface=' + bridge);
-    if (C && C.info) {
+    if (dsOn) {
+      push('# Адреса и DHCP для разделённых подсетей — в следующем разделе.',
+        '# Управляющий адрес роутера будет на vlan-' + dsVl.pc + ' (проводные ПК).');
+    } else {
+      push('/ip address add address=' + netCidr(lanIp, lanPrefix) + ' interface=' + l3Iface);
+    }
+    if (!dsOn && C && C.info) {
       const inf = C.info(C.ipToInt(lanIp), lanPrefix);
       if (inf && inf.hosts > 2 && opt(o, 'dhcp')) {
         const parts = inf.network.split('.');
@@ -528,6 +637,41 @@
       }
     }
     push('/ip dns set servers=' + clean(opt(o, 'dns')) + ' allow-remote-requests=yes');
+
+    if (dsOn) {
+      sec('Устройства по подсетям (VLAN ' + dsVl.pc + '/' + dsVl.wifi + '/' + dsVl.phone + '/' + dsVl.iot + ')');
+      push('# Каждый тип устройств — в своей подсети, но маршрутизация между ними разрешена:',
+        '# общие папки, принтеры, NAS и RDP доступны всем, как будто сеть одна.');
+      const dsGroups = [
+        { vlan: dsVl.pc, name: 'Проводные компьютеры' },
+        { vlan: dsVl.wifi, name: 'Ноутбуки и планшеты (Wi-Fi)' },
+        { vlan: dsVl.phone, name: 'Телефоны' },
+        { vlan: dsVl.iot, name: 'Принтеры и периферия' }
+      ];
+      dsGroups.forEach(function (g, i) {
+        const n = dsNets[i];
+        const iface = 'vlan-' + g.vlan;
+        push('', '# ' + g.name + ': ' + n.cidr + ', шлюз ' + n.gw + ', пул ' + n.from + '–' + n.to,
+          '/ip address add address=' + n.gw + '/' + n.prefix + ' interface=' + iface,
+          '/ip pool add name=pool-' + g.vlan + ' ranges=' + n.from + '-' + n.to,
+          '/ip dhcp-server add name=dhcp-' + g.vlan + ' interface=' + iface + ' address-pool=pool-' + g.vlan + ' lease-time=' + leaseTime,
+          '/ip dhcp-server network add address=' + n.cidr + ' gateway=' + n.gw + ' dns-server=' + n.gw);
+      });
+      const lanNetCidr = (C && C.info ? C.info(C.ipToInt(lanIp), lanPrefix).cidr : networkOf(lanIp, lanPrefix).cidr);
+      push('', '# Общие ресурсы: всем подсетям разрешено ходить друг к другу (файлы, принтеры, NAS)',
+        '/ip firewall filter add chain=forward src-address=' + lanNetCidr + ' dst-address=' + lanNetCidr +
+        ' action=accept comment="общие ресурсы: подсети видят друг друга"',
+        '# Доступ в интернет для этих подсетей разрешает правило «lan to wan» в разделе Firewall.');
+      const dsIfaces = ['vlan-' + dsVl.pc, 'vlan-' + dsVl.wifi, 'vlan-' + dsVl.phone, 'vlan-' + dsVl.iot].join(',');
+      push('', '# Имена и обнаружение: mDNS-повторитель (RouterOS 7.16+) сохраняет видимость принтеров,',
+        '# NAS и Chromecast из любой подсети. На старых версиях обновите RouterOS.',
+        '/ip firewall filter add chain=input protocol=udp dst-port=5353 action=accept comment="mDNS repeater"',
+        '/ip dns set mdns-repeat-ifaces=' + dsIfaces,
+        '# mDNS закрывает AirPrint, Chromecast, NAS и сетевые имена. Обзор сети Windows (WS-Discovery)',
+        '# идёт широковещательно и через подсети не проходит: подключайте принтеры по IP или добавьте',
+        '# записи в раздел «Локальные DNS-имена» (/ip dns static).',
+        '# Если в конфиге есть общий drop в forward, поднимите правило «общие ресурсы» выше него.');
+    }
 
     if (routes.length) {
       sec('Статические маршруты');
@@ -589,11 +733,30 @@
 
     if (wifiOn) {
       sec('Wi-Fi');
-      push('/interface wifi security',
-        'add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase=' + q(opt(o, 'wifiPass')),
-        '/interface wifi',
-        'add name=wifi-lan master-interface=wifi1 ssid=' + q(opt(o, 'wifiSsid')) + ' security=sec-lan',
-        '/interface bridge port add bridge=' + bridge + ' interface=wifi-lan');
+      if (dsOn) {
+        push('# Три отдельные сети: ноутбуки, телефоны и принтеры — каждая в своём VLAN',
+          '/interface wifi security',
+          'add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase=' + q(opt(o, 'wifiPass')),
+          'add name=sec-iot authentication-types=wpa2-psk,wpa3-psk passphrase=' + q(opt(o, 'wifiPass')),
+          '/interface wifi',
+          'add name=wifi-pc master-interface=wifi1 ssid=' + q(dsSsid.pc) + ' security=sec-lan',
+          'add name=wifi-phones master-interface=wifi1 ssid=' + q(dsSsid.phone) + ' security=sec-iot',
+          'add name=wifi-iot master-interface=wifi1 ssid=' + q(dsSsid.iot) + ' security=sec-iot',
+          '/interface bridge port',
+          'add bridge=' + bridge + ' interface=wifi-pc pvid=' + dsVl.wifi,
+          'add bridge=' + bridge + ' interface=wifi-phones pvid=' + dsVl.phone,
+          'add bridge=' + bridge + ' interface=wifi-iot pvid=' + dsVl.iot,
+          '/interface bridge vlan',
+          'add bridge=' + bridge + ' tagged=' + bridge + ' untagged=wifi-pc vlan-ids=' + dsVl.wifi,
+          'add bridge=' + bridge + ' tagged=' + bridge + ' untagged=wifi-phones vlan-ids=' + dsVl.phone,
+          'add bridge=' + bridge + ' tagged=' + bridge + ' untagged=wifi-iot vlan-ids=' + dsVl.iot);
+      } else {
+        push('/interface wifi security',
+          'add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase=' + q(opt(o, 'wifiPass')),
+          '/interface wifi',
+          'add name=wifi-lan master-interface=wifi1 ssid=' + q(opt(o, 'wifiSsid')) + ' security=sec-lan',
+          '/interface bridge port add bridge=' + bridge + ' interface=wifi-lan');
+      }
       const country = clean(opt(o, 'wifiCountry')) || 'belarus';
       const width = parseInt(opt(o, 'wifiWidth'), 10) || 20;
       const ch24 = parseInt(opt(o, 'wifiCh24'), 10) || 6;
@@ -616,7 +779,13 @@
       }
     }
 
-    if (ipv6Mode !== 'off') {
+    if (ipv6Mode !== 'off' && dsOn) {
+      sec('IPv6');
+      push('# При разделении на подсети IPv6 настраивается для каждой VLAN отдельно:',
+        '# /ipv6 address add address=::1/64 interface=vlan-' + dsVl.pc + ' advertise=yes',
+        '# /ipv6 address add address=::1/64 interface=vlan-' + dsVl.wifi + ' advertise=yes и так далее',
+        '# Правила /ipv6 firewall filter из шаблона ниже добавьте для интерфейсов vlan-* в списке LAN.');
+    } else if (ipv6Mode !== 'off') {
       sec('IPv6');
       if (ipv6Mode === 'pd') {
         push('/ipv6 dhcp-client add interface=' + wanPort + ' pool-name=ipv6-pool request=prefix add-default-route=yes disabled=no',
@@ -834,6 +1003,11 @@
       '/system clock set time-zone-name=' + clean(opt(o, 'tz')),
       '/system identity set name=' + q(identity));
 
+    if (guestOn || segs.length || dsOn) {
+      push('', '# VLAN-фильтрация включается в самом конце: все адреса, пулы и DHCP уже созданы',
+        '/interface bridge set ' + bridge + ' vlan-filtering=yes');
+    }
+
     sec('Проверка после вставки');
     push('# /ip address print', '# /ip route print where dst-address=0.0.0.0/0',
       '# /ip firewall filter print stats', '# /ipv6 address print',
@@ -858,6 +1032,7 @@
         'wifi': wifiOn ? 1 : 0,
         ipv6: ipv6Mode === 'off' ? 0 : 1,
         segments: segs.length,
+        devices: dsOn ? 4 : 0,
         leases: leases.length,
         routes: routes.length,
         notify: mailOn ? 1 : 0,
@@ -916,6 +1091,7 @@
     applyModel: applyModel,
     defaults: DEFAULTS,
     expandPorts: expandPorts,
-    networkOf: networkOf
+    networkOf: networkOf,
+    subnets: dsSplit
   };
 })();

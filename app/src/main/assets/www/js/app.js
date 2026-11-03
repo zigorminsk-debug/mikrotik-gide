@@ -1704,6 +1704,22 @@
       wizField('w-dns', 'DNS-серверы', o.dns, 'через запятую') +
       '</section>';
 
+    html += '<section class="card"><h3 class="card-h">' + svg('bridge', 15) + 'Устройства по подсетям</h3>' +
+      wizSwitch('w-devSeg', 'Разделить на 4 подсети по типам устройств', o.devSeg,
+        'проводные ПК, ноутбуки, телефоны и принтеры — каждый в своём VLAN') +
+      '<div class="wz-group' + (o.devSeg ? '' : ' off') + '" data-g="devseg">' +
+      '<div class="hint" style="margin:-4px 0 10px">' + esc(dsHint(o)) + '</div>' +
+      wizField('w-dsVlanPc', 'VLAN проводных ПК', o.dsVlanPc) +
+      wizField('w-dsVlanWifi', 'VLAN ноутбуков и планшетов', o.dsVlanWifi) +
+      wizField('w-dsVlanPhones', 'VLAN телефонов', o.dsVlanPhones) +
+      wizField('w-dsVlanIot', 'VLAN принтеров и периферии', o.dsVlanIot) +
+      wizField('w-dsWifiPc', 'SSID ноутбуков', o.dsWifiPc) +
+      wizField('w-dsWifiPhones', 'SSID телефонов', o.dsWifiPhones) +
+      wizField('w-dsWifiIot', 'SSID принтеров', o.dsWifiIot) +
+      '<div class="hint">Подсети маршрутизируются между собой: общие папки, принтеры и NAS доступны всем. ' +
+      'mDNS-повторитель сохраняет обнаружение, гостевой VLAN 20 остаётся изолированным.</div>' +
+      '</div></section>';
+
     html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Гости и Wi-Fi</h3>' +
       wizSwitch('w-guest', 'Гостевая сеть (VLAN 20)', o.guest, 'изолировать гостей от LAN') +
       '<div class="wz-group' + (o.guest ? '' : ' off') + '" data-g="guest">' +
@@ -1925,6 +1941,11 @@
       author: g('w-author', ''),
       wifiCountry: g('w-wifiCountry', 'belarus'), wifiCh24: g('w-wifiCh24', 6),
       wifiCh5: g('w-wifiCh5', 36), wifiWidth: g('w-wifiWidth', 20), wifiTxPower: g('w-wifiTxPower', ''),
+      devSeg: on('w-devSeg'),
+      dsVlanPc: g('w-dsVlanPc', 10), dsVlanWifi: g('w-dsVlanWifi', 30),
+      dsVlanPhones: g('w-dsVlanPhones', 40), dsVlanIot: g('w-dsVlanIot', 50),
+      dsWifiPc: g('w-dsWifiPc', 'PC-WiFi'), dsWifiPhones: g('w-dsWifiPhones', 'Phones'),
+      dsWifiIot: g('w-dsWifiIot', 'Printers'),
       tz: g('w-tz', 'Europe/Minsk'), ntp: g('w-ntp', 'by.pool.ntp.org'),
       leaseTime: g('w-leaseTime', '1d'),
       mail: on('w-mail'), mailServer: g('w-mailServer', ''), mailPort: g('w-mailPort', 587),
@@ -1974,6 +1995,7 @@
       '<div class="hint" style="margin:-4px 0 10px">' + esc(res.title || '') + ' · строк: ' + (res.lines || 0) +
       ' · пробросов: ' + (c.forwards || 0) + ' · сегментов: ' + (c.segments || 0) +
       ' · резервирований: ' + (c.leases || 0) + ' · маршрутов: ' + (c.routes || 0) +
+      (c.devices ? ' · подсетей: ' + c.devices : '') +
       ' · сервисов: ' + (c.services || 0) + ' · VPN: ' + (c.vpn || 0) +
       (c.notify ? ' · e-mail: вкл' : '') + '</div>';
     if (res.errors && res.errors.length) {
@@ -2052,6 +2074,7 @@
         if (key === 'static') show = sel && sel.value === 'static';
         if (key === 'pppoe') show = sel && sel.value === 'pppoe';
         if (key === 'guest') show = on('w-guest');
+        if (key === 'devseg') show = on('w-devSeg');
         if (key === 'wifi') show = on('w-wifi');
         if (key === 'ipv6s') show = ipv6 && ipv6.value === 'static';
         if (key === 'wg') show = on('w-wg');
@@ -2918,6 +2941,17 @@
       '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#2fe08a"/>' +
       '<text x="' + (cx - 10) + '" y="' + (cy + 22) + '" fill="#6e7d8f" font-size="10">точка</text>' +
       ticks + '</svg>';
+  }
+
+  function dsHint(o) {
+    const W = window.ConfigWizard;
+    const nets = (W && W.subnets) ? W.subnets(o.lanIp, o.lanPrefix) : [];
+    if (!nets.length) return 'Нужен префикс LAN от /8 до /26 — четырём подсетям не хватит адресов.';
+    const names = ['ПК', 'ноутбуки', 'телефоны', 'принтеры'];
+    return 'LAN ' + nets[0].cidr.replace(/\/\d+$/, '') + '/' + o.lanPrefix + ' → 4 подсети по /' + nets[0].prefix + ': ' +
+      nets.map(function (n, i) {
+        return names[i] + ' ' + n.cidr + ' (шлюз ' + n.gw + ')';
+      }).join(', ');
   }
 
   function coverageView() {
