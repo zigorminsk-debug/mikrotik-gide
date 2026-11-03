@@ -1525,7 +1525,7 @@
       toolCard('#/vlsm', 'VLSM-планировщик', 'План адресации по числу хостов + CSV', 'iface') +
       toolCard('#/diff', 'Сравнить конфиги', 'Два экспорта — что изменилось', 'task') +
       toolCard('#/quiz', 'Самопроверка', '111 вопросов по RouterOS с разбором ошибок', 'book') +
-      toolCard('#/models', 'Порты моделей', 'hEX, hAP ax3, RB4011, CRS328 — где WAN, PoE и SFP', 'iface') +
+      toolCard('#/models', 'Модели и совместимость', 'Матрица 15 моделей: пакет Wi-Fi (wifi или wireless), порты, PoE, SFP', 'iface') +
       toolCard('#/starred', 'Избранное и заметки', 'Всё отмеченное, записанное и прочитанное', 'svc') +
       toolCard('#/examples', 'Примеры конфигов', '11 готовых схем: интернет, VLAN, VPN, Wi-Fi, IPTV', 'task') +
       toolCard('#/cheats', 'Шпаргалки', '7 наборов команд: база, firewall, NAT, VLAN, WireGuard', 'book') +
@@ -2708,11 +2708,34 @@
 
     let html = '<div class="wrap">';
     html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Порты моделей</span></div>';
-    html += '<h1 class="art-title">Порты моделей</h1>';
-    html += '<div class="hint" style="margin:-6px 0 10px">Какой порт для WAN, где PoE, где SFP — чтобы не гадать по документации.</div>';
+    html += '<h1 class="art-title">Модели и совместимость</h1>';
+    html += '<div class="hint" style="margin:-6px 0 10px">Матрица ходовых моделей и раскладка портов: какой порт для WAN, где PoE, где SFP ' +
+      'и — главное — какой пакет Wi-Fi на устройстве.</div>';
     html += '<div class="chips">' + maps.map(function (x) {
       return '<button class="chip' + (x.id === m.id ? ' on' : '') + '" data-model="' + x.id + '">' + esc(x.name.split(' (')[0]) + '</button>';
     }).join('') + '</div>';
+
+    const specs = window.MODEL_SPECS || [];
+    if (specs.length) {
+      html += '<section class="card" id="compat"><h3 class="card-h">' + svg('system', 15) + 'Матрица совместимости: ' + specs.length + ' моделей</h3>' +
+        '<div class="hint" style="margin:-4px 0 10px">Главное, из-за чего конфиг не применяется: какой пакет Wi-Fi на устройстве и какие у него порты. ' +
+        'Если в колонке «пакет Wi-Fi» стоит <b>wireless</b> — команды <span class="mono">/interface wifi</span> на этом роутере не работают, нужны ' +
+        '<span class="mono">/interface wireless</span> и радиоинтерфейс <span class="mono">wlan1</span>.</div>' +
+        '<div class="wz-row" style="margin:0 0 10px"><input class="inp" id="mdl-filter" placeholder="Найти модель: ax3, 951, cAP…" autocomplete="off"></div>' +
+        '<div class="tbl-wrap"><table class="tbl" id="mdl-matrix"><thead><tr><th>Модель</th><th>Пакет Wi-Fi</th><th>Диапазоны</th>' +
+        '<th>Ethernet</th><th>SFP</th><th>USB</th><th>PoE-in</th><th>PoE-out</th><th>RAM</th></tr></thead><tbody>' +
+        specs.map(function (x) {
+          const legacy = /wireless/.test(x.pkg) && !/wifi-qcom/.test(x.pkg);
+          const pkgCls = x.pkg === '—' ? '' : legacy ? ' style="color:#a15c00"' : ' style="color:#0b6b3a"';
+          return '<tr data-spec="' + esc(x.id) + '"' + (x.id === m.id ? ' style="background:var(--focus,#eef5ff)"' : '') + '>' +
+            '<td><b>' + esc(x.name) + '</b><div class="hint" style="margin:2px 0 0;font-size:12px">' + esc(x.note) + '</div></td>' +
+            '<td' + pkgCls + '>' + esc(x.pkg) + '</td><td>' + esc(x.bands) + '</td><td class="mono">' + esc(x.eth) + '</td>' +
+            '<td>' + esc(x.sfp) + '</td><td>' + esc(x.usb) + '</td><td class="mono">' + esc(x.poeIn) + '</td>' +
+            '<td class="mono">' + esc(x.poeOut) + '</td><td>' + esc(x.ram) + '</td></tr>';
+        }).join('') + '</tbody></table></div>' +
+        '<div class="hint" style="margin-top:8px">Данные по даташитам MikroTik. У одной модели бывают ревизии — сверяйтесь с наклейкой и <span class="mono">/system resource print</span>.</div>' +
+        '</section>';
+    }
 
     html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + esc(m.name) + '</h3>' +
       '<div class="hint" style="margin:-4px 0 12px">' + esc(m.note || '') + '</div>' +
@@ -2733,15 +2756,46 @@
       html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Дополнительно</h3><ul class="clean">' +
         m.extras.map(function (e) { return '<li><b>' + esc(e.t) + '</b> — ' + esc(e.note) + '</li>'; }).join('') + '</ul></section>';
     }
-    if (m.art && BY_ID[m.art]) {
-      html += '<div class="wz-actions"><a class="btn" href="#/' + m.art + '">Статья: ' + esc(BY_ID[m.art].t) + '</a>' +
-        '<a class="btn" href="#/wizard">Собрать конфиг для этой модели</a></div>';
-    }
+    html += '<div class="wz-actions"><button class="btn" data-wizmodel="' + esc(m.id) + '">Собрать конфиг для этой модели</button>';
+    if (m.art && BY_ID[m.art]) html += '<a class="btn" href="#/' + m.art + '">Статья: ' + esc(BY_ID[m.art].t) + '</a>';
+    html += '</div>';
     html += '</div>';
     return html;
   }
 
   function bindModels() {
+    const f = document.getElementById('mdl-filter');
+    if (f) {
+      f.addEventListener('input', function () {
+        const q = f.value.trim().toLowerCase();
+        document.querySelectorAll('#mdl-matrix tbody tr').forEach(function (tr) {
+          tr.style.display = !q || tr.textContent.toLowerCase().indexOf(q) >= 0 ? '' : 'none';
+        });
+      });
+    }
+    function setWizModel(id) {
+      let v = {};
+      try { v = JSON.parse(store.get('wiz') || '{}') || {}; } catch (e) { v = {}; }
+      if (window.ConfigWizard && window.ConfigWizard.applyModel) v = window.ConfigWizard.applyModel(v, id);
+      v.model = id;
+      store.set('wiz', JSON.stringify(v));
+      location.hash = '#/wizard';
+    }
+    document.querySelectorAll('[data-wizmodel]').forEach(function (b) {
+      b.addEventListener('click', function () { setWizModel(b.getAttribute('data-wizmodel')); });
+    });
+    document.querySelectorAll('#mdl-matrix tbody tr').forEach(function (tr) {
+      tr.style.cursor = 'pointer';
+      tr.addEventListener('click', function () {
+        const id = tr.getAttribute('data-spec');
+        if ((window.MODEL_MAPS || []).some(function (x) { return x.id === id; })) {
+          store.set('modelView', id);
+          route();
+        } else {
+          setWizModel(id);
+        }
+      });
+    });
     document.querySelectorAll('[data-model]').forEach(function (b) {
       b.addEventListener('click', function () {
         store.set('modelView', b.getAttribute('data-model'));
@@ -3029,7 +3083,7 @@
         '\n/interface wireless set wlan1 antenna-gain=' + st.gain) + '</pre></div>' +
       '<div class="wz-actions"><a class="btn" href="#/wifi-power">Статья: мощность и покрытие</a>' +
       '<a class="btn" href="#/wifi">Каналы Wi-Fi</a>' +
-      '<a class="btn" href="#/models">Порты и антенны моделей</a></div></section>';
+      '<a class="btn" href="#/models">Модели: совместимость и порты</a></div></section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('info', 15) + 'Справочник</h3>' +
       '<div class="cv-refs">' +

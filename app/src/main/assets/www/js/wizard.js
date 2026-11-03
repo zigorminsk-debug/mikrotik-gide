@@ -25,7 +25,8 @@
     bridge: 'bridge-lan',
     dhcp: true, dns: '1.1.1.1,8.8.8.8',
     guest: true, guestPort: 'ether5', guestIp: '192.168.20.1', guestPrefix: 24,
-    wifi: false, wifiKind: 'wifi', wifiRadio: 'wifi1',   // wifi = пакет wifi (ax), legacy = пакет wireless (802.11n)
+    wifi: false, wifiKind: 'wifi', wifiRadio: 'wifi1', wifiRadio5: 'wifi2', wifi5: true,
+    // wifiKind: wifi = пакет wifi (ax и wifi-qcom-ac), legacy = пакет wireless (802.11n/ac)
     wifiSsid: 'Office', wifiPass: 'WiFi-Pass-2026', wifiGuestSsid: 'Office-Guest',
     wifiGuestPass: 'Guest-Pass-2026',
     ipv6: 'off',            // off | pd | static
@@ -57,15 +58,44 @@
   };
 
   /* типовые модели: подставляют порты и наличие Wi-Fi */
+  /* Ходовые модели RouterOS 7. Для каждой: какие порты, есть ли Wi-Fi,
+     в каком пакете он живёт (wifi — /interface wifi, legacy — /interface wireless),
+     сколько диапазонов и как называются радиоинтерфейсы. */
   const MODELS = {
-    generic: { name: 'Универсальный', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5' },
-    hex: { name: 'hEX / hEX S', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: false },
-    ax2: { name: 'hAP ax2', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1' },
-    ax3: { name: 'hAP ax3', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1' },
-    rb951: { name: 'RB951G-2HnD (802.11n)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: '',
-      wifi: true, wifiKind: 'legacy', wifiRadio: 'wlan1' },
-    rb4011: { name: 'RB4011', wanPort: 'ether1', lanPorts: 'ether2-ether9', guestPort: 'ether10', wifi: false },
-    crs328: { name: 'CRS328-24P', wanPort: 'ether1', lanPorts: 'ether2-ether23', guestPort: 'ether24', wifi: false }
+    generic: { name: 'Универсальный (5 портов)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5' },
+    hex: { name: 'hEX (RB750Gr3), 5 портов', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5', wifi: false },
+    hexs: { name: 'hEX S (RB760iGS): SFP, USB, PoE-out', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5', wifi: false },
+    hexpoe: { name: 'hEX PoE (RB960PGS): PoE-out 2–5', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5', wifi: false },
+    rb951: { name: 'RB951G-2HnD (802.11n, wireless)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: '',
+      wifi: true, wifiKind: 'legacy', wifiRadio: 'wlan1', wifi5: false },
+    hap_lite: { name: 'hAP lite (RB941-2nD, 100M, 2,4 ГГц)', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: '',
+      wifi: true, wifiKind: 'legacy', wifiRadio: 'wlan1', wifi5: false },
+    hap_ac2: { name: 'hAP ac² (RBD52G, пакет wireless)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5',
+      wifi: true, wifiKind: 'legacy', wifiRadio: 'wlan1', wifiRadio5: 'wlan2', wifi5: true },
+    hap_ac2w: { name: 'hAP ac² с wifi-qcom-ac (/interface wifi)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5',
+      wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1', wifiRadio5: 'wifi2', wifi5: true },
+    hap_ac3: { name: 'hAP ac³ (RBD53iG, wireless)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5',
+      wifi: true, wifiKind: 'legacy', wifiRadio: 'wlan1', wifiRadio5: 'wlan2', wifi5: true },
+    hap_ac3w: { name: 'hAP ac³ с wifi-qcom-ac (/interface wifi)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5',
+      wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1', wifiRadio5: 'wifi2', wifi5: true },
+    hap_ax2: { name: 'hAP ax² (C52iG-5HaxD2HaxD, Wi-Fi 6)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5',
+      wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1', wifiRadio5: 'wifi2', wifi5: true },
+    hap_ax3: { name: 'hAP ax³ (C53UiG: ether1 — 2,5G)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5',
+      wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1', wifiRadio5: 'wifi2', wifi5: true },
+    hap_ax_lite: { name: 'hAP ax lite (L41G-2axD, только 2,4 ГГц)', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: '',
+      wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1', wifi5: false },
+    l009: { name: 'L009UiGS-2HaxD: 8 портов, SFP, 2,4 ГГц ax', wanPort: 'ether1', lanPorts: 'ether2-ether8', guestPort: 'ether8',
+      wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1', wifi5: false },
+    cap_ax: { name: 'cAP ax (точка доступа, 2 порта)', wanPort: 'ether1', lanPorts: 'ether2', guestPort: '',
+      wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1', wifiRadio5: 'wifi2', wifi5: true },
+    cap_ac: { name: 'cAP ac (точка доступа, wireless)', wanPort: 'ether1', lanPorts: 'ether2', guestPort: '',
+      wifi: true, wifiKind: 'legacy', wifiRadio: 'wlan1', wifiRadio5: 'wlan2', wifi5: true },
+    wap_ac: { name: 'wAP ac (RBwAPG-5HacD2HnD, wireless)', wanPort: 'ether1', lanPorts: '', guestPort: '',
+      wifi: true, wifiKind: 'legacy', wifiRadio: 'wlan1', wifiRadio5: 'wlan2', wifi5: true },
+    rb4011: { name: 'RB4011iGS+ (10 портов, без Wi-Fi)', wanPort: 'ether1', lanPorts: 'ether2-ether9', guestPort: 'ether10', wifi: false },
+    rb3011: { name: 'RB3011UiAS (10 портов, без Wi-Fi)', wanPort: 'ether1', lanPorts: 'ether2-ether10', guestPort: 'ether10', wifi: false },
+    rb5009: { name: 'RB5009UG+S+IN (2,5G + SFP+, без Wi-Fi)', wanPort: 'ether1', lanPorts: 'ether2-ether7', guestPort: 'ether8', wifi: false },
+    crs328: { name: 'CRS328-24P-4S+ (коммутатор, без Wi-Fi)', wanPort: 'ether1', lanPorts: 'ether2-ether23', guestPort: 'ether24', wifi: false }
   };
 
   const PRESETS = {
@@ -474,7 +504,10 @@
 
   /* ---------------- генерация конфига ---------------- */
   function generate(rawOpts) {
-    const o = rawOpts || {};
+    let o = rawOpts || {};
+    // если выбрана модель, а тип Wi-Fi в ответах не сохранён — берём его из модели,
+    // иначе для RB951G получили бы команды пакета wifi на устройстве с wireless
+    if (o.model && o.wifiKind == null && MODELS[o.model]) o = applyModel(o, o.model);
     const issues = validate(o);
     const warn = issues.filter(function (x) { return x.level === 'warn'; }).map(function (x) { return x.msg; });
     const errors = issues.filter(function (x) { return x.level === 'error'; }).map(function (x) { return x.msg; });
@@ -772,6 +805,8 @@
       const txp = clean(opt(o, 'wifiTxPower'));
       const legacy = clean(opt(o, 'wifiKind')) === 'legacy';
       const radio = clean(opt(o, 'wifiRadio')) || (legacy ? 'wlan1' : 'wifi1');
+      const radio5 = clean(opt(o, 'wifiRadio5')) || (legacy ? 'wlan2' : 'wifi2');
+      const has5 = opt(o, 'wifi5') !== false;   // у одномастотных моделей (RB951G, hAP lite, L009) 5 ГГц нет
       if (legacy) {
         /* ---------- пакет wireless: RB951G-2HnD, 802.11n, ОДИН диапазон 2.4 ГГц ---------- */
         sec('Wi-Fi (пакет wireless: RB951G-2HnD и другие 802.11n)');
@@ -800,6 +835,12 @@
               country + ' band=2ghz-b/g/n frequency=' + ch24Freq(ch24) + ' channel-width=' + width + 'mhz disabled=no',
             '/interface bridge port add bridge=' + bridge + ' interface=' + radio);
           if (txp) push('/interface wireless set ' + radio + ' tx-power-mode=all-rates-fixed tx-power=' + txp);
+          if (has5) {
+            push('# Второй диапазон 5 ГГц — свой радиоинтерфейс, тот же SSID и профиль',
+              '/interface wireless set ' + radio5 + ' mode=ap-bridge ssid=' + q(opt(o, 'wifiSsid')) + ' security-profile=sec-lan country=' +
+                country + ' band=5ghz-a/n/ac frequency=' + ch5Freq(ch5) + ' channel-width=' + w5 + 'mhz disabled=no',
+              '/interface bridge port add bridge=' + bridge + ' interface=' + radio5);
+          }
         }
         if (width === 40 && ch24 >= 1 && ch24 <= 13) {
           push('# ВНИМАНИЕ: 40 МГц в 2.4 ГГц занимает почти весь диапазон — лучше 20 МГц.');
@@ -816,7 +857,7 @@
         /* ---------- пакет wifi: hAP ax2/ax3, cAP ax — SSID и страна в профиле configuration ---------- */
         sec('Wi-Fi (пакет wifi: RouterOS 7.13+ — hAP ax2/ax3, cAP ax, wAP ax)');
         push('# В пакете wifi у интерфейса НЕТ полей ssid и country — они живут в профиле configuration.',
-          '# Имена радиоинтерфейсов проверьте так: /interface wifi print (обычно wifi1 — 2.4 ГГц, wifi2 — 5 ГГц)',
+          '# Имена радиоинтерфейсов проверьте так: /interface wifi print (обычно ' + radio + (has5 ? ', ' + radio5 : '') + ')',
           '# Если у вас старый пакет wireless (802.11n, RB951) — выберите модель RB951G-2HnD в мастере.');
         if (dsOn) {
           const dsSs = [
@@ -831,25 +872,31 @@
             push('/interface wifi datapath add name=dp-' + w.vlan + ' bridge=' + bridge + ' vlan-id=' + w.vlan,
               '/interface wifi configuration add name=cfg-' + w.vlan + ' ssid=' + q(w.ssid) + ' country=' + country +
                 ' security=' + w.sec + ' datapath=dp-' + w.vlan,
-              '/interface wifi add name=' + w.iface + ' master-interface=wifi1 configuration=cfg-' + w.vlan + ' disabled=no',
+              '/interface wifi add name=' + w.iface + ' master-interface=' + radio + ' configuration=cfg-' + w.vlan + ' disabled=no',
               '/interface bridge vlan add bridge=' + bridge + ' tagged=' + bridge + ' vlan-ids=' + w.vlan);
           });
           push('# Основное радио 2.4 ГГц и второе (5 ГГц) — тот же профиль ноутбуков',
-            '/interface wifi set [find where name="wifi1"] configuration=cfg-' + dsVl.wifi + ' disabled=no',
-            ':do {/interface wifi set [find where name="wifi2"] configuration=cfg-' + dsVl.wifi + ' disabled=no} on-error={}',
-            '/interface wifi set [find where name="wifi1"] channel.frequency=' + ch24Freq(ch24) + ' channel.width=' + width + 'mhz',
-            ':do {/interface wifi set [find where name="wifi2"] channel.frequency=' + ch5Freq(ch5) + ' channel.width=' + w5 + 'mhz} on-error={}');
+            '/interface wifi set [find where name="' + radio + '"] configuration=cfg-' + dsVl.wifi + ' disabled=no',
+            '/interface wifi set [find where name="' + radio + '"] channel.frequency=' + ch24Freq(ch24) + ' channel.width=' + width + 'mhz');
+          if (has5) {
+            push(':do {/interface wifi set [find where name="' + radio5 + '"] configuration=cfg-' + dsVl.wifi + ' disabled=no} on-error={}',
+              ':do {/interface wifi set [find where name="' + radio5 + '"] channel.frequency=' + ch5Freq(ch5) + ' channel.width=' + w5 + 'mhz} on-error={}');
+          }
         } else {
           push('/interface wifi security add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase=' + wpass + ' wps=disable',
             '/interface wifi datapath add name=dp-lan bridge=' + bridge,
             '/interface wifi configuration add name=cfg-lan ssid=' + q(opt(o, 'wifiSsid')) + ' country=' + country +
               ' security=sec-lan datapath=dp-lan channel.frequency=' + ch24Freq(ch24) + ' channel.width=' + width + 'mhz',
-            '/interface wifi configuration add name=cfg-lan5 ssid=' + q(opt(o, 'wifiSsid')) + ' country=' + country +
-              ' security=sec-lan datapath=dp-lan channel.frequency=' + ch5Freq(ch5) + ' channel.width=' + w5 + 'mhz',
             '# Страна обязательна: без неё радио не поднимется (country в профиле)',
-            '/interface wifi set [find where name="wifi1"] configuration=cfg-lan disabled=no',
-            ':do {/interface wifi set [find where name="wifi2"] configuration=cfg-lan5 disabled=no} on-error={}');
-          if (txp) push('/interface wifi set [find where name="wifi1"] tx-power=' + txp);
+            '/interface wifi set [find where name="' + radio + '"] configuration=cfg-lan disabled=no');
+          if (has5) {
+            push('/interface wifi configuration add name=cfg-lan5 ssid=' + q(opt(o, 'wifiSsid')) + ' country=' + country +
+                ' security=sec-lan datapath=dp-lan channel.frequency=' + ch5Freq(ch5) + ' channel.width=' + w5 + 'mhz',
+              ':do {/interface wifi set [find where name="' + radio5 + '"] configuration=cfg-lan5 disabled=no} on-error={}');
+          } else {
+            push('# У этой модели только 2,4 ГГц — профиль и настройки для 5 ГГц не создаём.');
+          }
+          if (txp) push('/interface wifi set [find where name="' + radio + '"] tx-power=' + txp);
         }
         if (width === 40 && ch24 >= 1 && ch24 <= 13) {
           push('# ВНИМАНИЕ: 40 МГц в 2.4 ГГц занимает почти весь диапазон — лучше 20 МГц.');
@@ -860,7 +907,7 @@
             '/interface wifi datapath add name=dp-guest bridge=' + bridge + ' vlan-id=20',
             '/interface wifi configuration add name=cfg-guest ssid=' + q(opt(o, 'wifiGuestSsid')) + ' country=' + country +
               ' security=sec-guest datapath=dp-guest',
-            '/interface wifi add name=wifi-guest master-interface=wifi1 configuration=cfg-guest disabled=no');
+            '/interface wifi add name=wifi-guest master-interface=' + radio + ' configuration=cfg-guest disabled=no');
         }
       }
     }
@@ -1182,6 +1229,8 @@
       if (m.wifi != null) out.wifi = m.wifi;
       if (m.wifiKind) out.wifiKind = m.wifiKind;
       if (m.wifiRadio) out.wifiRadio = m.wifiRadio;
+      if (m.wifiRadio5) out.wifiRadio5 = m.wifiRadio5;
+      if (m.wifi5 != null) out.wifi5 = m.wifi5;
       if (out.pppoeServerPort && (m.wanPort === out.pppoeServerPort)) out.pppoeServerPort = m.guestPort;
     }
     return out;
