@@ -126,7 +126,7 @@ func (f *fakeROS) handle(conn net.Conn) {
 				}
 			}
 			_ = writeSentence(conn, "!done")
-		case strings.HasPrefix(cmd, "/system script"):
+		case strings.HasPrefix(cmd, "/system/script"), strings.HasPrefix(cmd, "/system script"):
 			if !authed {
 				_ = writeSentence(conn, "!trap", "=message=not logged in")
 				continue

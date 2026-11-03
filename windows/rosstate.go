@@ -110,7 +110,7 @@ func collectSnapshot(address, user, pass string) (*rosSnapshot, error) {
 		Counts:  map[string]int{},
 	}
 	for _, menu := range snapshotMenus {
-		rows, err := c.command(menu + "/print")
+		rows, err := c.runCommand(menu + " print")
 		if err != nil {
 			continue // меню может отсутствовать в этой версии — это нормально
 		}
@@ -151,11 +151,11 @@ func checkRouterUpdates(address, user, pass string) (*rosUpdates, error) {
 	defer func() { _ = c.Close() }()
 	out := &rosUpdates{Checked: time.Now().Format("2006-01-02 15:04")}
 	c.setTimeout(45 * time.Second)
-	if _, err := c.command("/system package update/check-for-updates"); err != nil {
+	if _, err := c.runCommand("/system package update check-for-updates"); err != nil {
 		out.Note = "проверка обновлений не удалась (нет интернета на роутере?): " + err.Error()
 	}
 	c.setTimeout(15 * time.Second)
-	if rows, err := c.command("/system package update/print"); err == nil && len(rows) > 0 {
+	if rows, err := c.runCommand("/system package update print"); err == nil && len(rows) > 0 {
 		row := firstRow(rows)
 		out.Installed = strings.TrimSpace(row["installed-version"])
 		out.Latest = strings.TrimSpace(row["latest-version"])
@@ -165,7 +165,7 @@ func checkRouterUpdates(address, user, pass string) (*rosUpdates, error) {
 			out.RouterOSNew = true
 		}
 	}
-	if rows, err := c.command("/system routerboard/print"); err == nil && len(rows) > 0 {
+	if rows, err := c.runCommand("/system routerboard print"); err == nil && len(rows) > 0 {
 		row := firstRow(rows)
 		out.Firmware = strings.TrimSpace(row["current-firmware"])
 		out.FirmwareNew = strings.TrimSpace(row["upgrade-firmware"])
@@ -187,7 +187,7 @@ func installRouterOS(address, user, pass string) (string, error) {
 	}
 	defer func() { _ = c.Close() }()
 	c.setTimeout(45 * time.Second)
-	if _, err := c.command("/system package update/install"); err != nil {
+	if _, err := c.runCommand("/system package update install"); err != nil {
 		return "", err
 	}
 	return "Обновление RouterOS запущено. Роутер перезагрузится сам (1–3 минуты) — " +
@@ -201,7 +201,7 @@ func upgradeFirmware(address, user, pass string) (string, error) {
 		return "", err
 	}
 	defer func() { _ = c.Close() }()
-	if _, err := c.command("/system routerboard/upgrade"); err != nil {
+	if _, err := c.runCommand("/system routerboard upgrade"); err != nil {
 		return "", err
 	}
 	return "Прошивка RouterBOOT обновлена. Перезагрузите роутер: /system reboot " +
@@ -215,7 +215,7 @@ func rebootRouter(address, user, pass string) (string, error) {
 		return "", err
 	}
 	defer func() { _ = c.Close() }()
-	if _, err := c.command("/system reboot"); err != nil {
+	if _, err := c.runCommand("/system reboot"); err != nil {
 		// на перезагрузке соединение обрывается — это ожидаемо
 		if strings.Contains(strings.ToLower(err.Error()), "eof") ||
 			strings.Contains(strings.ToLower(err.Error()), "reset") ||

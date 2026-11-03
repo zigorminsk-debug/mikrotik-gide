@@ -192,9 +192,10 @@ func parseConfigLine(line string) (rosCommand, bool) {
 	return cmd, true
 }
 
-// rosWord превращает разобранную команду в набор слов для API.
+// words превращает разобранную команду в набор слов для API.
+// Путь идёт в слэш-форме: «/ip/address/add».
 func (c rosCommand) words() []string {
-	out := []string{c.Path + "/" + c.Action}
+	out := []string{apiPath(c.Path + " " + c.Action)}
 	for _, k := range c.Order {
 		out = append(out, "="+k+"="+c.Args[k])
 	}
@@ -261,7 +262,7 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 	// конфиг возвращается через Files → Restore.
 	backupName := "before-apply-" + time.Now().Format("20060102-1504")
 	backup := rosApplyResult{Status: "ok"}
-	if _, err := c.command("/system backup save", "=name="+backupName, "=dont-encrypt=yes"); err != nil {
+	if _, err := c.runCommand("/system backup save", "=name="+backupName, "=dont-encrypt=yes"); err != nil {
 		backup.Status = "error"
 		backup.Message = "бэкап не сделался: " + err.Error() + " — применяю без страховки"
 	} else {
@@ -282,7 +283,7 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 			results = append(results, res)
 			continue
 		}
-		if _, err := c.command(cmd.words()...); err != nil {
+		if _, err := c.runCommand(cmd.words()...); err != nil {
 			switch {
 			case isAlreadyThere(err.Error()):
 				res.Status = "exists"
@@ -313,10 +314,10 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 		}
 		src := strings.Join(srcLines, "\n")
 		res := rosApplyResult{Status: "script", Message: "выражения скрипта: строк " + fmt.Sprint(len(script))}
-		if _, err := c.command("/system script add", "=name="+name, "=source="+src, "=policy=read,write,policy,test,romon"); err != nil {
+		if _, err := c.runCommand("/system script add", "=name="+name, "=source="+src, "=policy=read,write,policy,test,romon"); err != nil {
 			if isAlreadyThere(err.Error()) {
-				_, _ = c.command("/system script remove", "=numbers="+name)
-				_, err = c.command("/system script add", "=name="+name, "=source="+src, "=policy=read,write,policy,test,romon")
+				_, _ = c.runCommand("/system script remove", "=numbers="+name)
+				_, err = c.runCommand("/system script add", "=name="+name, "=source="+src, "=policy=read,write,policy,test,romon")
 			}
 			if err != nil {
 				res.Status = "error"
@@ -326,14 +327,14 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 				return results, nil
 			}
 		}
-		if _, err := c.command("/system script run", "=number="+name); err != nil {
+		if _, err := c.runCommand("/system script run", "=number="+name); err != nil {
 			res.Status = "error"
 			res.Message = err.Error()
 			failed++
 		} else {
 			res.Message += " — выполнены"
 		}
-		_, _ = c.command("/system script remove", "=numbers="+name)
+		_, _ = c.runCommand("/system script remove", "=numbers="+name)
 		results = append(results, res)
 	}
 	_ = failed

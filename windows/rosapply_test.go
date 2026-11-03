@@ -110,7 +110,7 @@ func TestPlanConfig(t *testing.T) {
 
 func TestApplyConfigAgainstFakeRouter(t *testing.T) {
 	f := newFakeROS(t, false)
-	f.fail["/ip dns"] = "already have such entry"
+	f.fail["/ip/dns/set"] = "already have such entry"
 	host, port := f.addr()
 	target := host + ":" + strconv.Itoa(port)
 
@@ -165,19 +165,19 @@ func TestApplyConfigAgainstFakeRouter(t *testing.T) {
 
 	sent := strings.Join(f.commands(), "\n")
 	for _, want := range []string{
-		"/system backup save",
-		"/interface bridge/add",
-		"/ip address/add",
-		"/ip service/disable",
-		"/system script add",
-		"/system script run",
-		"/system script remove",
+		"/system/backup/save",
+		"/interface/bridge/add",
+		"/ip/address/add",
+		"/ip/service/disable",
+		"/system/script/add",
+		"/system/script/run",
+		"/system/script/remove",
 	} {
 		if !strings.Contains(sent, want) {
 			t.Errorf("на роутер не ушло: %s\nотправлено:\n%s", want, sent)
 		}
 	}
-	if strings.Contains(sent, "/ip route/print") {
+	if strings.Contains(sent, "/ip/route/print") {
 		t.Error("команда только для чтения всё-таки отправлена")
 	}
 }
@@ -222,6 +222,42 @@ func TestTokenizeLine(t *testing.T) {
 	for i := range want {
 		if got[i] != want[i] {
 			t.Fatalf("слово %d = %q, хотели %q", i, got[i], want[i])
+		}
+	}
+}
+
+// роутер, который не понимает слэш-форму пути, должен получить форму с пробелами
+func TestRunCommandFallbackToSpaces(t *testing.T) {
+	f := newFakeROS(t, false)
+	f.fail["/ip/dns/set"] = "no such command"
+	host, port := f.addr()
+	c, err := rosDial(host, port, false, 5*time.Second)
+	if err != nil {
+		t.Fatalf("соединение: %v", err)
+	}
+	defer func() { _ = c.Close() }()
+	if err := c.login("admin", "secret"); err != nil {
+		t.Fatalf("вход: %v", err)
+	}
+	if _, err := c.runCommand("/ip dns set", "=servers=1.1.1.1"); err != nil {
+		t.Fatalf("запасная форма пути не сработала: %v", err)
+	}
+	sent := strings.Join(f.commands(), "\n")
+	if !strings.Contains(sent, "/ip/dns/set") || !strings.Contains(sent, "/ip dns set") {
+		t.Fatalf("ожидали две попытки, отправлено:\n%s", sent)
+	}
+}
+
+func TestAPIPath(t *testing.T) {
+	cases := map[string]string{
+		"/ip address print":                           "/ip/address/print",
+		"/interface wireless security-profiles print": "/interface/wireless/security-profiles/print",
+		"/system package update check-for-updates":    "/system/package/update/check-for-updates",
+		"/system/resource/print":                      "/system/resource/print",
+	}
+	for in, want := range cases {
+		if got := apiPath(in); got != want {
+			t.Errorf("apiPath(%q) = %q, хотели %q", in, got, want)
 		}
 	}
 }

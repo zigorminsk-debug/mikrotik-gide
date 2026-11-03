@@ -280,16 +280,48 @@ func (c *rosConn) command(words ...string) ([]map[string]string, error) {
 	}
 }
 
+// apiPath переводит команду в форму протокола API: пробелы между уровнями меню
+// заменяются слэшами («/ip address print» → «/ip/address/print»). Именно такая
+// форма описана в документации RouterOS, а сервер понимает её всегда.
+func apiPath(cmd string) string {
+	fields := strings.Fields(strings.TrimSpace(cmd))
+	if len(fields) == 0 {
+		return cmd
+	}
+	return strings.Join(fields, "/")
+}
+
+// apiPathSpaces — та же команда, но с пробелами (запасной вариант).
+func apiPathSpaces(cmd string) string {
+	return strings.Join(strings.Fields(strings.TrimSpace(cmd)), " ")
+}
+
+// runCommand выполняет команду, начиная со слэш-формы пути; если роутер
+// не знает такой команды — пробует форму с пробелами.
+func (c *rosConn) runCommand(words ...string) ([]map[string]string, error) {
+	if len(words) == 0 {
+		return nil, errors.New("пустая команда")
+	}
+	rows, err := c.command(append([]string{apiPath(words[0])}, words[1:]...)...)
+	if err == nil {
+		return rows, nil
+	}
+	msg := strings.ToLower(err.Error())
+	if strings.Contains(msg, "no such command") || strings.Contains(msg, "bad command name") ||
+		strings.Contains(msg, "expected command") {
+		return c.command(append([]string{apiPathSpaces(words[0])}, words[1:]...)...)
+	}
+	return rows, err
+}
+
 // apiSource — источник данных через протокол API.
 type apiSource struct {
 	c *rosConn
 }
 
 func (s apiSource) fetch(path string) ([]map[string]string, error) {
-	if !strings.HasSuffix(path, "/print") {
-		path += "/print"
-	}
-	return s.c.command(path)
+	path = strings.TrimSuffix(path, "/print")
+	return s.c.runCommand(path + " print")
 }
 
 // rosProbeInfo — паспорт роутера, который показывает приложение.
