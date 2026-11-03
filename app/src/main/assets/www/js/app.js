@@ -1518,6 +1518,7 @@
     html += '<div class="tools-grid">' +
       toolCard('#/wizard', 'Мастер конфигурации', 'WAN, LAN, IPv6, Wi-Fi, VPN, пробросы — готовый конфиг', 'gear') +
       toolCard('#/router', 'Мой роутер', 'опрос версии и прошивки, применение конфига, обновления', 'system') +
+      toolCard('#/win4', 'Окна Winbox 4', 'настоящие снимки окон с живого RouterOS', 'iface') +
       toolCard('#/course', 'Курс за 7 дней', 'План обучения с практикой и прогрессом', 'book') +
       toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню: доступ, firewall, сервисы, Wi-Fi', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'Вставьте /export — проверю firewall, NAT, DHCP, Wi-Fi', 'svc') +
@@ -2188,6 +2189,49 @@
       '<div id="rosUpd" class="hint" style="margin-top:8px">RouterOS и прошивка RouterBOOT проверяются отдельно.</div></section>';
     html += '</div>';
     return html;
+  }
+
+  /* ------------------------------------------------------------------
+     «Окна Winbox 4» — настоящие снимки, сделанные в CI на живом RouterOS.
+     ------------------------------------------------------------------ */
+  function win4View() {
+    const list = window.WIN4_SHOTS || [];
+    const groups = [];
+    list.forEach(function (x) {
+      if (groups.indexOf(x.g) < 0) groups.push(x.g);
+    });
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a>' +
+      '<span class="sep">/</span><span>Окна Winbox 4</span></div>';
+    html += '<h1 class="art-title">Окна Winbox 4 — настоящие снимки</h1>';
+    html += '<div class="hint" style="margin:-6px 0 10px">Эти кадры сделаны автоматически в GitHub Actions: ' +
+      'RouterOS 7.24.6 (CHR) в виртуальной машине и Winbox 4.4 на виртуальном экране. Ничего не дорисовано. ' +
+      'Всего снимков: ' + list.length + '. Меню слева — то же, что в вашем Winbox.</div>';
+    html += '<div class="chips" id="w4Filter"><button class="chip on" data-w4="*">Все</button>' +
+      groups.map(function (g) { return '<button class="chip" data-w4="' + esc(g) + '">' + esc(g) + '</button>'; }).join('') +
+      '</div>';
+    html += '<div class="w4-grid" id="w4Grid">' + list.map(function (x) {
+      return '<figure class="w4-fig" data-w4g="' + esc(x.g) + '">' +
+        '<a href="img/shots/' + esc(x.f) + '" target="_blank" rel="noopener">' +
+        '<img loading="lazy" src="img/shots/' + esc(x.f) + '" alt="' + esc(x.t) + '"></a>' +
+        '<figcaption><b>' + esc(x.t) + '</b><span>' + esc(x.d) + '</span></figcaption></figure>';
+    }).join('') + '</div></div>';
+    return html;
+  }
+
+  function bindWin4() {
+    const grid = document.getElementById('w4Grid');
+    const filter = document.getElementById('w4Filter');
+    if (!grid || !filter) return;
+    filter.addEventListener('click', function (e) {
+      const b = e.target.closest('[data-w4]');
+      if (!b) return;
+      const g = b.getAttribute('data-w4');
+      filter.querySelectorAll('[data-w4]').forEach(function (x) { x.classList.toggle('on', x === b); });
+      grid.querySelectorAll('.w4-fig').forEach(function (fig) {
+        fig.style.display = (g === '*' || fig.getAttribute('data-w4g') === g) ? '' : 'none';
+      });
+    });
   }
 
   function rosSnapRender(snap) {
@@ -5130,7 +5174,8 @@
       return;
     }
     const TOOL_TITLES = {
-      tools: 'Инструменты', wizard: 'Мастер конфигурации', router: 'Мой роутер', subnet: 'Калькулятор подсетей',
+      tools: 'Инструменты', wizard: 'Мастер конфигурации', router: 'Мой роутер', win4: 'Окна Winbox 4',
+      subnet: 'Калькулятор подсетей',
       vlsm: 'VLSM-планировщик', diff: 'Сравнить конфиги', quiz: 'Самопроверка',
       audit: 'Аудит конфига', diag: 'Диагностика по симптому', glossary: 'Глоссарий и порты',
       harden: 'Защита от взлома', course: 'Курс за 7 дней', models: 'Порты моделей',
@@ -5140,7 +5185,8 @@
     };
     if (TOOL_TITLES[id]) {
       const VIEWS = {
-        tools: toolsView, wizard: wizardView, router: routerView, subnet: subnetView, vlsm: vlsmView, diff: diffView,
+        tools: toolsView, wizard: wizardView, router: routerView, win4: win4View,
+        subnet: subnetView, vlsm: vlsmView, diff: diffView,
         quiz: quizView, audit: auditView, diag: diagView, glossary: glossaryView, harden: hardenView,
         course: courseView, models: modelsView, starred: starredView, wifi: wifiView,
         keys: keysView, coverage: coverageView, cheats: cheatsView, examples: examplesView, backup: backupView
@@ -5149,7 +5195,7 @@
       content.scrollTop = 0;
       markActive(null);
       const BINDS = {
-        wizard: bindWizard, router: bindRouter, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
+        wizard: bindWizard, router: bindRouter, win4: bindWin4, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
         audit: bindAudit, glossary: bindGlossary, harden: bindHarden, course: bindCourse,
         models: bindModels, starred: bindStarred, wifi: bindWifi, keys: bindKeys,
         coverage: bindCoverage, examples: bindExamples, backup: bindBackup

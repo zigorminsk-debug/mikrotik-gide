@@ -254,8 +254,20 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 	defer func() { _ = c.Close() }()
 
 	steps, script := splitConfig(text)
-	results := make([]rosApplyResult, 0, len(steps)+1)
+	results := make([]rosApplyResult, 0, len(steps)+2)
 	failed := 0
+
+	// Перед изменениями делаем бэкап на самом роутере: если что-то пойдёт не так,
+	// конфиг возвращается через Files → Restore.
+	backupName := "before-apply-" + time.Now().Format("20060102-1504")
+	backup := rosApplyResult{Status: "ok"}
+	if _, err := c.command("/system backup save", "=name="+backupName, "=dont-encrypt=yes"); err != nil {
+		backup.Status = "error"
+		backup.Message = "бэкап не сделался: " + err.Error() + " — применяю без страховки"
+	} else {
+		backup.Message = "бэкап перед изменениями: " + backupName + " (Files → Restore)"
+	}
+	results = append(results, backup)
 
 	for _, step := range steps {
 		cmd := step.Cmd

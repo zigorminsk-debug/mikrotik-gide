@@ -132,6 +132,15 @@ func TestApplyConfigAgainstFakeRouter(t *testing.T) {
 	for _, r := range results {
 		statuses[r.Raw] = r.Status
 	}
+	hasBackup := false
+	for _, r := range results {
+		if strings.Contains(r.Message, "бэкап перед изменениями") {
+			hasBackup = true
+		}
+	}
+	if !hasBackup {
+		t.Errorf("перед применением должен делаться бэкап: %v", results)
+	}
 	if len(results) < 5 {
 		t.Fatalf("строк в отчёте: %d (%v)", len(results), statuses)
 	}
@@ -156,6 +165,7 @@ func TestApplyConfigAgainstFakeRouter(t *testing.T) {
 
 	sent := strings.Join(f.commands(), "\n")
 	for _, want := range []string{
+		"/system backup save",
 		"/interface bridge/add",
 		"/ip address/add",
 		"/ip service/disable",
