@@ -7,11 +7,12 @@ name: Winbox 4 — настоящие скриншоты окон
 
 on:
   workflow_dispatch:
-    inputs:
-      keep_alive:
-        description: 'Сколько секунд держать Winbox открытым перед снимками'
-        required: false
-        default: '25'
+  # workflow_dispatch по имени доступен только для файлов из main,
+  # поэтому запускаем и по пушу в файл-триггер
+  push:
+    paths:
+      - 'ci/winbox-shots.trigger'
+      - '.github/workflows/winbox-shots.yml'
 
 permissions:
   contents: write
@@ -103,7 +104,7 @@ jobs:
           xdotool type --delay 60 '127.0.0.1'
           sleep 1
           xdotool key Return
-          sleep "${{ github.event.inputs.keep_alive }}"
+          sleep 25
           import -window root docs/shots/02-after-connect.png || true
 
       - name: Открыть окна и снять (черновой проход)
