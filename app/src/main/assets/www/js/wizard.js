@@ -25,7 +25,8 @@
     bridge: 'bridge-lan',
     dhcp: true, dns: '1.1.1.1,8.8.8.8',
     guest: true, guestPort: 'ether5', guestIp: '192.168.20.1', guestPrefix: 24,
-    wifi: false, wifiSsid: 'Office', wifiPass: 'WiFi-Pass-2026', wifiGuestSsid: 'Office-Guest',
+    wifi: false, wifiKind: 'wifi', wifiRadio: 'wifi1',   // wifi = пакет wifi (ax), legacy = пакет wireless (802.11n)
+    wifiSsid: 'Office', wifiPass: 'WiFi-Pass-2026', wifiGuestSsid: 'Office-Guest',
     wifiGuestPass: 'Guest-Pass-2026',
     ipv6: 'off',            // off | pd | static
     ipv6Prefix: '2001:db8:1::/64',
@@ -59,8 +60,10 @@
   const MODELS = {
     generic: { name: 'Универсальный', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: 'ether5' },
     hex: { name: 'hEX / hEX S', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: false },
-    ax2: { name: 'hAP ax2', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: true },
-    ax3: { name: 'hAP ax3', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: true },
+    ax2: { name: 'hAP ax2', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1' },
+    ax3: { name: 'hAP ax3', wanPort: 'ether1', lanPorts: 'ether2-ether4', guestPort: 'ether5', wifi: true, wifiKind: 'wifi', wifiRadio: 'wifi1' },
+    rb951: { name: 'RB951G-2HnD (802.11n)', wanPort: 'ether1', lanPorts: 'ether2-ether5', guestPort: '',
+      wifi: true, wifiKind: 'legacy', wifiRadio: 'wlan1' },
     rb4011: { name: 'RB4011', wanPort: 'ether1', lanPorts: 'ether2-ether9', guestPort: 'ether10', wifi: false },
     crs328: { name: 'CRS328-24P', wanPort: 'ether1', lanPorts: 'ether2-ether23', guestPort: 'ether24', wifi: false }
   };
@@ -134,10 +137,29 @@
     return out;
   }
 
-  function netCidr(ip, prefix) {
+  /* адрес хоста с префиксом — для /ip address add: 192.168.88.1/24 */
+  function hostCidr(ip, prefix) {
     if (C && C.parse) {
       const p = C.parse(ip + '/' + prefix);
       if (p) return p.ipStr + '/' + p.prefix;
+    }
+    return String(ip) + '/' + prefix;
+  }
+
+  /* адрес СЕТИ с префиксом — для /ip dhcp-server network и /ip service address:
+     RouterOS требует, чтобы младшие биты были нулевыми (192.168.20.0/24, а не .1/24) */
+  function netCidr(ip, prefix) {
+    if (C && C.info && C.parse) {
+      const p = C.parse(ip + '/' + prefix);
+      const inf = p ? C.info(p.ip, p.prefix) : null;
+      if (inf && inf.cidr) return inf.cidr;
+    }
+    const parts = String(ip).split('.');
+    if (parts.length === 4 && !isNaN(+prefix)) {
+      const n = parts.reduce(function (a, x) { return (a << 8) + (parseInt(x, 10) & 255); }, 0);
+      const mask = +prefix === 0 ? 0 : (0xffffffff << (32 - +prefix)) >>> 0;
+      const net = (n & mask) >>> 0;
+      return [net >>> 24, (net >>> 16) & 255, (net >>> 8) & 255, net & 255].join('.') + '/' + prefix;
     }
     return String(ip) + '/' + prefix;
   }
@@ -544,7 +566,10 @@
 
     push('# ' + identity + ' — конфиг собран мастером приложения «MikroTik · Учебник Winbox 4»',
       '# RouterOS 7.x. Вставьте целиком в New Terminal.',
-      '# Перед вставкой сохраните текущий конфиг: /export file=before-change');
+      '# Перед вставкой сохраните текущий конфиг: /export file=before-change',
+      '# Скрипт можно запускать повторно: объекты и правила с теми же именами/комментариями не дублируются.',
+      '# На роутере с заводской настройкой удобнее начать с чистого конфига:',
+      '# /system reset-configuration no-defaults=yes skip-backup=yes (роутер перезагрузится, адрес задаётся заново)');
     if (authorLine) push('# Объект / автор: ' + authorLine);
     push('# Собрано: ' + new Date().toLocaleString('ru-RU') + ' · разделов: предпросмотр ниже');
     if (errors.length) {
@@ -553,11 +578,10 @@
     }
 
     sec('Интерфейсы и списки');
-    push('/interface list', 'add name=LAN', 'add name=WAN');
+    push('/interface list add name=LAN', '/interface list add name=WAN');
     if (guestOn) push('/interface list add name=GUEST');
-    push('/interface list member',
-      'add interface=' + bridge + ' list=LAN',
-      'add interface=' + wanPort + ' list=WAN');
+    push('/interface list member add interface=' + bridge + ' list=LAN',
+      '/interface list member add interface=' + wanPort + ' list=WAN');
     push('', '/interface bridge add name=' + bridge);
     lanPorts.forEach(function (p) {
       push('/interface bridge port add bridge=' + bridge + ' interface=' + p +
@@ -586,7 +610,7 @@
 
     sec('WAN');
     if (wanMode === 'static') {
-      push('/ip address add address=' + netCidr(opt(o, 'wanIp'), opt(o, 'wanPrefix')) + ' interface=' + wanPort,
+      push('/ip address add address=' + hostCidr(opt(o, 'wanIp'), opt(o, 'wanPrefix')) + ' interface=' + wanPort,
         '/ip route add gateway=' + clean(opt(o, 'wanGw')));
     } else if (wanMode === 'pppoe') {
       push('/interface pppoe-client add name=wan-pppoe interface=' + wanPort +
@@ -627,7 +651,9 @@
       push('# Адреса и DHCP для разделённых подсетей — в следующем разделе.',
         '# Управляющий адрес роутера будет на vlan-' + dsVl.pc + ' (проводные ПК).');
     } else {
-      push('/ip address add address=' + netCidr(lanIp, lanPrefix) + ' interface=' + l3Iface);
+      push('/ip address add address=' + hostCidr(lanIp, lanPrefix) + ' interface=' + l3Iface);
+      push('# Если этот адрес уже висел на другом интерфейсе (заводской ether2 или bridge) — переносим на ' + l3Iface,
+        ':do {/ip address set [/ip address find where address="' + hostCidr(lanIp, lanPrefix) + '"] interface=' + l3Iface + '} on-error={}');
     }
     if (!dsOn && C && C.info) {
       const inf = C.info(C.ipToInt(lanIp), lanPrefix);
@@ -737,50 +763,105 @@
     }
 
     if (wifiOn) {
-      sec('Wi-Fi');
-      if (dsOn) {
-        push('# Три отдельные сети: ноутбуки, телефоны и принтеры — каждая в своём VLAN',
-          '/interface wifi security',
-          'add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase=' + q(opt(o, 'wifiPass')),
-          'add name=sec-iot authentication-types=wpa2-psk,wpa3-psk passphrase=' + q(opt(o, 'wifiPass')),
-          '/interface wifi',
-          'add name=wifi-pc master-interface=wifi1 ssid=' + q(dsSsid.pc) + ' security=sec-lan',
-          'add name=wifi-phones master-interface=wifi1 ssid=' + q(dsSsid.phone) + ' security=sec-iot',
-          'add name=wifi-iot master-interface=wifi1 ssid=' + q(dsSsid.iot) + ' security=sec-iot',
-          '/interface bridge port',
-          'add bridge=' + bridge + ' interface=wifi-pc pvid=' + dsVl.wifi,
-          'add bridge=' + bridge + ' interface=wifi-phones pvid=' + dsVl.phone,
-          'add bridge=' + bridge + ' interface=wifi-iot pvid=' + dsVl.iot,
-          '/interface bridge vlan',
-          'add bridge=' + bridge + ' tagged=' + bridge + ' untagged=wifi-pc vlan-ids=' + dsVl.wifi,
-          'add bridge=' + bridge + ' tagged=' + bridge + ' untagged=wifi-phones vlan-ids=' + dsVl.phone,
-          'add bridge=' + bridge + ' tagged=' + bridge + ' untagged=wifi-iot vlan-ids=' + dsVl.iot);
-      } else {
-        push('/interface wifi security',
-          'add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase=' + q(opt(o, 'wifiPass')),
-          '/interface wifi',
-          'add name=wifi-lan master-interface=wifi1 ssid=' + q(opt(o, 'wifiSsid')) + ' security=sec-lan',
-          '/interface bridge port add bridge=' + bridge + ' interface=wifi-lan');
-      }
       const country = clean(opt(o, 'wifiCountry')) || 'belarus';
       const width = parseInt(opt(o, 'wifiWidth'), 10) || 20;
       const ch24 = parseInt(opt(o, 'wifiCh24'), 10) || 6;
       const ch5 = parseInt(opt(o, 'wifiCh5'), 10) || 36;
-      push('', '# Страна и каналы: от страны зависят разрешённые частоты и мощность',
-        '/interface wifi set wifi1 country=' + country);
+      const w5 = width === 20 ? 80 : width;
+      const wpass = q(opt(o, 'wifiPass'));
       const txp = clean(opt(o, 'wifiTxPower'));
-      if (txp) push('/interface wifi set wifi1 tx-power=' + txp);
-      push('/interface wifi set wifi1 channel.frequency=' + ch24Freq(ch24) + ' channel.width=' + width + 'mhz');
-      push('# 5 ГГц (второй радиоинтерфейс, у hAP ax2/ax3 это wifi2):',
-        '# /interface wifi set wifi2 channel.frequency=' + ch5Freq(ch5) + ' channel.width=' + (width === 20 ? 80 : width) + 'mhz');
-      if (width === 40 && ch24 >= 1 && ch24 <= 13) {
-        push('# ВНИМАНИЕ: 40 МГц в 2.4 ГГц занимает почти весь диапазон — лучше 20 МГц.');
-      }
-      if (guestOn) {
-        push('/interface wifi security add name=sec-guest authentication-types=wpa2-psk passphrase=' + q(opt(o, 'wifiGuestPass')),
-          '/interface wifi add name=wifi-guest master-interface=wifi1 ssid=' + q(opt(o, 'wifiGuestSsid')) + ' security=sec-guest',
-          '/interface bridge port add bridge=' + bridge + ' interface=wifi-guest pvid=20',
-          '/interface bridge vlan add bridge=' + bridge + ' untagged=wifi-guest vlan-ids=20');
+      const legacy = clean(opt(o, 'wifiKind')) === 'legacy';
+      const radio = clean(opt(o, 'wifiRadio')) || (legacy ? 'wlan1' : 'wifi1');
+      if (legacy) {
+        /* ---------- пакет wireless: RB951G-2HnD, 802.11n, ОДИН диапазон 2.4 ГГц ---------- */
+        sec('Wi-Fi (пакет wireless: RB951G-2HnD и другие 802.11n)');
+        push('# У 802.11n-моделей SSID и страна задаются прямо на интерфейсе ' + radio + ', а не в профиле configuration.',
+          '# Проверить имя радиоинтерфейса: /interface wireless print (обычно ' + radio + ')');
+        if (dsOn) {
+          const dsSs = [
+            { iface: 'wlan-pc', ssid: dsSsid.pc, sec: 'sec-lan', vlan: dsVl.wifi },
+            { iface: 'wlan-phones', ssid: dsSsid.phone, sec: 'sec-iot', vlan: dsVl.phone },
+            { iface: 'wlan-iot', ssid: dsSsid.iot, sec: 'sec-iot', vlan: dsVl.iot }
+          ];
+          push('/interface wireless security-profiles add name=sec-lan mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=' + wpass,
+            '/interface wireless security-profiles add name=sec-iot mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=' + wpass);
+          dsSs.forEach(function (w) {
+            push('/interface wireless add name=' + w.iface + ' master-interface=' + radio + ' ssid=' + q(w.ssid) +
+              ' security-profile=' + w.sec + ' disabled=no',
+              '/interface bridge port add bridge=' + bridge + ' interface=' + w.iface + ' pvid=' + w.vlan,
+              '/interface bridge vlan add bridge=' + bridge + ' tagged=' + bridge + ' untagged=' + w.iface + ' vlan-ids=' + w.vlan);
+          });
+          push('/interface wireless set ' + radio + ' mode=ap-bridge security-profile=sec-lan country=' + country +
+            ' band=2ghz-b/g/n frequency=' + ch24Freq(ch24) + ' channel-width=' + width + 'mhz disabled=no',
+            '/interface bridge port add bridge=' + bridge + ' interface=' + radio);
+        } else {
+          push('/interface wireless security-profiles add name=sec-lan mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=' + wpass,
+            '/interface wireless set ' + radio + ' mode=ap-bridge ssid=' + q(opt(o, 'wifiSsid')) + ' security-profile=sec-lan country=' +
+              country + ' band=2ghz-b/g/n frequency=' + ch24Freq(ch24) + ' channel-width=' + width + 'mhz disabled=no',
+            '/interface bridge port add bridge=' + bridge + ' interface=' + radio);
+          if (txp) push('/interface wireless set ' + radio + ' tx-power-mode=all-rates-fixed tx-power=' + txp);
+        }
+        if (width === 40 && ch24 >= 1 && ch24 <= 13) {
+          push('# ВНИМАНИЕ: 40 МГц в 2.4 ГГц занимает почти весь диапазон — лучше 20 МГц.');
+        }
+        if (guestOn) {
+          push('/interface wireless security-profiles add name=sec-guest mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key=' +
+              q(opt(o, 'wifiGuestPass')),
+            '/interface wireless add name=wlan-guest master-interface=' + radio + ' ssid=' + q(opt(o, 'wifiGuestSsid')) +
+              ' security-profile=sec-guest disabled=no',
+            '/interface bridge port add bridge=' + bridge + ' interface=wlan-guest pvid=20',
+            '/interface bridge vlan add bridge=' + bridge + ' untagged=wlan-guest vlan-ids=20');
+        }
+      } else {
+        /* ---------- пакет wifi: hAP ax2/ax3, cAP ax — SSID и страна в профиле configuration ---------- */
+        sec('Wi-Fi (пакет wifi: RouterOS 7.13+ — hAP ax2/ax3, cAP ax, wAP ax)');
+        push('# В пакете wifi у интерфейса НЕТ полей ssid и country — они живут в профиле configuration.',
+          '# Имена радиоинтерфейсов проверьте так: /interface wifi print (обычно wifi1 — 2.4 ГГц, wifi2 — 5 ГГц)',
+          '# Если у вас старый пакет wireless (802.11n, RB951) — выберите модель RB951G-2HnD в мастере.');
+        if (dsOn) {
+          const dsSs = [
+            { iface: 'wifi-pc', ssid: dsSsid.pc, sec: 'sec-lan', vlan: dsVl.wifi },
+            { iface: 'wifi-phones', ssid: dsSsid.phone, sec: 'sec-iot', vlan: dsVl.phone },
+            { iface: 'wifi-iot', ssid: dsSsid.iot, sec: 'sec-iot', vlan: dsVl.iot }
+          ];
+          push('# Три SSID, каждый в своём VLAN: в бридж трафик уходит через datapath',
+            '/interface wifi security add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase=' + wpass + ' wps=disable',
+            '/interface wifi security add name=sec-iot authentication-types=wpa2-psk,wpa3-psk passphrase=' + wpass + ' wps=disable');
+          dsSs.forEach(function (w) {
+            push('/interface wifi datapath add name=dp-' + w.vlan + ' bridge=' + bridge + ' vlan-id=' + w.vlan,
+              '/interface wifi configuration add name=cfg-' + w.vlan + ' ssid=' + q(w.ssid) + ' country=' + country +
+                ' security=' + w.sec + ' datapath=dp-' + w.vlan,
+              '/interface wifi add name=' + w.iface + ' master-interface=wifi1 configuration=cfg-' + w.vlan + ' disabled=no',
+              '/interface bridge vlan add bridge=' + bridge + ' tagged=' + bridge + ' vlan-ids=' + w.vlan);
+          });
+          push('# Основное радио 2.4 ГГц и второе (5 ГГц) — тот же профиль ноутбуков',
+            '/interface wifi set [find where name="wifi1"] configuration=cfg-' + dsVl.wifi + ' disabled=no',
+            ':do {/interface wifi set [find where name="wifi2"] configuration=cfg-' + dsVl.wifi + ' disabled=no} on-error={}',
+            '/interface wifi set [find where name="wifi1"] channel.frequency=' + ch24Freq(ch24) + ' channel.width=' + width + 'mhz',
+            ':do {/interface wifi set [find where name="wifi2"] channel.frequency=' + ch5Freq(ch5) + ' channel.width=' + w5 + 'mhz} on-error={}');
+        } else {
+          push('/interface wifi security add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase=' + wpass + ' wps=disable',
+            '/interface wifi datapath add name=dp-lan bridge=' + bridge,
+            '/interface wifi configuration add name=cfg-lan ssid=' + q(opt(o, 'wifiSsid')) + ' country=' + country +
+              ' security=sec-lan datapath=dp-lan channel.frequency=' + ch24Freq(ch24) + ' channel.width=' + width + 'mhz',
+            '/interface wifi configuration add name=cfg-lan5 ssid=' + q(opt(o, 'wifiSsid')) + ' country=' + country +
+              ' security=sec-lan datapath=dp-lan channel.frequency=' + ch5Freq(ch5) + ' channel.width=' + w5 + 'mhz',
+            '# Страна обязательна: без неё радио не поднимется (country в профиле)',
+            '/interface wifi set [find where name="wifi1"] configuration=cfg-lan disabled=no',
+            ':do {/interface wifi set [find where name="wifi2"] configuration=cfg-lan5 disabled=no} on-error={}');
+          if (txp) push('/interface wifi set [find where name="wifi1"] tx-power=' + txp);
+        }
+        if (width === 40 && ch24 >= 1 && ch24 <= 13) {
+          push('# ВНИМАНИЕ: 40 МГц в 2.4 ГГц занимает почти весь диапазон — лучше 20 МГц.');
+        }
+        if (guestOn) {
+          push('/interface wifi security add name=sec-guest authentication-types=wpa2-psk,wpa3-psk passphrase=' +
+              q(opt(o, 'wifiGuestPass')) + ' wps=disable',
+            '/interface wifi datapath add name=dp-guest bridge=' + bridge + ' vlan-id=20',
+            '/interface wifi configuration add name=cfg-guest ssid=' + q(opt(o, 'wifiGuestSsid')) + ' country=' + country +
+              ' security=sec-guest datapath=dp-guest',
+            '/interface wifi add name=wifi-guest master-interface=wifi1 configuration=cfg-guest disabled=no');
+        }
       }
     }
 
@@ -802,15 +883,15 @@
       }
       push('/ipv6 firewall address-list add list=lan6 address=' + (ipv6Mode === 'static'
         ? clean(opt(o, 'ipv6Prefix')) : '2000::/3') + ' comment="v6 range"');
-      push('/ipv6 firewall filter',
-        'add chain=input connection-state=established,related action=accept',
-        'add chain=input connection-state=invalid action=drop',
-        'add chain=input protocol=icmpv6 action=accept comment="icmpv6"',
-        'add chain=input in-interface-list=WAN action=drop comment="drop wan v6"',
-        'add chain=forward connection-state=established,related action=accept',
-        'add chain=forward connection-state=invalid action=drop',
-        'add chain=forward in-interface-list=LAN action=accept comment="lan v6"',
-        'add chain=forward in-interface-list=WAN action=drop');
+      push('',
+        '/ipv6 firewall filter add chain=input connection-state=established,related action=accept',
+        '/ipv6 firewall filter add chain=input connection-state=invalid action=drop',
+        '/ipv6 firewall filter add chain=input protocol=icmpv6 action=accept comment="icmpv6"',
+        '/ipv6 firewall filter add chain=input in-interface-list=WAN action=drop comment="drop wan v6"',
+        '/ipv6 firewall filter add chain=forward connection-state=established,related action=accept',
+        '/ipv6 firewall filter add chain=forward connection-state=invalid action=drop',
+        '/ipv6 firewall filter add chain=forward in-interface-list=LAN action=accept comment="lan v6"',
+        '/ipv6 firewall filter add chain=forward in-interface-list=WAN action=drop');
     }
 
     sec('NAT и проброс портов');
@@ -836,21 +917,21 @@
 
     sec('Firewall');
     if (opt(o, 'protect')) {
-      push('/ip firewall filter',
-        'add chain=input connection-state=established,related action=accept comment="established"',
-        'add chain=input connection-state=invalid action=drop comment="invalid"',
-        'add chain=input protocol=icmp action=accept comment="icmp"',
-        'add chain=input in-interface-list=WAN action=drop comment="drop wan input"',
-        'add chain=forward connection-state=established,related action=accept comment="fwd established"',
-        'add chain=forward connection-state=invalid action=drop');
-      if (wgOn) push('add chain=forward in-interface=wg0 action=accept comment="wg forward"');
+      push('',
+        '/ip firewall filter add chain=input connection-state=established,related action=accept comment="established"',
+        '/ip firewall filter add chain=input connection-state=invalid action=drop comment="invalid"',
+        '/ip firewall filter add chain=input protocol=icmp action=accept comment="icmp"',
+        '/ip firewall filter add chain=input in-interface-list=WAN action=drop comment="drop wan input"',
+        '/ip firewall filter add chain=forward connection-state=established,related action=accept comment="fwd established"',
+        '/ip firewall filter add chain=forward connection-state=invalid action=drop');
+      if (wgOn) push('/ip firewall filter add chain=forward in-interface=wg0 action=accept comment="wg forward"');
       if (l2tpOn) push('# L2TP: при необходимости разрешите forward для PPP-интерфейсов (in-interface=all-ppp)');
-      push('add chain=forward in-interface-list=LAN out-interface-list=WAN action=accept comment="lan to wan"');
+      push('/ip firewall filter add chain=forward in-interface-list=LAN out-interface-list=WAN action=accept comment="lan to wan"');
       if (guestOn) {
-        push('add chain=forward in-interface-list=GUEST out-interface-list=LAN action=drop comment="guest isolated"',
-          'add chain=forward in-interface-list=GUEST out-interface-list=WAN action=accept comment="guest to wan"');
+        push('/ip firewall filter add chain=forward in-interface-list=GUEST out-interface-list=LAN action=drop comment="guest isolated"',
+          '/ip firewall filter add chain=forward in-interface-list=GUEST out-interface-list=WAN action=accept comment="guest to wan"');
       }
-      push('add chain=forward in-interface-list=WAN action=drop comment="drop wan forward"');
+      push('/ip firewall filter add chain=forward in-interface-list=WAN action=drop comment="drop wan forward"');
     } else {
       push('# firewall не включён — не оставляйте роутер без правил в интернете');
     }
@@ -859,9 +940,9 @@
       sec('VPN');
       if (wgOn) {
         push('/interface wireguard add name=wg0 listen-port=' + (+opt(o, 'wgPort') || 13231),
-          '/ip address add address=' + netCidr(clean(opt(o, 'wgIp')), 24) + ' interface=wg0',
+          '/ip address add address=' + hostCidr(clean(opt(o, 'wgIp')), 24) + ' interface=wg0',
           '/ip firewall filter add chain=input protocol=udp dst-port=' + (+opt(o, 'wgPort') || 13231) +
-          ' action=accept comment="wireguard" place-before=[find where comment="drop wan input"]',
+          ' action=accept comment="wireguard" place-before=[/ip/firewall/filter find where comment="drop wan input"]',
           '# Пир: /interface wireguard peers add interface=wg0 public-key="…" allowed-address=10.10.10.2/32');
       }
       if (l2tpOn) {
@@ -871,7 +952,7 @@
           '/ppp profile add name=vpn-profile local-address=10.20.20.1 remote-address=vpn-pool dns-server=' +
           clean(opt(o, 'dns')).split(',')[0],
           '/ppp secret add name=vpn1 password=' + q('ChangeMe-2026') + ' profile=vpn-profile service=l2tp',
-          '/ip firewall filter add chain=input protocol=udp dst-port=500,1701,4500 action=accept comment="l2tp/ipsec" place-before=[find where comment="drop wan input"]');
+          '/ip firewall filter add chain=input protocol=udp dst-port=500,1701,4500 action=accept comment="l2tp/ipsec" place-before=[/ip/firewall/filter find where comment="drop wan input"]');
       }
     }
 
@@ -897,14 +978,14 @@
 
     if (opt(o, 'autobackup')) {
       sec('Автобэкап конфигурации');
-      push('/system script',
-        'add name=auto-backup policy=read,write,sensitive source={',
+      push(':if ([:len [/system script find where name="auto-backup"]] = 0) do={',
+        '/system script add name=auto-backup policy=read,write,sensitive source={',
         '  :local d [/system clock get date]',
         '  :local tag ("bak-" . $d)',
         '  /system backup save name=$tag dont-encrypt=yes',
         '  /export file=($tag . "-cfg")',
         '  :log info ("auto-backup: " . $tag)',
-        '}',
+        '}}',
         '/system scheduler add name=daily-backup start-time=03:30:00 interval=1d on-event="/system script run auto-backup"');
       push('# Копии лежат в Files. Для отправки на сервер добавьте в скрипт:');
       push('# /tool fetch url="sftp://backup@10.0.0.5/" src-path=($tag . ".backup") upload=yes user=backup password=***');
@@ -948,7 +1029,7 @@
       const up = Math.max(1, Math.round((+opt(o, 'wanUp') || 100) * 0.95));
       push('/queue type add name=pcq-up kind=pcq pcq-classifier=src-address',
         '/queue type add name=pcq-down kind=pcq pcq-classifier=dst-address',
-        '/queue simple add name=wan-shape target=' + (C && C.info ? C.info(C.ipToInt(lanIp), lanPrefix).cidr : netCidr(lanIp, lanPrefix)) +
+        '/queue simple add name=wan-shape target=' + netCidr(lanIp, lanPrefix) +
         ' max-limit=' + up + 'M/' + dn + 'M queue=pcq-up/pcq-down comment="qos shape"',
         '# FastTrack обходит очереди: если шейпинг не срабатывает, исключите нужный трафик из fasttrack-connection.');
     }
@@ -991,10 +1072,10 @@
         '/ip smb set enabled=no');
       if (opt(o, 'protect')) {
         push('# Брутфорс: 3 попытки → blacklist на неделю (правила встают перед блокировкой WAN)',
-          '/ip firewall filter add chain=input action=drop protocol=tcp dst-port=22,8291 src-address-list=blacklist comment="blacklist" place-before=[find where comment="drop wan input"]',
-          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 src-address-list=stage2 address-list=blacklist address-list-timeout=1w comment="brute stage3" place-before=[find where comment="drop wan input"]',
-          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 src-address-list=stage1 address-list=stage2 address-list-timeout=1m comment="brute stage2" place-before=[find where comment="drop wan input"]',
-          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 connection-state=new address-list=stage1 address-list-timeout=1m comment="brute stage1" place-before=[find where comment="drop wan input"]');
+          '/ip firewall filter add chain=input action=drop protocol=tcp dst-port=22,8291 src-address-list=blacklist comment="blacklist" place-before=[/ip/firewall/filter find where comment="drop wan input"]',
+          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 src-address-list=stage2 address-list=blacklist address-list-timeout=1w comment="brute stage3" place-before=[/ip/firewall/filter find where comment="drop wan input"]',
+          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 src-address-list=stage1 address-list=stage2 address-list-timeout=1m comment="brute stage2" place-before=[/ip/firewall/filter find where comment="drop wan input"]',
+          '/ip firewall filter add chain=input action=add-src-to-address-list protocol=tcp dst-port=22,8291 connection-state=new address-list=stage1 address-list-timeout=1m comment="brute stage1" place-before=[/ip/firewall/filter find where comment="drop wan input"]');
       }
       push('# Полный чек-лист защиты — раздел «Защита от взлома» в приложении.');
     }
@@ -1018,7 +1099,7 @@
       '# /ip firewall filter print stats', '# /ipv6 address print',
       '# /ping 8.8.8.8 count=4', '# /export file=after-wizard');
 
-    const text = L.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    const text = L.map(guardLine).join('\n').replace(/\n{3,}/g, '\n\n').trim();
     const sections = [];
     L.forEach(function (line) {
       if (/^# ----------/.test(line)) sections.push(line.replace(/^# -+ | -+$/g, '').trim());
@@ -1045,6 +1126,23 @@
           (syslogOn ? 1 : 0) + (hardenOn ? 1 : 0)
       }
     };
+  }
+
+  /* Скрипт должен переживать повторный запуск на уже настроенном роутере:
+     аддитивные команды оборачиваем в проверку существования (по comment или name),
+     чтобы второй запуск не создавал дубликаты правил и не печатал «already exists». */
+  function guardLine(line) {
+    if (!/^\//.test(line)) return line;
+    if (/[{}]/.test(line)) return line;
+    const m = /^(.*?)\s+add\s+(.*)$/.exec(line);
+    if (!m) return line;
+    const menu = m[1].replace(/\s+$/, '');
+    const args = m[2];
+    let key = null, val = null, g = /(?:^|\s)comment=("([^"]*)"|\S+)/.exec(args);
+    if (g) { key = 'comment'; val = g[2] !== undefined ? g[2] : g[1]; }
+    else if ((g = /(?:^|\s)name=("([^"]*)"|\S+)/.exec(args))) { key = 'name'; val = g[2] !== undefined ? g[2] : g[1]; }
+    if (!key) return ':do {' + line + '} on-error={}';
+    return ':if ([:len [' + menu + ' find where ' + key + '="' + val + '"]] = 0) do={' + line + '}';
   }
 
   function presets() {
@@ -1082,6 +1180,8 @@
       out.lanPorts = m.lanPorts;
       out.guestPort = m.guestPort;
       if (m.wifi != null) out.wifi = m.wifi;
+      if (m.wifiKind) out.wifiKind = m.wifiKind;
+      if (m.wifiRadio) out.wifiRadio = m.wifiRadio;
       if (out.pppoeServerPort && (m.wanPort === out.pppoeServerPort)) out.pppoeServerPort = m.guestPort;
     }
     return out;

@@ -5,6 +5,22 @@ window.CHANGELOG = [
   {
     v: 'auto',
     date: '2026-11-03',
+    title: 'Мастер: конфиг применяется на реальном роутере и не боится повторного запуска',
+    items: [
+      'Исправлен адрес сети в /ip dhcp-server network и /ip service address: теперь 192.168.88.0/24, а не 192.168.88.1/24 — RouterOS больше не отвечает «invalid network» и «must have all host bits zero».',
+      'Команды place-before переведены на полный путь (/ip/firewall/filter find …): раньше вложенный find выполнялся в чужом меню и правила вставали не туда («invalid internal item number»).',
+      'Все команды в скрипте — с полным путём меню, без переключения контекста «/ip firewall filter» + «add …»: источник путаницы с адресами и правилами убран.',
+      'Скрипт стал повторяемым: перед созданием проверяется, есть ли объект с таким именем или комментарием — второй запуск не плодит дубликаты правил и не печатает «already exists».',
+      'Wi-Fi для пакета wifi (hAP ax2/ax3, cAP ax): SSID и страна живут в профиле configuration, а не на интерфейсе — раньше RouterOS отвечал «expected end of command» и SSID не записывался. Теперь: security → datapath → configuration → set wifi1 configuration=…',
+      'Появилась модель RB951G-2HnD (802.11n, пакет wireless): мастер сам делает /interface wireless security-profiles add …, ssid и country на интерфейсе wlan1, гостевой SSID через master-interface и bridge port с pvid.',
+      'В карточках моделей добавлен RB951G-2HnD: порты, один диапазон 2,4 ГГц, отсутствие меню /interface wifi, питание 24 В.',
+      'Если LAN-адрес уже висел на другом интерфейсе (заводской ether2), скрипт переносит его на бридж, а не молча теряет.',
+      'В шапке скрипта — подсказка начинать с чистого конфига (/system reset-configuration no-defaults=yes).',
+    ],
+  },
+  {
+    v: 'auto',
+    date: '2026-11-03',
     title: 'Окна нарисованы по настоящему Winbox 4',
     items: [
       'Новый вид окон: светлая тема Winbox 4, синий заголовок с именем окна и диалога («WireGuard Peer › New…»), вкладки-чипы, правая панель Copy.',

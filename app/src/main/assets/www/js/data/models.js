@@ -33,6 +33,23 @@ window.MODEL_MAPS = [
     ]
   },
   {
+    id: 'rb951g', name: 'RB951G-2HnD (5 портов + 802.11n)', art: 'wifi-interface',
+    note: 'Старая добрая рабочая лошадка: 5 гигабитных портов, один диапазон 2,4 ГГц, пакет wireless (wlan1). Пакета wifi и меню /interface wifi здесь нет — вся настройка Wi-Fi через /interface wireless.',
+    ports: [
+      { n: 1, label: 'ether1', role: 'WAN', note: 'Провайдер; PoE-in нет, питание от БП 24 В' },
+      { n: 2, label: 'ether2', role: 'LAN', note: 'Локальная сеть (в заводском конфиге — с 192.168.88.1)' },
+      { n: 3, label: 'ether3', role: 'LAN', note: 'Коммутатор или точка доступа' },
+      { n: 4, label: 'ether4', role: 'LAN', note: 'Принтер, ТВ-приставка' },
+      { n: 5, label: 'ether5', role: 'LAN', note: 'Гостевая VLAN или резерв' }
+    ],
+    extras: [
+      { t: 'Wi-Fi 2,4 ГГц (wlan1)', note: '802.11b/g/n, один диапазон: 5 ГГц нет' },
+      { t: 'Пакет wireless', note: 'SSID и страна задаются на интерфейсе: /interface wireless set wlan1 ssid=… country=…' },
+      { t: 'USB', note: 'USB 2.0 — LTE-модем или флешка для бэкапов' },
+      { t: 'Питание', note: '24 В, 1,2 А; PoE-out на портах нет' }
+    ]
+  },
+  {
     id: 'rb4011', name: 'RB4011iGS+ (10 портов)', art: 'if-bonding',
     note: 'Мощный роутер без Wi-Fi: 10 портов 1G, SFP+ 10G, два блока питания.',
     ports: [
