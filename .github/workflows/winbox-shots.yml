@@ -57,7 +57,7 @@ jobs:
           set -euxo pipefail
           cd /tmp/wb
           qemu-system-x86_64 -m 1536 -smp 4 -machine pc -accel tcg,thread=multi \
-            -drive file=chr.qcow2,format=qcow2,if=virtio \
+            -drive file=chr.qcow2,format=qcow2,if=ide,index=0 \
             -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
             -device virtio-net-pci,netdev=n0 \
             -display none -monitor unix:/tmp/wb/mon.sock,server,nowait \
@@ -70,6 +70,18 @@ jobs:
           done
           test "$ok" = 1
           python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm || true
+
+      - name: Посмотреть, как грузится CHR
+        run: |
+          set -x
+          mkdir -p docs/shots
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            sleep 20
+            python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm >/dev/null 2>&1 || true
+            [ -f /tmp/wb/guest.ppm ] && convert /tmp/wb/guest.ppm "docs/shots/08-chr-boot-$((i*20)).png" 2>/dev/null || true
+            echo "t=$((i*20))c: $(ls -l /tmp/wb/guest.ppm 2>/dev/null | awk '{print $5}') байт" >> docs/shots/report.txt
+          done
+          tail -20 /tmp/wb/chr-console.log >> docs/shots/report.txt 2>/dev/null || true
 
       - name: Запустить Xvfb и Winbox 4
         run: |
