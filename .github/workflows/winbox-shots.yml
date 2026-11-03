@@ -60,7 +60,8 @@ jobs:
             -drive file=chr.qcow2,format=qcow2,if=virtio \
             -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
             -device virtio-net-pci,netdev=n0 \
-            -display none -serial file:/tmp/wb/chr-console.log \
+            -display none -monitor unix:/tmp/wb/mon.sock,server,nowait \
+            -serial file:/tmp/wb/chr-console.log \
             -daemonize -pidfile /tmp/wb/qemu.pid
           ok=0
           for i in $(seq 1 120); do
@@ -68,6 +69,7 @@ jobs:
             sleep 2
           done
           test "$ok" = 1
+          python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm || true
 
       - name: Запустить Xvfb и Winbox 4
         run: |
@@ -114,13 +116,20 @@ jobs:
             sleep 20
             NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
             echo "t=$((i*20))s window=\"$NAME\"" >> docs/shots/report.txt
+            python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm >/dev/null 2>&1 || true
+            if [ -f /tmp/wb/guest.ppm ]; then
+              convert /tmp/wb/guest.ppm "docs/shots/09-guest-$((i*20)).png" 2>/dev/null || true
+            fi
             import -window root "docs/shots/10-wait-$((i*20)).png" || true
             if [ "$NAME" != "WinBox 4.4" ] && [ -n "$NAME" ]; then
               echo "подключились на $((i*20))c: $NAME" >> docs/shots/report.txt
               break
             fi
-            # проверяем, отвечает ли служба winbox у CHR
-            (echo > /dev/tcp/127.0.0.1/8291) >/dev/null 2>&1 && echo "  порт 8291 отвечает" >> docs/shots/report.txt || true
+            # CHR может ещё грузиться — повторяем «Connect» (кнопка на панели входа)
+            WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
+            xdotool windowactivate --sync "$WID" || true
+            xdotool mousemove 354 633 click 1 || true
+            sleep 2
           done
           WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
           xdotool getwindowgeometry --shell "$WID" > docs/shots/geometry.txt 2>&1 || true
