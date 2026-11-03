@@ -27,9 +27,8 @@ t=780c  winbox-head=[]
 ждать по таймеру до 11 мин
 BIN=./WinBox
 connect 1: window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox]
-рабочее окно: X=200 Y=200 W=1200 H=700
 === время ===
-Tue Nov  3 08:47:21 UTC 2026
+Tue Nov  3 09:23:51 UTC 2026
 === qemu-img ===
 image: chr.qcow2
 file format: qcow2
@@ -52,71 +51,91 @@ APP,INFO: font from settings: "Inter"
 APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
 DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
-JGCACHE,INFO: cleanup skipped: no cache dir
+JGCACHE,INFO: cleanup skipped: lastcleanup fresh
 APP,UPDATE: version fetched: "4.4"
 APP,UPDATE: nothing to update
-WBOXCONN status change "Looking up host..."
-WBOXCONN status change "Connecting..."
-WBOXCONN status change "Authenticating..."
-WBOXCONN status change "Auth OK."
-boardName=<CHR>
-boardArch=<i386>
-boardFamily=<x86>
-license=<6>
-skin=<default>
-displayName=<CHR QEMU Standard PC (i440FX + PIIX, 1996)>
-vers=<7.24.6 (long-term)>
-WBOXCONN,ERR: getting skin file fd
---- nv::message --------
- u32 [SYS_ERRNO]=ERROR_FAILED
- u32 [SYS_TYPE]=TYPE_REPLY
- u32 [SYS_STATUS]=STATUS_ERROR
- u32 [SYS_REQID]=4 0x4 4.0.0.0
- string [SYS_ERRSTR]=cannot open source file
- u32[2] [SYS_TO]=0, 1, 
- u32[2] [SYS_FROM]=2, 2, 
- string[1] [SYS_TRACE]=msg-proxy-7.24.6, 
-WBOXCONN,INFO: all index files downlaoded
-TUPLE,DBG: adding missing seps
-!!! TODO u32_array "Pairwise Ciphers" "WiFi"
-!!! TODO u32_array "RSN AKMS" "WiFi"
-TUPLE,DBG: adding missing seps
-WBOXSESS,INFO: upgrade check use subscribe
-PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/workspaces/__127.0.0.1.cfg.viw2"
-   versFile: NEWESTa7.stable status:"" STATE:0 fin:1 latestVersStr:
-WBOXSESS,INFO: newer version available for RouterOS:7.25
-WBOXSESS,INFO: first clock synced
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: lastcleanup fresh
+APP,UPDATE: version fetched: "4.4"
+APP,UPDATE: nothing to update
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: lastcleanup fresh
+APP,UPDATE: version fetched: "4.4"
+APP,UPDATE: nothing to update
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: lastcleanup fresh
+APP,UPDATE: version fetched: "4.4"
+APP,UPDATE: nothing to update
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: lastcleanup fresh
+APP,UPDATE: version fetched: "4.4"
+APP,UPDATE: nothing to update
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 === процессы ===
-runner      3741 25.1  2.0 3173940 343688 ?      Sl   08:29   4:25 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      4233  0.2  0.4 223828 77616 ?        S    08:46   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      4244  1.1  0.8 909656 133748 ?       Sl   08:46   0:00 /tmp/wb/winbox/./WinBox
+runner      4454 30.8  2.0 3180108 334956 ?      Sl   08:54   9:08 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4901  0.1  0.5 225728 82120 ?        S    09:10   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      6294  0.4  0.5 859932 91092 ?        Sl   09:22   0:00 ./WinBox
 === файлы ===
-total 1324
--rw-r--r-- 1 runner runner  62249 Nov  3 08:46 01-login.png
--rw-r--r-- 1 runner runner  69837 Nov  3 08:46 02-connect-1.png
--rw-r--r-- 1 runner runner   1066 Nov  3 08:32 08-chr-120.png
--rw-r--r-- 1 runner runner   1075 Nov  3 08:33 08-chr-210.png
--rw-r--r-- 1 runner runner   2147 Nov  3 08:30 08-chr-30.png
--rw-r--r-- 1 runner runner   1066 Nov  3 08:35 08-chr-300.png
--rw-r--r-- 1 runner runner   1075 Nov  3 08:37 08-chr-390.png
--rw-r--r-- 1 runner runner   1066 Nov  3 08:39 08-chr-480.png
--rw-r--r-- 1 runner runner   1075 Nov  3 08:41 08-chr-570.png
--rw-r--r-- 1 runner runner    306 Nov  3 08:42 08-chr-660.png
--rw-r--r-- 1 runner runner    306 Nov  3 08:44 08-chr-750.png
--rw-r--r-- 1 runner runner  69826 Nov  3 08:46 30-desktop.png
--rw-r--r-- 1 runner runner  59671 Nov  3 08:46 31-wifi-closed.png
--rw-r--r-- 1 runner runner  59598 Nov  3 08:46 31-wifi.png
--rw-r--r-- 1 runner runner  88835 Nov  3 08:46 32-interfaces.png
--rw-r--r-- 1 runner runner  85006 Nov  3 08:46 33-wireguard.png
--rw-r--r-- 1 runner runner  89868 Nov  3 08:46 34-bridge.png
--rw-r--r-- 1 runner runner  94591 Nov  3 08:46 35-ppp.png
--rw-r--r-- 1 runner runner 118701 Nov  3 08:47 36-queues.png
--rw-r--r-- 1 runner runner  90137 Nov  3 08:47 37-files.png
--rw-r--r-- 1 runner runner 112821 Nov  3 08:47 40-ip-menu.png
--rw-r--r-- 1 runner runner  90017 Nov  3 08:47 41-ip-first.png
--rw-r--r-- 1 runner runner  89621 Nov  3 08:47 50-settings.png
--rw-r--r-- 1 runner runner  90526 Nov  3 08:47 51-after-settings.png
--rw-r--r-- 1 runner runner     58 Nov  3 08:46 geometry.txt
--rw-r--r-- 1 runner runner   3669 Nov  3 08:47 report.txt
--rw-r--r-- 1 runner runner    410 Nov  3 08:47 xwininfo-2.txt
--rw-r--r-- 1 runner runner    410 Nov  3 08:46 xwininfo.txt
+total 1152
+-rw-r--r-- 1 runner runner 62265 Nov  3 09:10 01-login.png
+-rw-r--r-- 1 runner runner 69379 Nov  3 09:10 02-connect-1.png
+-rw-r--r-- 1 runner runner  2135 Nov  3 08:56 08-chr-120.png
+-rw-r--r-- 1 runner runner  1075 Nov  3 08:58 08-chr-210.png
+-rw-r--r-- 1 runner runner  2147 Nov  3 08:54 08-chr-30.png
+-rw-r--r-- 1 runner runner  1066 Nov  3 09:00 08-chr-300.png
+-rw-r--r-- 1 runner runner  1075 Nov  3 09:01 08-chr-390.png
+-rw-r--r-- 1 runner runner  1066 Nov  3 09:03 08-chr-480.png
+-rw-r--r-- 1 runner runner  1075 Nov  3 09:05 08-chr-570.png
+-rw-r--r-- 1 runner runner  1066 Nov  3 09:07 08-chr-660.png
+-rw-r--r-- 1 runner runner   306 Nov  3 09:08 08-chr-750.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:11 31-quickset.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:12 32-wifi.png
+-rw-r--r-- 1 runner runner 62886 Nov  3 09:13 33-interfaces.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:14 34-wireguard.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:15 35-bridge.png
+-rw-r--r-- 1 runner runner 62886 Nov  3 09:15 36-ppp.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:16 37-queues.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:17 38-files.png
+-rw-r--r-- 1 runner runner 62886 Nov  3 09:18 40-ip-address.png
+-rw-r--r-- 1 runner runner 62886 Nov  3 09:19 41-ip-dhcpserver.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:20 42-ip-dns.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:21 43-ip-firewall.png
+-rw-r--r-- 1 runner runner 66079 Nov  3 09:21 44-ip-routes.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:22 45-ip-services.png
+-rw-r--r-- 1 runner runner 62240 Nov  3 09:23 46-fw-new.png
+-rw-r--r-- 1 runner runner    58 Nov  3 09:10 geometry.txt
+-rw-r--r-- 1 runner runner  5839 Nov  3 09:23 report.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 09:23 xwininfo-2.txt
+-rw-r--r-- 1 runner runner   410 Nov  3 09:10 xwininfo.txt
