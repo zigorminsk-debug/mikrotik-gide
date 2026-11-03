@@ -972,7 +972,8 @@
       '<div class="upd" id="updBox">Проверьте, нет ли новой сборки — обновления ставятся поверх текущей версии.</div>' +
       '<div class="upd-actions" style="display:flex;gap:8px;flex-wrap:wrap;margin-top:10px">' +
       '<button class="btn primary" id="checkUpdBtn">' + svg('down', 15) + 'Проверить обновления</button>' +
-      '<a class="btn" href="' + RELEASES_URL + '">Все релизы ↗</a></div></div>';
+      '<a class="btn" href="' + RELEASES_URL + '">Все релизы ↗</a></div></div>' +
+      '<div id="mtgUpd"></div>';
 
     html += '<div class="set-card"><h3 class="card-h">' + svg('book', 15) + 'История релизов</h3>' + changelogHtml() + '</div>';
 

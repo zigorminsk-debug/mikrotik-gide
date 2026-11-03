@@ -1,4 +1,4 @@
-name: Android APK
+name: Сборка приложения (Android + Windows)
 
 # Сборка подписанного APK при каждом пуше в рабочую ветку и main,
 # а также вручную из вкладки Actions.
@@ -19,8 +19,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build signed APK
+  android:
+    name: Подписанный APK
+    outputs:
+      build_no: ${{ steps.ver.outputs.build_no }}
+      name: ${{ steps.ver.outputs.name }}
+      apk: ${{ steps.apk.outputs.file }}
+      sha: ${{ steps.apk.outputs.sha }}
     runs-on: ubuntu-latest
 
     steps:
@@ -163,35 +168,117 @@ jobs:
           compression-level: 0
           retention-days: 90
 
-      - name: Публикация релиза с APK
-        if: github.event_name != 'pull_request'
-        uses: softprops/action-gh-release@v2
+      - name: Контент-пак как артефакт релиза
+        uses: actions/upload-artifact@v4
         with:
-          tag_name: build-${{ steps.ver.outputs.build_no }}
-          name: Сборка ${{ steps.ver.outputs.build_no }} · v${{ steps.ver.outputs.name }}
-          body: |
-            Автоматическая сборка учебника **MikroTik · Winbox 4**.
-
-            * версия: `1.0.${{ steps.ver.outputs.build_no }}`
-            * versionCode: `${{ steps.ver.outputs.code }}`
-            * коммит: `${{ github.sha }}`
-            * SHA-256 APK: `${{ steps.apk.outputs.sha }}`
-
-            APK подписан постоянным ключом проекта — устанавливается поверх предыдущих версий.
-            Файл в релизе — чистый `.apk` (без архива).
-
-            `content-pack.json` — дополнительный контент: приложение скачивает его
-            из последнего релиза и добавляет статьи без переустановки.
-          files: |
-            ${{ steps.apk.outputs.file }}
-            content-pack.json
-          fail_on_unmatched_files: true
-          draft: false
-          prerelease: false
+          name: content-pack
+          path: content-pack.json
+          if-no-files-found: error
 
       - name: Итог
         run: |
           {
             echo ""
-            echo "**Скачать:** релиз \`build-${{ steps.ver.outputs.build_no }}\` → \`${{ steps.apk.outputs.file }}\`"
+            echo "**Скачать:** релиз \`build-${{ steps.ver.outputs.build_no }}\` → \`${{ steps.apk.outputs.file }}\` и Windows-сборка"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  windows:
+    name: Windows EXE (Go)
+    runs-on: windows-latest
+    outputs:
+      file: ${{ steps.build.outputs.file }}
+      sha: ${{ steps.build.outputs.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Проверки Go
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Сборка EXE
+        id: build
+        shell: pwsh
+        run: |
+          $ver = "1.0.${{ github.run_number }}"
+          $out = "mikrotik-gide-windows-v$ver.exe"
+          go build -trimpath -ldflags "-H windowsgui -s -w -X main.version=$ver -X main.buildNo=${{ github.run_number }}" -o $out ./windows
+          $hash = (Get-FileHash $out -Algorithm SHA256).Hash.ToLower()
+          $size = (Get-Item $out).Length
+          "file=$out" >> $env:GITHUB_OUTPUT
+          "sha=$hash" >> $env:GITHUB_OUTPUT
+          "### Windows: `$out` · $size байт · SHA-256 `$hash`" >> $env:GITHUB_STEP_SUMMARY
+
+      - name: Артефакт EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: ${{ steps.build.outputs.file }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
+  release:
+    name: Публикация релиза (APK + EXE)
+    needs: [android, windows]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Скачать APK
+        uses: actions/download-artifact@v4
+        with:
+          name: mikrotik-gide-${{ needs.android.outputs.name }}
+          path: dist
+
+      - name: Скачать контент-пак
+        uses: actions/download-artifact@v4
+        with:
+          name: content-pack
+          path: dist
+
+      - name: Скачать Windows-сборку
+        uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: dist
+
+      - name: Содержимое релиза
+        run: ls -lh dist
+
+      - name: Публикация релиза
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ needs.android.outputs.build_no }}
+          name: Сборка ${{ needs.android.outputs.build_no }} · v${{ needs.android.outputs.name }}
+          body: |
+            Автоматическая сборка учебника **MikroTik · Winbox 4** для Android и Windows.
+
+            * версия: `1.0.${{ needs.android.outputs.build_no }}`
+            * коммит: `${{ github.sha }}`
+            * SHA-256 APK: `${{ needs.android.outputs.sha }}`
+            * SHA-256 EXE: `${{ needs.windows.outputs.sha }}`
+
+            **Android:** APK подписан постоянным ключом проекта — устанавливается поверх предыдущих версий.
+
+            **Windows:** `mikrotik-gide-windows-*.exe` — портативная программа (один файл, без установки).
+            Внутри то же содержимое учебника; обновление ставится из самого приложения
+            («О программе» → «Проверить обновление») или вручную заменой файла.
+
+            `content-pack.json` — дополнительный контент: приложение скачивает его
+            из последнего релиза и добавляет статьи без переустановки.
+          files: |
+            dist/${{ needs.android.outputs.apk }}
+            dist/content-pack.json
+            dist/${{ needs.windows.outputs.file }}
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false

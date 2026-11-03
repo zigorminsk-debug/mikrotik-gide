@@ -22,3 +22,13 @@ node_modules/
 
 # артефакт сборки контент-пака
 content-pack.json
+
+# Windows-сборка (Go)
+*.exe
+*.exe.old
+dist/
+
+# Windows-сборка (Go)
+*.exe
+*.exe.old
+dist/
