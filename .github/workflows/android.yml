@@ -197,7 +197,7 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-          cache: true
+          cache: false
 
       - name: Проверки Go
         run: |
@@ -206,16 +206,27 @@ jobs:
 
       - name: Сборка EXE
         id: build
-        shell: pwsh
+        shell: bash
         run: |
-          $ver = "1.0.${{ github.run_number }}"
-          $out = "mikrotik-gide-windows-v$ver.exe"
-          go build -trimpath -ldflags "-H windowsgui -s -w -X main.version=$ver -X main.buildNo=${{ github.run_number }}" -o $out ./windows
-          $hash = (Get-FileHash $out -Algorithm SHA256).Hash.ToLower()
-          $size = (Get-Item $out).Length
-          "file=$out" >> $env:GITHUB_OUTPUT
-          "sha=$hash" >> $env:GITHUB_OUTPUT
-          "### Windows: `$out` · $size байт · SHA-256 `$hash`" >> $env:GITHUB_STEP_SUMMARY
+          set -euo pipefail
+          VER="1.0.${{ github.run_number }}"
+          OUT="mikrotik-gide-windows-v$VER.exe"
+          echo "Версия: $VER"
+          go env GOOS GOARCH GOVERSION
+          if ! go build -trimpath -ldflags "-H windowsgui -s -w -X main.version=$VER -X main.buildNo=${{ github.run_number }}" -o "$OUT" ./windows; then
+            echo "::error::go build завершился с ошибкой"
+            exit 1
+          fi
+          ls -lh "$OUT"
+          SHA=$(sha256sum "$OUT" | cut -d' ' -f1)
+          SIZE=$(stat -c %s "$OUT")
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "| Файл | Размер | SHA-256 |"
+            echo "|---|---|---|"
+            echo "| \`$OUT\` | $SIZE Б | \`$SHA\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Артефакт EXE
         uses: actions/upload-artifact@v4
