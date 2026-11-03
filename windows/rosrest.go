@@ -105,6 +105,14 @@ func flattenRows(v interface{}) []map[string]string {
 				row[k] = fmt.Sprintf("%t", tv)
 			case nil:
 				// пустое значение в RouterOS часто приходит как null
+			case map[string]interface{}:
+				// вложенные настройки (channel, security) RouterOS отдаёт объектом —
+				// склеиваем их как «channel.band», чтобы разбор был одинаковым с API
+				for k2, v2 := range tv {
+					if s2, ok := v2.(string); ok {
+						row[k+"."+k2] = s2
+					}
+				}
 			case []interface{}:
 				parts := make([]string, 0, len(tv))
 				for _, x := range tv {

@@ -95,7 +95,10 @@ func (c *rosConn) sendSentence(words ...string) error {
 }
 
 // readSentence читает одно предложение (до пустого слова).
+// Таймаут ставится на каждое чтение: один общий дедлайн на соединение
+// обрывал опрос, если роутер отвечал по частям дольше нескольких секунд.
 func (c *rosConn) readSentence() ([]string, error) {
+	_ = c.conn.SetReadDeadline(time.Now().Add(15 * time.Second))
 	var words []string
 	for {
 		n, err := rosReadLength(c.br)
@@ -133,7 +136,7 @@ func rosDial(address string, port int, useTLS bool, timeout time.Duration) (*ros
 	if err != nil {
 		return nil, err
 	}
-	_ = conn.SetDeadline(time.Now().Add(timeout))
+	_ = conn.SetDeadline(time.Now().Add(timeout)) // только на первый обмен (login)
 	c := &rosConn{conn: conn, br: bufio.NewReader(conn)}
 	return c, nil
 }
@@ -232,6 +235,7 @@ func (c *rosConn) login(user, pass string) error {
 
 // command выполняет команду и возвращает строки ответа (!re).
 func (c *rosConn) command(words ...string) ([]map[string]string, error) {
+	_ = c.conn.SetDeadline(time.Time{})
 	if err := c.sendSentence(words...); err != nil {
 		return nil, err
 	}
