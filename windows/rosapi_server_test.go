@@ -30,7 +30,7 @@ func newFakeROS(t *testing.T, challenge bool) *fakeROS {
 	}
 	f := &fakeROS{ln: ln, user: "admin", pass: "secret", challenge: challenge,
 		rows: map[string][]map[string]string{
-			"/system/resource": {{"version": "7.24.6", "board-name": "RB951G-2HnD"}},
+			"/system/resource":    {{"version": "7.24.6", "board-name": "RB951G-2HnD"}},
 			"/system/routerboard": {{"current-firmware": "6.49.13", "upgrade-firmware": "6.49.13"}},
 		}}
 	go f.serve()

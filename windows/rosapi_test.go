@@ -85,9 +85,9 @@ func TestCollectRouter(t *testing.T) {
 		"/system/resource": {{"version": "7.24.6", "board-name": "RB951G-2HnD", "architecture-name": "mipsbe", "uptime": "1w2d"}},
 		"/system/routerboard": {{"current-firmware": "6.49.13", "upgrade-firmware": "6.49.13",
 			"model": "RB951G-2HnD", "serial-number": "6E1C05A1B2C3"}},
-		"/system/identity": {{"name": "home-gw"}},
-		"/system/package":  {{"name": "routeros"}, {"name": "wireless"}},
-		"/interface":       {{"name": "ether1", "type": "ether"}, {"name": "wlan1", "type": "wlan"}},
+		"/system/identity":    {{"name": "home-gw"}},
+		"/system/package":     {{"name": "routeros"}, {"name": "wireless"}},
+		"/interface":          {{"name": "ether1", "type": "ether"}, {"name": "wlan1", "type": "wlan"}},
 		"/interface/wireless": {{"name": "wlan1", "band": "2ghz-b/g/n"}},
 		"/ip/service":         {{"name": "winbox", "address": "192.168.88.0/24"}, {"name": "telnet", "disabled": "true"}},
 	}, err: map[string]error{"/interface/wifi": errors.New("нет такого меню")}}
