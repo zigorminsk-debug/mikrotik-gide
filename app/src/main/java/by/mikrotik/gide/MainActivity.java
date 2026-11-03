@@ -36,6 +36,8 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import android.widget.Toast;
+import android.window.OnBackInvokedCallback;
+import android.window.OnBackInvokedDispatcher;
 
 /**
  * Единственная Activity приложения.
@@ -115,6 +117,7 @@ public class MainActivity extends Activity {
             web.loadUrl(START_URL);
         }
         openFromShortcut(getIntent());
+        registerBackCallback();
     }
 
     @Override
@@ -456,10 +459,35 @@ public class MainActivity extends Activity {
         }
     }
 
+    /**
+     * «Назад»: закрыть панель поиска, затем вернуться по истории экранов.
+     * Возвращает false, если возвращаться некуда — тогда приложение закрывается.
+     */
+    private boolean handleBack() {
+        if (web == null) return false;
+        if (web.canGoBack()) {
+            web.goBack();
+            return true;
+        }
+        return false;
+    }
+
+    /** Android 13+ (predictive back): системный жест приходит сюда, а не в onKeyDown. */
+    private void registerBackCallback() {
+        if (Build.VERSION.SDK_INT < 33) return;
+        getOnBackInvokedDispatcher().registerOnBackInvokedCallback(
+                OnBackInvokedDispatcher.PRIORITY_DEFAULT,
+                new OnBackInvokedCallback() {
+                    @Override
+                    public void onBackInvoked() {
+                        if (!handleBack()) finish();
+                    }
+                });
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK && web != null && web.canGoBack()) {
-            web.goBack();
+        if (keyCode == KeyEvent.KEYCODE_BACK && handleBack()) {
             return true;
         }
         return super.onKeyDown(keyCode, event);

@@ -94,6 +94,7 @@
     } catch (e) { return {}; }
   }
   function markRead(id) {
+    touchDay();
     const m = readMap();
     if (!m[id]) {
       m[id] = 1;
@@ -102,6 +103,61 @@
     }
   }
   function readCount() { return Object.keys(readMap()).length; }
+
+  /* серия дней: какие дни открывали статьи */
+  function isoOf(d) {
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+  function pluralDays(n) {
+    const a = Math.abs(n) % 100, b = a % 10;
+    if (a > 10 && a < 20) return 'дней подряд';
+    if (b === 1) return 'день подряд';
+    if (b >= 2 && b <= 4) return 'дня подряд';
+    return 'дней подряд';
+  }
+  function dayList() {
+    try {
+      const v = JSON.parse(store.get('days') || '[]');
+      return Array.isArray(v) ? v.filter(function (x) { return typeof x === 'string'; }) : [];
+    } catch (e) { return []; }
+  }
+  function touchDay() {
+    const d = isoOf(new Date());
+    const l = dayList();
+    if (l[l.length - 1] === d) return;
+    l.push(d);
+    while (l.length > 400) l.shift();
+    store.set('days', JSON.stringify(l));
+  }
+  function streak() {
+    const set = {};
+    dayList().forEach(function (d) { set[d] = 1; });
+    const cur = new Date();
+    cur.setHours(0, 0, 0, 0);
+    if (!set[isoOf(cur)]) cur.setDate(cur.getDate() - 1);
+    let n = 0;
+    for (let guard = 0; guard < 400; guard++) {
+      if (!set[isoOf(cur)]) break;
+      n++;
+      cur.setDate(cur.getDate() - 1);
+    }
+    return n;
+  }
+  function weekStrip() {
+    const set = {};
+    dayList().forEach(function (d) { set[d] = 1; });
+    const names = ['вс', 'пн', 'вт', 'ср', 'чт', 'пт', 'сб'];
+    const out = [];
+    for (let k = 6; k >= 0; k--) {
+      const d = new Date();
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() - k);
+      const on = set[isoOf(d)];
+      out.push('<span class="wd' + (on ? ' on' : '') + (k === 0 ? ' today' : '') + '" title="' + isoOf(d) + '">' +
+        names[d.getDay()] + '<i></i></span>');
+    }
+    return '<div class="week-strip">' + out.join('') + '</div>';
+  }
 
   /* ---------------- размер шрифта ---------------- */
   const FS_STEPS = [0.9, 1, 1.08, 1.18, 1.3, 1.45, 1.6, 1.8];
@@ -267,6 +323,15 @@
       const bar = $('#readBar');
       if (bar) bar.style.width = Math.round(done * 100 / total) + '%';
     }
+    const st2 = $('#streakStat');
+    if (st2) {
+      const n = streak();
+      st2.textContent = n;
+      st2.parentNode.innerHTML = '<b id="streakStat">' + n + '</b> ' + pluralDays(n) +
+        '<span>· занятия за последние 7 дней</span>';
+    }
+    const ws = $('.week-strip');
+    if (ws) ws.outerHTML = weekStrip();
   }
 
   function markActive(id) {
@@ -357,6 +422,8 @@
       '<h3 class="card-h">' + svg('system', 15) + 'Ваш прогресс</h3>' +
       '<div class="hint" style="margin:-2px 0 8px">Прочитано <b id="readStat">0 из ' + total + ' (0%)</b></div>' +
       '<div class="upd-bar"><i id="readBar" style="width:0%"></i></div>' +
+      '<div class="streak-line"><b id="streakStat">' + (streak() || 0) + '</b> ' + pluralDays(streak()) +
+      '<span>· занятия за последние 7 дней</span></div>' + weekStrip() +
       '<div class="hint" style="margin-top:8px">Статьи отмечаются прочитанными автоматически при открытии. ' +
       'Избранное — звёздочкой ★ в заголовке статьи.</div>' +
       '</div>';
@@ -416,6 +483,7 @@
     html += '<div class="art-actions">' +
       '<button class="btn" id="shareArt">Поделиться</button>' +
       '<button class="btn" id="printArt">В PDF</button>' +
+      '<button class="btn" id="htmlArt">В HTML</button>' +
       ((a.steps && a.steps.length) ? '<a class="btn" href="#/run/' + a.id + '">Режим на объекте</a>' : '') +
       '</div>';
 
@@ -1252,6 +1320,7 @@
     if (rp) rp.addEventListener('click', function () {
       store.del(READ_KEY);
       store.del(FAV_KEY);
+      store.del('days');
       buildFavBox();
       refreshProgress();
       rp.textContent = 'Сброшено';
@@ -1279,38 +1348,93 @@
   let SEARCH_INDEX = null;
   function buildIndex() {
     SEARCH_INDEX = FLAT.map(function (a) {
-      const steps = (a.steps || []).map(function (s) { return typeof s === 'string' ? s : (s.t + ' ' + (s.d || '')); }).join(' ');
+      const steps = (a.steps || []).map(function (s) { return typeof s === 'string' ? s : (s.t + ' ' + (s.d || '') + ' ' + (s.cmd || '')); }).join(' ');
       const cfg = a.config ? (Array.isArray(a.config) ? a.config.join(' ') : String(a.config)) : '';
       const cmds = (a.check || []).map(function (c) { return c.c || ''; }).join(' ');
-      const text = [a.t, a.path, a.purpose, (a.usage || []).join(' '), steps,
-        (a.mistakes || []).join(' '), (a.tags || []).join(' '), cfg, cmds].join(' ').toLowerCase();
-      return { a: a, text: text };
+      const orig = [a.t, a.path, a.purpose, (a.usage || []).join(' '), steps,
+        (a.mistakes || []).join(' '), (a.tags || []).join(' '), cfg, cmds].join(' ');
+      return { a: a, orig: orig, text: orig.toLowerCase() };
     });
+  }
+
+  function sqHist() {
+    try {
+      const v = JSON.parse(store.get('sqh') || '[]');
+      return Array.isArray(v) ? v.filter(function (x) { return typeof x === 'string' && x; }).slice(0, 6) : [];
+    } catch (e) { return []; }
+  }
+  function sqPush(q) {
+    q = String(q || '').trim();
+    if (q.length < 2) return;
+    const list = sqHist().filter(function (x) { return x.toLowerCase() !== q.toLowerCase(); });
+    list.unshift(q);
+    store.set('sqh', JSON.stringify(list.slice(0, 6)));
+  }
+  function escRe(s) { return String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+  function hlText(s, words) {
+    let out = esc(s == null ? '' : s);
+    if (!words || !words.length) return out;
+    const pat = words.filter(Boolean).map(function (w) { return escRe(esc(w)); }).join('|');
+    if (!pat) return out;
+    try {
+      return out.replace(new RegExp('(' + pat + ')', 'gi'), '<mark class="hl">$1</mark>');
+    } catch (e) { return out; }
+  }
+  function sqChips(list, title) {
+    if (!list.length) return '';
+    return '<div class="sq-block"><div class="sq-h">' + title + '</div><div class="sq-chips">' +
+      list.map(function (q) {
+        const safe = esc(q).replace(/"/g, '&quot;');
+        return '<button class="sq-chip" data-sq="' + safe + '">' + esc(q) + '</button>';
+      }).join('') +
+      '</div></div>';
   }
   function doSearch(q) {
     if (!SEARCH_INDEX) buildIndex();
     const res = $('#searchResults');
-    const query = q.trim().toLowerCase();
+    const query = String(q || '').trim().toLowerCase();
+    if (!query) {
+      const recent = sqHist();
+      res.innerHTML = sqChips(recent, 'Недавние запросы') +
+        sqChips(['wireguard', 'vlan', 'nat', 'dhcp', 'pppoe', 'firewall', 'backup', 'bridge'], 'Часто ищут') +
+        '<div class="sq-links">' +
+        '<a class="list-row" href="#/diag"><span class="n">?</span><b>Диагностика по симптому</b><span>что не работает</span></a>' +
+        '<a class="list-row" href="#/glossary"><span class="n">A</span><b>Глоссарий и порты</b><span>50 терминов</span></a>' +
+        '<a class="list-row" href="#/harden"><span class="n">✓</span><b>Защита от взлома</b><span>56 пунктов</span></a>' +
+        '</div>';
+      return;
+    }
     if (query.length < 2) {
       res.innerHTML = '<div class="empty">Введите минимум 2 символа.<br>Например: <b>nat</b>, <b>vlan</b>, <b>wireguard</b>, <b>dhcp</b>, <b>backup</b>, <b>pppoe</b>.</div>';
       return;
     }
-    const words = query.split(/\s+/);
-    const hits = SEARCH_INDEX.filter(function (row) {
+    const words = query.split(/\s+/).filter(Boolean);
+    const all = SEARCH_INDEX.filter(function (row) {
       return words.every(function (w) { return row.text.indexOf(w) >= 0; });
-    }).slice(0, 40);
-    if (!hits.length) {
-      res.innerHTML = '<div class="empty">Ничего не найдено по запросу «' + esc(q) + '».</div>';
+    });
+    if (!all.length) {
+      res.innerHTML = '<div class="empty">Ничего не найдено по запросу «' + esc(q) + '».</div>' +
+        '<div class="sq-hint">Попробуйте одно слово: <b>nat</b>, <b>vlan</b>, <b>vpn</b>, <b>bridge</b>. ' +
+        'Или посмотрите разделы:</div>' +
+        '<div class="sq-links">' +
+        '<a class="list-row" href="#/diag"><span class="n">?</span><b>Диагностика по симптому</b><span>10 симптомов</span></a>' +
+        '<a class="list-row" href="#/glossary"><span class="n">A</span><b>Глоссарий и порты</b><span>50 терминов</span></a>' +
+        '</div>';
       return;
     }
-    res.innerHTML = hits.map(function (h) {
+    const hits = all.slice(0, 40);
+    let html = '<div class="sr-count">Найдено ' + all.length + (all.length > hits.length ? ', показаны первые ' + hits.length : '') + ' · «' + esc(q) + '»</div>';
+    html += hits.map(function (h) {
       const a = h.a;
       const at = h.text.indexOf(words[0]);
-      const snippet = at > 60 ? '…' + h.text.slice(at - 60, at + 110) : h.text.slice(0, 150);
-      return '<a class="sr" href="#/' + a.id + '"><b>' + esc(a.t) + '</b>' +
+      const from = at > 60 ? at - 60 : 0;
+      const raw = h.orig.slice(from, from + 170).replace(/\s+/g, ' ').trim();
+      const snippet = (from ? '…' : '') + raw + '…';
+      return '<a class="sr" href="#/' + a.id + '"><b>' + hlText(a.t, words) + '</b>' +
         '<span>' + esc(a._group.name) + (a.path ? ' · ' + esc(a.path) : '') + '</span>' +
-        '<p>' + esc(snippet) + '…</p></a>';
+        '<p>' + hlText(snippet, words) + '</p></a>';
     }).join('');
+    res.innerHTML = html;
   }
 
   /* ================= сервисные мелочи ================= */
@@ -2138,7 +2262,7 @@
   }
 
   /* ================= резервная копия данных ================= */
-  const BACKUP_KEYS = ['fav', 'read', 'notes', 'last', 'snq', 'wiz', 'vlsm', 'diffA', 'diffB', 'diffIgnore', 'shots', 'theme', 'fs', 'audit', 'harden'];
+  const BACKUP_KEYS = ['fav', 'read', 'notes', 'last', 'days', 'sqh', 'snq', 'wiz', 'vlsm', 'diffA', 'diffB', 'diffIgnore', 'shots', 'theme', 'fs', 'audit', 'harden'];
 
   function backupCollect() {
     const data = {};
@@ -2303,10 +2427,7 @@
   /* ================= курс «7 дней» ================= */
   function courseStartDate() { return store.get('courseStart') || ''; }
 
-  function todayISO() {
-    const d = new Date();
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
+  function todayISO() { return isoOf(new Date()); }
 
   function courseToday() {
     const d = new Date();
@@ -2447,51 +2568,98 @@
   }
 
   /* ================= экспорт библиотеки в HTML ================= */
-  function libraryHtml() {
+  const EXPORT_CSS = 'body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;line-height:1.55;color:#111}' +
+    'h1{margin:0 0 4px;font-size:28px}h2{margin:32px 0 8px;border-bottom:2px solid #eee;padding-bottom:6px}h3{margin:22px 0 6px;font-size:18px}' +
+    '.meta{color:#666;font-size:13px;margin-bottom:4px}.p{white-space:pre-wrap}pre{background:#f6f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:10px;overflow-x:auto;font-size:13px}' +
+    'code{background:#f6f8fa;padding:1px 4px;border-radius:4px}ul,ol{padding-left:22px}li{margin:4px 0}' +
+    '.note{background:#fff8e5;border-left:3px solid #f0a13a;padding:8px 12px;border-radius:6px;margin:14px 0;font-size:14px}' +
+    '@media print{pre{page-break-inside:avoid}h3{page-break-after:avoid}}';
+
+  function articleBodyHtml(a, withHeading) {
     const parts = [];
+    if (withHeading) parts.push('<h3>' + esc(a.t) + '</h3>');
+    if (a.path) parts.push('<div class="meta">' + esc(a.path) + '</div>');
+    if (a.purpose) parts.push('<p class="p">' + inline(a.purpose) + '</p>');
+    if (a.usage && a.usage.length) {
+      parts.push('<p><b>Где применяется:</b></p><ul>' + a.usage.map(function (u) {
+        return '<li>' + inline(u) + '</li>';
+      }).join('') + '</ul>');
+    }
+    if (a.steps && a.steps.length) {
+      parts.push('<p><b>Порядок настройки:</b></p><ol>' + a.steps.map(function (st) {
+        const t = typeof st === 'string' ? st : (st.t + (st.d ? ' — ' + st.d : ''));
+        const cmd = (typeof st === 'object' && st.cmd) ? '<pre>' + esc(st.cmd) + '</pre>' : '';
+        return '<li>' + inline(t) + cmd + '</li>';
+      }).join('') + '</ol>');
+    }
+    if (a.config) {
+      const text = Array.isArray(a.config) ? a.config.join('\n') : String(a.config);
+      parts.push('<p><b>Готовый конфиг:</b></p><pre>' + esc(text) + '</pre>');
+    }
+    if (a.mistakes && a.mistakes.length) {
+      parts.push('<p><b>Частые ошибки:</b></p><ul>' + a.mistakes.map(function (m) {
+        return '<li>' + inline(m) + '</li>';
+      }).join('') + '</ul>');
+    }
+    if (a.check && a.check.length) {
+      parts.push('<p><b>Проверка:</b></p><ul>' + a.check.map(function (c) {
+        const txt = typeof c === 'string' ? c : (c.c || '');
+        return '<li>' + inline(txt) + '</li>';
+      }).join('') + '</ul>');
+    }
+    if (a.id && notesGet(a.id)) {
+      parts.push('<div class="note"><b>Моя заметка:</b><br>' + esc(notesGet(a.id)).replace(/\n/g, '<br>') + '</div>');
+    }
+    return parts.join('\n');
+  }
+
+  function libraryHtml() {
     const ver = window.APP_VERSION || 'dev';
+    const parts = [];
     parts.push('<!doctype html><html lang="ru"><head><meta charset="utf-8">');
     parts.push('<meta name="viewport" content="width=device-width,initial-scale=1">');
     parts.push('<title>MikroTik · Учебник Winbox 4 — версия ' + esc(ver) + '</title>');
-    parts.push('<style>body{font-family:-apple-system,Segoe UI,Roboto,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;line-height:1.55;color:#111}');
-    parts.push('h1{margin:0 0 4px;font-size:28px}h2{margin:32px 0 8px;border-bottom:2px solid #eee;padding-bottom:6px}h3{margin:22px 0 6px;font-size:18px}');
-    parts.push('.meta{color:#666;font-size:13px;margin-bottom:4px}.p{white-space:pre-wrap}pre{background:#f6f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:10px;overflow-x:auto;font-size:13px}');
-    parts.push('code{background:#f6f8fa;padding:1px 4px;border-radius:4px}ul,ol{padding-left:22px}@media print{pre{page-break-inside:avoid}}</style></head><body>');
+    parts.push('<style>' + EXPORT_CSS + '</style></head><body>');
     parts.push('<h1>MikroTik · Учебник Winbox 4</h1>');
     parts.push('<div class="meta">Версия ' + esc(ver) + ' · выгружено ' + new Date().toLocaleString('ru-RU') +
       ' · статей: ' + FLAT.length + '</div>');
+    parts.push('<p class="meta">Содержание:</p><ol>' + GROUPS.map(function (g) {
+      if (!g.items || !g.items.length) return '';
+      return '<li>' + esc(g.name) + ' — ' + g.items.length + '</li>';
+    }).join('') + '</ol>');
     GROUPS.forEach(function (g) {
       if (!g.items || !g.items.length) return;
       parts.push('<h2>' + esc(g.name) + '</h2>');
       g.items.forEach(function (a) {
-        parts.push('<h3>' + esc(a.t) + '</h3>');
-        if (a.path) parts.push('<div class="meta">' + esc(a.path) + '</div>');
-        if (a.purpose) parts.push('<p>' + esc(a.purpose) + '</p>');
-        if (a.usage && a.usage.length) {
-          parts.push('<p><b>Где применяется:</b></p><ul>' + a.usage.map(function (u) {
-            return '<li>' + esc(u) + '</li>';
-          }).join('') + '</ul>');
-        }
-        if (a.steps && a.steps.length) {
-          parts.push('<p><b>Порядок настройки:</b></p><ol>' + a.steps.map(function (s) {
-            const t = typeof s === 'string' ? s : (s.t + (s.d ? ' — ' + s.d : ''));
-            const cmd = (typeof s === 'object' && s.cmd) ? '<pre>' + esc(s.cmd) + '</pre>' : '';
-            return '<li>' + esc(t) + cmd + '</li>';
-          }).join('') + '</ol>');
-        }
-        if (a.config) {
-          const text = Array.isArray(a.config) ? a.config.join('\n') : String(a.config);
-          parts.push('<p><b>Готовый конфиг:</b></p><pre>' + esc(text) + '</pre>');
-        }
-        if (a.check && a.check.length) {
-          parts.push('<p><b>Проверка:</b></p><ul>' + a.check.map(function (c) {
-            return '<li>' + esc(c) + '</li>';
-          }).join('') + '</ul>');
-        }
+        parts.push(articleBodyHtml(a, true));
       });
     });
     parts.push('<p class="meta">Выгружено из приложения «MikroTik · Учебник Winbox 4».</p></body></html>');
     return parts.join('\n');
+  }
+
+  function articleHtml(a) {
+    const ver = window.APP_VERSION || 'dev';
+    const parts = [];
+    parts.push('<!doctype html><html lang="ru"><head><meta charset="utf-8">');
+    parts.push('<meta name="viewport" content="width=device-width,initial-scale=1">');
+    parts.push('<title>' + esc(a.t) + ' · MikroTik</title>');
+    parts.push('<style>' + EXPORT_CSS + '</style></head><body>');
+    parts.push('<h1>' + esc(a.t) + '</h1>');
+    parts.push('<div class="meta">' + esc(a._group.name) + (a.path ? ' · ' + esc(a.path) : '') +
+      ' · RouterOS 7 / Winbox 4 · версия ' + esc(ver) + '</div>');
+    parts.push(articleBodyHtml(a, false));
+    parts.push('<p class="meta">Выгружено из приложения «MikroTik · Учебник Winbox 4».</p></body></html>');
+    return parts.join('\n');
+  }
+
+  function exportArticle(a) {
+    const slug = String(a.id || 'article').replace(/[^a-z0-9-]+/gi, '-').slice(0, 60);
+    const name = 'mikrotik-' + slug + '-' + todayISO() + '.html';
+    const saved = saveTextFile(name, articleHtml(a));
+    if (saved === 'blob') toast('Статья сохранена: ' + name);
+    else if (saved === 'bridge') toast('Файл сохраняется в Загрузки');
+    else shareText(articleHtml(a), a.t);
   }
 
   function exportLibrary() {
@@ -3385,6 +3553,12 @@
       else if (window.print) window.print();
       return;
     }
+    const htmlBtn = t.closest('#htmlArt');
+    if (htmlBtn) {
+      const cur = BY_ID[location.hash.replace(/^#\/?/, '').split('?')[0]];
+      if (cur) exportArticle(cur);
+      return;
+    }
     const artBtn = t.closest('#shareArt');
     if (artBtn) {
       const cur = BY_ID[location.hash.replace(/^#\/?/, '').split('?')[0]];
@@ -3436,8 +3610,25 @@
       $('#searchInput').value = '';
     });
     $('#searchInput').addEventListener('input', function (e) { doSearch(e.target.value); });
+    $('#searchInput').addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        sqPush(e.target.value);
+        doSearch(e.target.value);
+        if (document.activeElement === e.target) e.target.blur();
+      }
+    });
     $('#searchLayer').addEventListener('click', function (e) {
+      const chip = e.target.closest && e.target.closest('.sq-chip');
+      if (chip) {
+        const q = chip.getAttribute('data-sq') || chip.textContent;
+        $('#searchInput').value = q;
+        doSearch(q);
+        $('#searchInput').focus();
+        return;
+      }
       if (e.target.closest('.sr')) {
+        sqPush($('#searchInput').value);
         $('#searchLayer').hidden = true;
         $('#searchInput').value = '';
       }

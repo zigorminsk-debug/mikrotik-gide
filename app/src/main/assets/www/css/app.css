@@ -1050,3 +1050,31 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 /* =============== экзамен =============== */
 .qz-opt.sel{border-color:var(--accent);background:var(--accent-soft);color:var(--txt)}
 .qz-modes .btn[data-qn="exam"]{border-color:rgba(240,161,58,.5);color:var(--amber)}
+
+/* =============== поиск 2.0 =============== */
+.sr-count{font-size:calc(12px * var(--fsm, 1));color:var(--txt-mute);padding:2px 4px 8px}
+.sr mark.hl{background:rgba(240,161,58,.28);color:inherit;border-radius:3px;padding:0 2px}
+.sq-block{margin:0 0 14px}
+.sq-h{font-size:calc(11.5px * var(--fsm, 1));text-transform:uppercase;letter-spacing:.5px;color:var(--txt-mute);margin:0 0 7px 2px}
+.sq-chips{display:flex;flex-wrap:wrap;gap:7px}
+.sq-chip{
+  font:inherit;font-size:calc(13px * var(--fsm, 1));padding:6px 11px;border-radius:999px;
+  border:1px solid var(--line);background:var(--panel-2);color:var(--txt-dim);
+}
+.sq-chip:active{border-color:var(--accent);color:var(--txt)}
+.sq-links{margin-top:4px}
+.sq-hint{font-size:calc(13px * var(--fsm, 1));color:var(--txt-dim);margin:4px 2px 10px;line-height:1.5}
+
+/* =============== серия дней =============== */
+.streak-line{font-size:calc(13px * var(--fsm, 1));color:var(--txt-dim);margin-top:10px}
+.streak-line b{font-size:calc(19px * var(--fsm, 1));color:var(--accent)}
+.streak-line span{color:var(--txt-mute)}
+.week-strip{display:flex;gap:6px;margin-top:8px}
+.week-strip .wd{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;
+  font-size:calc(10.5px * var(--fsm, 1));color:var(--txt-mute);
+}
+.week-strip .wd i{width:100%;height:6px;border-radius:3px;background:var(--panel-2);border:1px solid var(--line)}
+.week-strip .wd.on{color:var(--txt)}
+.week-strip .wd.on i{background:var(--accent);border-color:var(--accent)}
+.week-strip .wd.today i{box-shadow:0 0 0 1px var(--accent)}
