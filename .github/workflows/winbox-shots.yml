@@ -105,28 +105,7 @@ jobs:
           sleep 12
           import -window root "$GITHUB_WORKSPACE/docs/shots/01-login.png" || true
 
-      - name: Подключиться к CHR
-        run: |
-          set -x
-          cd "$GITHUB_WORKSPACE"
-          WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
-          xdotool windowactivate --sync "$WID" || true
-          sleep 1
-          xdotool type --delay 60 '127.0.0.1'
-          sleep 1
-          xdotool key Return
-          sleep 3
-          for k in 1 2 3 4 5 6 7 8 9 10; do
-            sleep 6
-            NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
-            echo "connect ${k}: window=[$NAME]" >> docs/shots/report.txt
-            import -window root "docs/shots/02-connect-$k.png" || true
-            case "$NAME" in *WinBox*4.4*) ;; *) break;; esac
-          done
-          xdotool getwindowgeometry --shell "$WID" > docs/shots/geometry.txt 2>&1 || true
-          xwininfo -root -tree > docs/shots/xwininfo.txt || true
-
-      - name: Снять окна Winbox 4
+      - name: Подключиться и снять окна Winbox 4
         run: |
           set -x
           cd "$GITHUB_WORKSPACE"
@@ -140,43 +119,72 @@ jobs:
             done
             echo "$best"
           }
-          start_winbox() {
-            pkill -f 'WinBox' 2>/dev/null || true
-            sleep 3
-            ( cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software \
-                QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 \
-                nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 & )
-            sleep 11
+          shot() { import -window root "docs/shots/$1.png" || true; sleep 0.4; }
+          state() {
+            WID=$(biggest)
+            eval "$(xdotool getwindowgeometry --shell "$WID" 2>/dev/null)"
+            TITLE=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+            echo "  [$1] window=[$TITLE] geo=${WIDTH}x${HEIGHT}+${X}+${Y}" >> docs/shots/report.txt
           }
-          # подключаемся двойным щелчком по строке CHR в списке соседей
+
+          # --- подключение в три попытки, каждая с проверкой заголовка окна ---
           connect_chr() {
-            WID=$(biggest); eval "$(xdotool getwindowgeometry --shell "$WID")"
-            xdotool windowactivate --sync "$WID" || true
+            state "старт"
+            xdotool windowfocus --sync "$WID" 2>/dev/null || xdotool windowactivate --sync "$WID" || true
             sleep 1
-            # поле «Connect to» (x 154..446, y 282..300 в координатах окна) и кнопка Connect
+            # попытка 1: клик по полю «Connect to», ввод адреса, Enter
             xdotool mousemove $((X + 300)) $((Y + 291)) click 1
             sleep 1
+            xdotool windowfocus --sync "$WID" 2>/dev/null || true
             xdotool key --clearmodifiers ctrl+a
-            xdotool type --delay 40 '127.0.0.1'
+            xdotool type --delay 60 '127.0.0.1'
             sleep 1
-            xdotool mousemove $((X + 192)) $((Y + 443)) click 1
-            for i in $(seq 1 12); do
-              sleep 3
-              NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
-              case "$NAME" in admin@*) break;; esac
+            shot "02-typed"
+            xdotool key Return
+            for i in $(seq 1 5); do
+              sleep 2
+              TITLE=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+              case "$TITLE" in admin@*) break;; esac
             done
-            echo "  подключение: $(xdotool getwindowname "$WID" 2>/dev/null)" >> docs/shots/report.txt
-            # диалог «Change Password Now» — Cancel
-            xdotool mousemove $((X + 665)) $((Y + 404)) click 1
+            state "после Enter"
+            # попытка 2: кнопка Connect
+            case "$TITLE" in
+              admin@*) ;;
+              *)
+                xdotool mousemove $((X + 192)) $((Y + 443)) click 1
+                for i in $(seq 1 5); do
+                  sleep 2
+                  TITLE=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+                  case "$TITLE" in admin@*) break;; esac
+                done
+                state "после кнопки Connect"
+                ;;
+            esac
+            # попытка 3: двойной щелчок по строке соседа (IP-адрес роутера)
+            case "$TITLE" in
+              admin@*) ;;
+              *)
+                xdotool mousemove $((X + 497)) $((Y + 124)) click --repeat 2 --delay 150 1
+                for i in $(seq 1 6); do
+                  sleep 2
+                  TITLE=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+                  case "$TITLE" in admin@*) break;; esac
+                done
+                state "после двойного щелчка по соседу"
+                ;;
+            esac
+            # диалог «Change Password Now» закрываем Esc (безопаснее клика по координатам)
+            xdotool windowfocus --sync "$WID" 2>/dev/null || true
+            xdotool key Escape
             sleep 2
+            shot "03-desktop"
+            case "$TITLE" in admin@*) return 0;; *) return 1;; esac
           }
-          shot() { import -window root "docs/shots/$1.png" || true; sleep 0.4; }
 
+          # --- снимок одного окна: клик по дереву (+ подменю), кадр, обрезка ---
           capture() {
             name=$1; tdy=$2; sdy=$3; newbtn=${4:-0}
-            start_winbox
-            connect_chr
-            WID=$(biggest); eval "$(xdotool getwindowgeometry --shell "$WID")"
+            WID=$(biggest); eval "$(xdotool getwindowgeometry --shell "$WID" 2>/dev/null)"
             xdotool mousemove $((X + 80)) $((Y + tdy)) click 1
             sleep 2
             if [ -n "$sdy" ] && [ "$sdy" != "-" ]; then
@@ -190,19 +198,56 @@ jobs:
             shot "raw-$name"
             convert "docs/shots/raw-$name.png" -crop 1200x700+200+200 +repage "docs/shots/win-$name.png" 2>/dev/null || true
             rm -f "docs/shots/raw-$name.png"
+            echo "  снято: $name" >> docs/shots/report.txt
           }
 
-          capture quickset      50  -   0
-          capture interfaces    95  -   0
-          capture wireguard    122  -   0
-          capture bridge       146  -   0
-          capture firewall     238 168  0
-          capture ip-address   238 53   0
-          capture ip-dns       238 144  0
-          capture ip-routes    238 399  0
-          capture ip-services  238 492  0
-          capture fw-new       238 168  1
+          # Winbox перезапускаем каждые несколько окон: так на снимке видно только
+          # нужное окно, а не десяток наложенных друг на друга.
+          restart_winbox() {
+            pkill -f '/WinBox' 2>/dev/null || true
+            sleep 3
+            ( cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software \
+                QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 \
+                nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 & )
+            sleep 11
+          }
+
+          group() {
+            restart_winbox
+            if ! connect_chr; then
+              echo "  подключение не удалось, окна этой группы пропущены" >> docs/shots/report.txt
+              return 1
+            fi
+            return 0
+          }
+
+          if group; then
+            capture quickset      50  -   0
+            capture interfaces    95  -   0
+            capture wireguard    122  -   0
+            capture ip-address   238 53   0
+          fi
+          if group; then
+            capture bridge       146  -   0
+            capture firewall     238 168  0
+            capture ip-firewall  238 168  0
+            capture fw-new       238 168  1
+          fi
+          if group; then
+            capture ip-dns       238 144  0
+            capture ip-routes    238 399  0
+            capture ip-services  238 492  0
+            capture queues       353  -   0
+          fi
+          if group; then
+            capture files        398  -   0
+            capture log          421  -   0
+            capture ppp          170  -   0
+            capture system       530  -   0
+          fi
+
           xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
+          ps aux | grep -i winbox | grep -v grep > docs/shots/ps.txt || true
 
       - name: Отчёт и скриншоты в ветку
         if: always()
@@ -220,5 +265,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A docs/shots
-          git commit -m "CI: настоящие скриншоты Winbox 4 [skip ci]" || echo "нечего коммитить"
+          git commit --allow-empty -m "CI: настоящие скриншоты Winbox 4 [skip ci]" || echo "нечего коммитить"
           git push origin "HEAD:${{ github.ref_name }}" || echo "push не удался"
