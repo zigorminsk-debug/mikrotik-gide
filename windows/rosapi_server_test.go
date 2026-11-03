@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"net"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -20,6 +21,11 @@ type fakeROS struct {
 	pass      string
 	challenge bool // старый протокол: challenge в =ret=
 	rows      map[string][]map[string]string
+
+	mu   sync.Mutex
+	got  []string          // всё, что прислало приложение
+	fail map[string]string // префикс команды → текст ошибки
+	// re отвечает на !re строки для произвольных путей (кроме rows)
 }
 
 func newFakeROS(t *testing.T, challenge bool) *fakeROS {
@@ -29,6 +35,7 @@ func newFakeROS(t *testing.T, challenge bool) *fakeROS {
 		t.Fatalf("слушатель: %v", err)
 	}
 	f := &fakeROS{ln: ln, user: "admin", pass: "secret", challenge: challenge,
+		fail: map[string]string{},
 		rows: map[string][]map[string]string{
 			"/system/resource":    {{"version": "7.24.6", "board-name": "RB951G-2HnD"}},
 			"/system/routerboard": {{"current-firmware": "6.49.13", "upgrade-firmware": "6.49.13"}},
@@ -68,6 +75,11 @@ func (f *fakeROS) handle(conn net.Conn) {
 		}
 		cmd := words[0]
 		attrs := rosAttrs(words[1:])
+		f.record(strings.Join(words, " "))
+		if msg, bad := f.shouldFail(cmd); bad {
+			_ = writeSentence(conn, "!trap", "=message="+msg)
+			continue
+		}
 		switch {
 		case cmd == "/login" && len(words) == 1:
 			if f.challenge {
@@ -114,10 +126,47 @@ func (f *fakeROS) handle(conn net.Conn) {
 				}
 			}
 			_ = writeSentence(conn, "!done")
+		case strings.HasPrefix(cmd, "/system script"):
+			if !authed {
+				_ = writeSentence(conn, "!trap", "=message=not logged in")
+				continue
+			}
+			_ = writeSentence(conn, "!done")
 		default:
-			_ = writeSentence(conn, "!trap", "=message=no such command")
+			// любую другую команду принимаем: тесты применения конфига
+			// проверяют, что именно приложение отправило
+			if !authed {
+				_ = writeSentence(conn, "!trap", "=message=not logged in")
+				continue
+			}
+			_ = writeSentence(conn, "!done")
 		}
 	}
+}
+
+func (f *fakeROS) record(line string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.got = append(f.got, line)
+}
+
+func (f *fakeROS) shouldFail(cmd string) (string, bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for prefix, msg := range f.fail {
+		if strings.HasPrefix(cmd, prefix) {
+			return msg, true
+		}
+	}
+	return "", false
+}
+
+func (f *fakeROS) commands() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]string, len(f.got))
+	copy(out, f.got)
+	return out
 }
 
 func challengeResponse(pass, challenge string) string {

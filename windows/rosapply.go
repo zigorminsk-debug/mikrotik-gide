@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -78,36 +79,61 @@ func tokenizeLine(line string) []string {
 	return out
 }
 
+// matchBrace возвращает содержимое между { и парной } и позицию закрывающей.
+func matchBrace(s string, open int) (string, int, bool) {
+	if open < 0 || open >= len(s) || s[open] != '{' {
+		return "", 0, false
+	}
+	depth := 0
+	for i := open; i < len(s); i++ {
+		switch s[i] {
+		case '{':
+			depth++
+		case '}':
+			depth--
+			if depth == 0 {
+				return strings.TrimSpace(s[open+1 : i]), i, true
+			}
+		}
+	}
+	return "", 0, false
+}
+
 // unwrapGuard снимает обёртки мастера и говорит, можно ли игнорировать ошибку.
+//
+//	:do {команда} on-error={}            — ошибку глушим
+//	:if ([:len [...]] = 0) do={команда}  — команда уже есть, это норма
 func unwrapGuard(line string) (string, bool) {
 	s := strings.TrimSpace(line)
-	changed := false
+	guarded := false
 	for i := 0; i < 4; i++ {
-		low := s
-		if strings.HasPrefix(low, ":do") {
-			open := strings.Index(low, "{")
-			closeIdx := strings.LastIndex(low, "}")
-			if open > 0 && closeIdx > open {
-				s = strings.TrimSpace(low[open+1 : closeIdx])
-				changed = true
-				continue
+		switch {
+		case strings.HasPrefix(s, ":do"):
+			open := strings.IndexByte(s, '{')
+			inner, _, ok := matchBrace(s, open)
+			if !ok {
+				return s, guarded
 			}
-		}
-		if strings.HasPrefix(low, ":if") {
-			doIdx := strings.Index(low, "do=")
-			if doIdx > 0 {
-				open := strings.Index(low[doIdx:], "{")
-				closeIdx := strings.LastIndex(low, "}")
-				if open >= 0 && closeIdx > doIdx+open {
-					s = strings.TrimSpace(low[doIdx+open+1 : closeIdx])
-					changed = true
-					continue
-				}
+			s, guarded = inner, true
+		case strings.HasPrefix(s, ":if"):
+			doIdx := strings.Index(s, "do=")
+			if doIdx < 0 {
+				return s, guarded
 			}
+			open := strings.IndexByte(s[doIdx:], '{')
+			if open < 0 {
+				return s, guarded
+			}
+			inner, _, ok := matchBrace(s, doIdx+open)
+			if !ok {
+				return s, guarded
+			}
+			s, guarded = inner, true
+		default:
+			return s, guarded
 		}
-		break
 	}
-	return s, changed
+	return s, guarded
 }
 
 // parseConfigLine разбирает строку конфига. Второй результат — удалось ли
@@ -233,7 +259,11 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 
 	for _, step := range steps {
 		cmd := step.Cmd
-		res := rosApplyResult{Line: step.Line, Command: strings.TrimSpace(cmd.Path + " " + cmd.Action + " " + strings.Join(cmd.words()[1:], " "))}
+		res := rosApplyResult{
+			Line:    step.Line,
+			Raw:     strings.TrimSpace(cmd.Raw),
+			Command: strings.TrimSpace(cmd.Path + "/" + cmd.Action + " " + strings.Join(cmd.words()[1:], " ")),
+		}
 		if cmd.Action == "print" || cmd.Action == "export" || cmd.Action == "monitor" || cmd.Action == "get" || cmd.Action == "find" {
 			res.Status = "skipped"
 			res.Message = "только чтение — не отправлялось"
@@ -381,18 +411,49 @@ func matchKey(cmd rosCommand) (string, string) {
 	return "", ""
 }
 
+// splitTarget делит «192.168.88.1:8728» на адрес и порт.
+// Порт нужен тестам (и полезен, если API вынесен на нестандартный порт).
+func splitTarget(target string) (string, int) {
+	t := strings.TrimSpace(target)
+	t = strings.TrimPrefix(t, "http://")
+	t = strings.TrimPrefix(t, "https://")
+	if i := strings.IndexByte(t, '/'); i >= 0 {
+		t = t[:i]
+	}
+	if i := strings.LastIndexByte(t, ':'); i > 0 {
+		if p, err := strconv.Atoi(t[i+1:]); err == nil && p > 0 && p < 65536 {
+			return t[:i], p
+		}
+	}
+	return t, 0
+}
+
 // dialRouterAPI подключается по API: сначала 8728, затем api-ssl 8729.
-func dialRouterAPI(address, user, pass string) (*rosConn, error) {
-	address = normalizeAddress(address)
+func dialRouterAPI(target, user, pass string) (*rosConn, error) {
+	address, fixedPort := splitTarget(target)
 	if address == "" {
 		return nil, errors.New("не указан адрес роутера")
 	}
 	var problems []string
-	for _, p := range []struct {
+	var ports []struct {
 		port int
 		tls  bool
 		name string
-	}{{8728, false, "api"}, {8729, true, "api-ssl"}} {
+	}
+	if fixedPort > 0 {
+		ports = []struct {
+			port int
+			tls  bool
+			name string
+		}{{fixedPort, fixedPort == 8729, "api:" + strconv.Itoa(fixedPort)}}
+	} else {
+		ports = []struct {
+			port int
+			tls  bool
+			name string
+		}{{8728, false, "api"}, {8729, true, "api-ssl"}}
+	}
+	for _, p := range ports {
 		c, err := rosDial(address, p.port, p.tls, 6*time.Second)
 		if err != nil {
 			problems = append(problems, fmt.Sprintf("%s (%d): нет соединения", p.name, p.port))
