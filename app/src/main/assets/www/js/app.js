@@ -2948,12 +2948,11 @@
   function dsHint(o) {
     const W = window.ConfigWizard;
     const nets = (W && W.subnets) ? W.subnets(o.lanIp, o.lanPrefix) : [];
-    if (!nets.length) return 'Нужен префикс LAN от /8 до /26 — четырём подсетям не хватит адресов.';
-    const names = ['ПК', 'ноутбуки', 'телефоны', 'принтеры'];
-    return 'LAN ' + nets[0].cidr.replace(/\/\d+$/, '') + '/' + o.lanPrefix + ' → 4 подсети по /' + nets[0].prefix + ': ' +
-      nets.map(function (n, i) {
-        return names[i] + ' ' + n.cidr + ' (шлюз ' + n.gw + ')';
-      }).join(', ');
+    if (!nets.length) return 'Нужен префикс LAN от /22 до /28 (обычно /24): четырём подсетям нужно место.';
+    const names = ['проводные ПК', 'ноутбуки', 'телефоны', 'принтеры'];
+    return 'Четыре отдельные сети: ' + nets.map(function (n, i) {
+      return names[i] + ' ' + n.gw + '/' + n.prefix;
+    }).join(' · ') + '. Все видят друг друга и общие ресурсы, гостевая сеть остаётся изолированной.';
   }
 
   function coverageView() {
@@ -4434,7 +4433,73 @@
   /* ---------------- роутер ---------------- */
   const content = $('#content');
 
+  /* ------- навигация: возврат и позиция прокрутки ------- */
+  const navTrail = [];
+  let lastHash = '', popping = false;
+
+  function scrollStoreKey() { return 'sc:' + (location.hash || '#/'); }
+
+  function saveScroll() {
+    if (!content) return;
+    const k = scrollStoreKey();
+    try {
+      sessionStorage.setItem(k, String(content.scrollTop || 0));
+    } catch (e) { }
+  }
+
+  function restoreScroll() {
+    if (!content) return;
+    let v = 0;
+    try {
+      v = parseInt(sessionStorage.getItem(scrollStoreKey()) || '0', 10) || 0;
+    } catch (e) { v = 0; }
+    content.scrollTop = v > 0 ? v : 0;
+    if (v > 0 && window.requestAnimationFrame) {
+      requestAnimationFrame(function () { content.scrollTop = v; });
+    }
+  }
+
+  function updateBackBtn() {
+    const btn = document.getElementById('backBtn');
+    if (!btn) return;
+    const home = !location.hash || location.hash === '#/' || location.hash === '#';
+    btn.hidden = home;
+  }
+
+  function goBack() {
+    if (navTrail.length) {
+      popping = true;
+      const target = navTrail.pop();
+      if (location.hash === target) {
+        popping = false;
+        return;
+      }
+      location.hash = target;
+      setTimeout(function () { popping = false; }, 120);
+      return;
+    }
+    if (location.hash && location.hash !== '#/' && window.history && history.length > 1) {
+      history.back();
+      return;
+    }
+    location.hash = '#/';
+  }
+
   function route() {
+    const from = lastHash;
+    saveScroll();
+    renderRoute();
+    const to = location.hash || '#/';
+    if (!popping && from && from !== to) {
+      navTrail.push(from);
+      if (navTrail.length > 40) navTrail.shift();
+    }
+    lastHash = to;
+    updateBackBtn();
+    restoreScroll();
+  }
+
+  function renderRoute() {
     stopTick();
     if (location.hash.indexOf('#/quiz') !== 0) stopQuizTimer();
     const hash = location.hash.replace(/^#\/?/, '');
@@ -4645,6 +4710,8 @@
   function init() {
     buildSidebar();
 
+    const backBtn = $('#backBtn');
+    if (backBtn) backBtn.addEventListener('click', goBack);
     $('#menuBtn').addEventListener('click', function () {
       if (sidebar.classList.contains('open')) closeSidebar(); else openSidebar();
     });

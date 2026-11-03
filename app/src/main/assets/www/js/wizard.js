@@ -197,17 +197,17 @@
   function dsSplit(ip, prefix) {
     const n = ipInt(ip);
     const p0 = parseInt(prefix, 10);
-    if (n === null || !(p0 >= 8 && p0 <= 26)) return [];
-    const p = p0 + 2;
-    const block = Math.pow(2, 32 - p0);
-    const size = Math.pow(2, 32 - p);
-    const base = Math.floor(n / block) * block;
+    if (n === null || !(p0 >= 22 && p0 <= 28)) return [];
+    const size = Math.pow(2, 32 - p0);
+    const base = Math.floor(n / size) * size;
     const out = [];
     for (let i = 0; i < 4; i++) {
       const net = base + i * size;
+      const from = net + (size > 64 ? 10 : 2);
+      const to = Math.min(net + size - 2, net + 200);
       out.push({
-        net: intIp(net), prefix: p, cidr: intIp(net) + '/' + p,
-        gw: intIp(net + 1), from: intIp(net + 2), to: intIp(net + size - 2),
+        net: intIp(net), prefix: p0, cidr: intIp(net) + '/' + p0,
+        gw: intIp(net + 1), from: intIp(from), to: intIp(to),
         hosts: size - 2
       });
     }
@@ -260,8 +260,8 @@
 
     if (opt(o, 'devSeg')) {
       const pfx = +opt(o, 'lanPrefix');
-      if (!(pfx >= 8 && pfx <= 26)) {
-        err('lanPrefix', 'Для четырёх подсетей нужен префикс LAN от /8 до /26 — иначе не хватит адресов');
+      if (!(pfx >= 22 && pfx <= 28)) {
+        err('lanPrefix', 'Для четырёх подсетей нужен префикс LAN от /22 до /28 (обычно /24)');
       }
       const dsFields = [
         ['dsVlanPc', 'Проводные компьютеры'],
@@ -404,7 +404,12 @@
       }
       if (!ipOk(l.ip)) err('lease' + i, 'Резервирование ' + (i + 1) + ': некорректный IP');
       if (lanNet && ipOk(l.ip) && !ipInNetwork(l.ip, lanNet)) {
-        warn('lease' + i, 'Резервирование ' + (i + 1) + ': адрес вне сети LAN');
+        const dsAll = opt(o, 'devSeg') ? dsSplit(opt(o, 'lanIp'), opt(o, 'lanPrefix')) : [];
+        const inDs = dsAll.some(function (n) {
+          const nn = networkOf(n.gw, n.prefix);
+          return nn && ipInNetwork(l.ip, nn);
+        });
+        if (!inDs) warn('lease' + i, 'Резервирование ' + (i + 1) + ': адрес вне сети LAN');
       }
     });
 
@@ -657,11 +662,11 @@
           '/ip dhcp-server add name=dhcp-' + g.vlan + ' interface=' + iface + ' address-pool=pool-' + g.vlan + ' lease-time=' + leaseTime,
           '/ip dhcp-server network add address=' + n.cidr + ' gateway=' + n.gw + ' dns-server=' + n.gw);
       });
-      const lanNetCidr = (C && C.info ? C.info(C.ipToInt(lanIp), lanPrefix).cidr : networkOf(lanIp, lanPrefix).cidr);
-      push('', '# Общие ресурсы: всем подсетям разрешено ходить друг к другу (файлы, принтеры, NAS)',
-        '/ip firewall filter add chain=forward src-address=' + lanNetCidr + ' dst-address=' + lanNetCidr +
-        ' action=accept comment="общие ресурсы: подсети видят друг друга"',
-        '# Доступ в интернет для этих подсетей разрешает правило «lan to wan» в разделе Firewall.');
+      push('', '# Общие ресурсы: все четыре подсети видят друг друга полностью —',
+        '# файловые шары, сетевые принтеры, сервер RDS, NAS и любые внутренние сервисы.',
+        '/ip firewall filter add chain=forward in-interface-list=LAN out-interface-list=LAN action=accept comment="общие ресурсы: подсети видят друг друга"',
+        '/ip firewall filter add chain=forward in-interface-list=LAN out-interface-list=WAN action=accept comment="LAN в интернет"',
+        '# Серверу RDS и принтерам закрепите адреса в разделе «DHCP leases» — тогда доступ по IP всегда один и тот же.');
       const dsIfaces = ['vlan-' + dsVl.pc, 'vlan-' + dsVl.wifi, 'vlan-' + dsVl.phone, 'vlan-' + dsVl.iot].join(',');
       push('', '# Имена и обнаружение: mDNS-повторитель (RouterOS 7.16+) сохраняет видимость принтеров,',
         '# NAS и Chromecast из любой подсети. На старых версиях обновите RouterOS.',

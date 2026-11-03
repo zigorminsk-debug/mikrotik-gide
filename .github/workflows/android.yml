@@ -204,6 +204,18 @@ jobs:
           go vet ./...
           go test ./...
 
+      - name: Иконка приложения (rsrc → .syso)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # rsrc собирает ресурсы RT_GROUP_ICON/RT_ICON для exe;
+          # если модуль недоступен, сборка продолжится без значка
+          if go run github.com/akavel/rsrc@latest -arch amd64 -ico windows/icon.ico -o windows/rsrc_windows_amd64.syso; then
+            ls -l windows/rsrc_windows_amd64.syso
+          else
+            echo "::warning::не удалось собрать ресурс иконки, exe будет без значка"
+          fi
+
       - name: Сборка EXE
         id: build
         shell: bash

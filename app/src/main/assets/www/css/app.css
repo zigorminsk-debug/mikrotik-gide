@@ -1185,3 +1185,8 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 .mtg-banner b{color:var(--accent,#2f81f7)}
 .mtg-banner span{color:var(--txt-mute);font-size:calc(11.5px * var(--fsm, 1))}
 .mtg-banner:hover{border-color:var(--accent,#2f81f7)}
+
+/* скрытые элементы и кнопка «Назад» в шапке */
+[hidden]{display:none !important}
+#backBtn{margin-left:-2px}
+@media (max-width:520px){#backBtn{margin-left:-6px}}
