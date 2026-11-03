@@ -96,28 +96,50 @@ jobs:
       - name: Подключиться к CHR (127.0.0.1)
         run: |
           set -x
+          mkdir -p docs/shots
           WID=$(xdotool search --name 'WinBox' | head -1)
           echo "WID=$WID" >> docs/shots/report.txt
           xdotool windowactivate --sync "$WID" || true
           sleep 1
-          # обычно фокус уже в поле "Connect To"
           xdotool type --delay 60 '127.0.0.1'
           sleep 1
           xdotool key Return
-          sleep 25
           import -window root docs/shots/02-after-connect.png || true
 
-      - name: Открыть окна и снять (черновой проход)
+      - name: Дождаться рабочего стола и снять его
+        run: |
+          set -x
+          for i in 10 20 30 45 60 80 100 120; do
+            sleep_step=$(( i - ${prev:-0} )); prev=$i
+            sleep "$sleep_step"
+            WID=$(xdotool search --name 'WinBox' | head -1)
+            NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+            echo "t=${i}s window=\"$NAME\"" >> docs/shots/report.txt
+            import -window root "docs/shots/10-wait-$i.png" || true
+            if [ "$NAME" != "WinBox 4.4" ] && [ -n "$NAME" ]; then
+              echo "подключились на ${i}c: $NAME" >> docs/shots/report.txt
+              break
+            fi
+          done
+          WID=$(xdotool search --name 'WinBox' | head -1)
+          xdotool getwindowgeometry --shell "$WID" > docs/shots/geometry.txt 2>&1 || true
+          xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
+
+      - name: Проба клика по дереву разделов
         run: |
           set -x
           WID=$(xdotool search --name 'WinBox' | head -1)
           xdotool windowactivate --sync "$WID" || true
-          # слева дерево разделов; координаты подбираются по снимку 02
-          for name in ip ip-firewall interfaces; do
-            import -window root "docs/shots/03-$name.png" || true
-            sleep 1
-          done
-          xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
+          eval "$(xdotool getwindowgeometry --shell "$WID")"
+          echo "окно X=$X Y=$Y W=$WIDTH H=$HEIGHT" >> docs/shots/report.txt
+          # дерево слева: пробуем попасть по первому пункту и по «IP»
+          xdotool mousemove $((X + 60)) $((Y + 40)) click 1
+          sleep 3
+          import -window root docs/shots/20-click-top.png || true
+          xdotool mousemove $((X + 60)) $((Y + 300)) click 1
+          sleep 3
+          import -window root docs/shots/21-click-mid.png || true
+          xwininfo -root -tree > docs/shots/xwininfo-3.txt || true
 
       - name: Отчёт и скриншоты в ветку
         if: always()
