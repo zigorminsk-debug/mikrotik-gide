@@ -240,6 +240,13 @@
       if ([20, 40, 80].indexOf(width) < 0) err('wifiWidth', 'Ширина канала: 20, 40 или 80 МГц');
       if (!clean(opt(o, 'wifiCountry'))) err('wifiCountry', 'Укажите страну — от неё зависят разрешённые каналы и мощность');
       if (width === 40 && ch24 >= 1 && ch24 <= 13) warn('wifiCh24', 'Ширина 40 МГц в 2.4 ГГц перекрывает почти весь диапазон — оставьте 20');
+      const txp = clean(opt(o, 'wifiTxPower'));
+      if (txp) {
+        const tp = parseFloat(txp.replace(',', '.'));
+        if (!isFinite(tp) || tp < 0 || tp > 30) err('wifiTxPower', 'Мощность передатчика: число от 0 до 30 dBm');
+        else if (tp > 20) warn('wifiTxPower', 'Мощность выше 20 dBm — проверьте лимит EIRP для своей страны и усиление антенны');
+        else if (tp > 17) warn('wifiTxPower', 'Для нескольких точек 14–17 dBm лучше: клиенты будут переходить между ними');
+      }
     }
 
     (o.routes || []).forEach(function (r, i) {

@@ -1526,6 +1526,7 @@
       toolCard('#/starred', 'Избранное и заметки', 'Всё отмеченное, записанное и прочитанное', 'svc') +
       toolCard('#/cheats', 'Шпаргалки', '7 наборов команд: база, firewall, NAT, VLAN, WireGuard', 'book') +
       toolCard('#/wifi', 'Каналы Wi-Fi', 'Ширина канала, пересечения, команда для RouterOS', 'iface') +
+      toolCard('#/coverage', 'Мощность и покрытие', 'EIRP, радиус сигнала, сколько точек на площадь', 'iface') +
       toolCard('#/keys', 'Пароли и ключи', 'Wi-Fi и admin пароли, ключи WireGuard', 'svc') +
       toolCard('#/glossary', 'Глоссарий и порты', 'Термины RouterOS и таблица портов с поиском', 'bridge') +
       toolCard('#/backup', 'Данные и резервная копия', 'Заметки, прогресс, чек-листы — экспорт и импорт', 'down') +
@@ -1736,7 +1737,8 @@
         { v: '40', t: '40 МГц' },
         { v: '80', t: '80 МГц — только 5 ГГц' }
       ]) +
-      wizField('w-wifiTxPower', 'Мощность передатчика', o.wifiTxPower, 'пусто — авто; иначе dbm') +
+      wizField('w-wifiTxPower', 'Мощность передатчика, dBm', o.wifiTxPower, 'пусто — авто; 17–20 dBm обычно достаточно') +
+      '<div class="wz-row"><span class="wz-l"></span><a class="btn" href="#/coverage">Рассчитать зону покрытия</a></div>' +
       '</div></section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('ip', 15) + 'IPv6</h3>' +
@@ -2825,6 +2827,220 @@
     else shareText(html, 'Библиотека MikroTik');
   }
 
+  /* ================= мощность и покрытие Wi-Fi ================= */
+  const CV_MAT = {
+    dry: { t: 'гипсокартон / перегородка', db: 3 },
+    glass: { t: 'стекло, окно', db: 2 },
+    wood: { t: 'дерево, фанера', db: 4 },
+    brick: { t: 'кирпичная стена', db: 10 },
+    concrete: { t: 'бетонная стена', db: 15 },
+    metal: { t: 'металл, зеркало, шкаф', db: 25 }
+  };
+  const CV_LIMIT = { '2.4': 20, '5': 23 };
+  const CV_ENV = {
+    open: { t: 'открытое пространство / улица', n: 2.0 },
+    home: { t: 'квартира, гипсокартон', n: 2.8 },
+    office: { t: 'офис, кабинеты', n: 3.0 },
+    warehouse: { t: 'склад, стеллажи, металл', n: 3.5 }
+  };
+  const CV_MARGIN = 10; // запас: мебель, тело человека, антенна клиента хуже точки
+  const CV_DBM = [[0, '1 мВт'], [10, '10 мВт'], [17, '50 мВт'], [20, '100 мВт'], [23, '200 мВт'], [26, '400 мВт'], [30, '1000 мВт']];
+
+  function cvNum(v, def, min, max) {
+    const n = parseFloat(String(v == null ? '' : v).replace(',', '.'));
+    if (!isFinite(n)) return def;
+    return Math.max(min, Math.min(max, n));
+  }
+
+  function cvState() {
+    const band = store.get('cvBand') === '5' ? '5' : '2.4';
+    return {
+      band: band,
+      power: cvNum(store.get('cvPower'), 20, 0, 30),
+      gain: cvNum(store.get('cvGain'), 3, 0, 24),
+      loss: cvNum(store.get('cvLoss'), 0, 0, 10),
+      walls: Math.round(cvNum(store.get('cvWalls'), 1, 0, 6)),
+      mat: CV_MAT[store.get('cvMat')] ? store.get('cvMat') : 'brick',
+      env: CV_ENV[store.get('cvEnv')] ? store.get('cvEnv') : 'office',
+      target: Math.round(cvNum(store.get('cvTarget'), -67, -90, -40)),
+      area: cvNum(store.get('cvArea'), 80, 5, 5000)
+    };
+  }
+
+  function cvCalc(st) {
+    const f = st.band === '5' ? 5200 : 2437;
+    const n = CV_ENV[st.env].n;
+    const wallLoss = st.walls * CV_MAT[st.mat].db;
+    const eirp = st.power + st.gain - st.loss;
+    // потери на 1 м: 20·log10(f МГц) − 27,55; дальше 10·n·log10(d)
+    const pl1 = 20 * Math.log10(f) - 27.55;
+    const dist = function (rssi) {
+      const e = (eirp - wallLoss - CV_MARGIN - rssi - pl1) / (10 * n);
+      return Math.pow(10, e);
+    };
+    const targetDist = dist(st.target);
+    const cell = Math.PI * targetDist * targetDist;
+    const aps = Math.max(1, Math.ceil(st.area / Math.max(1, cell * 0.75)));
+    return {
+      f: f, n: n, pl1: pl1, wallLoss: wallLoss, eirp: eirp, env: CV_ENV[st.env].t,
+      over: eirp > CV_LIMIT[st.band],
+      limit: CV_LIMIT[st.band],
+      dist: dist, targetDist: targetDist, cell: cell, aps: aps,
+      enough: cell * 0.75 * aps >= st.area
+    };
+  }
+
+  function cvFmt(m) {
+    if (!isFinite(m)) return '—';
+    if (m >= 1000) return (m / 1000).toFixed(1).replace('.', ',') + ' км';
+    if (m >= 10) return Math.round(m) + ' м';
+    return m.toFixed(1).replace('.', ',') + ' м';
+  }
+
+  function cvSvg(res) {
+    const levels = [[-50, '#2fe08a'], [-60, '#2f81f7'], [-67, '#f0a13a'], [-80, '#f85149']];
+    const dmax = Math.max(1, res.dist(-80));
+    const R = 88, cx = 104, cy = 100;
+    const rings = levels.map(function (lv) {
+      const d = res.dist(lv[0]);
+      const r = Math.max(3, Math.min(R, R * d / dmax));
+      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r.toFixed(1) +
+        '" fill="none" stroke="' + lv[1] + '" stroke-width="2" opacity="0.85"/>';
+    }).join('');
+    const ticks = levels.map(function (lv, i) {
+      const y = 22 + i * 18;
+      return '<rect x="224" y="' + (y - 7) + '" width="10" height="10" rx="2" fill="' + lv[1] + '"/>' +
+        '<text x="240" y="' + (y + 2) + '" fill="#9aa8b8" font-size="11">' + lv[0] + ' dBm · ' + cvFmt(res.dist(lv[0])) + '</text>';
+    }).join('');
+    return '<svg viewBox="0 0 340 200" width="100%" height="auto" role="img" aria-label="Зона покрытия по уровням сигнала">' +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="rgba(47,129,247,.05)"/>' +
+      rings +
+      '<circle cx="' + cx + '" cy="' + cy + '" r="4" fill="#2fe08a"/>' +
+      '<text x="' + (cx - 10) + '" y="' + (cy + 22) + '" fill="#6e7d8f" font-size="10">точка</text>' +
+      ticks + '</svg>';
+  }
+
+  function coverageView() {
+    const st = cvState();
+    const res = cvCalc(st);
+
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>Мощность и покрытие</span></div>';
+    html += '<h1 class="art-title">Мощность и покрытие Wi-Fi</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Сколько энергии реально уходит в эфир (EIRP), какой радиус получается на разных уровнях сигнала и сколько точек нужно на площадь. ' +
+      'Расчёт — свободное пространство минус стены; реальные цифры будут чуть хуже из-за мебели и соседей.</div>';
+
+    html += '<div class="chips">' +
+      ['2.4', '5'].map(function (b) {
+        return '<button class="chip' + (st.band === b ? ' on' : '') + '" data-cvband="' + b + '">' + (b === '5' ? '5 ГГц' : '2.4 ГГц') + '</button>';
+      }).join('') + '</div>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Параметры точки</h3>' +
+      '<div class="cv-grid">' +
+      cvField('cvPower', 'Мощность, dBm', st.power, '0–30; по умолчанию auto') +
+      cvField('cvGain', 'Усиление антенны, dBi', st.gain, 'внутренние 3–5 dBi') +
+      cvField('cvLoss', 'Потери в кабеле, dB', st.loss, 'пигтейл ≈ 0,5–1 dB') +
+      cvField('cvWalls', 'Стен до клиента', st.walls, '0–6') +
+      cvField('cvArea', 'Площадь объекта, м²', st.area, 'для расчёта числа точек') +
+      '</div>' +
+      '<label class="wz-row"><span class="wz-l">Среда</span><select class="inp" id="cvEnv">' +
+      Object.keys(CV_ENV).map(function (k) {
+        return '<option value="' + k + '"' + (st.env === k ? ' selected' : '') + '>' + esc(CV_ENV[k].t) + ' · n=' + CV_ENV[k].n + '</option>';
+      }).join('') + '</select></label>' +
+      '<label class="wz-row"><span class="wz-l">Материал стен</span><select class="inp" id="cvMat">' +
+      Object.keys(CV_MAT).map(function (k) {
+        return '<option value="' + k + '"' + (st.mat === k ? ' selected' : '') + '>' + esc(CV_MAT[k].t) + ' · −' + CV_MAT[k].db + ' dB</option>';
+      }).join('') + '</select></label>' +
+      '<div class="cv-target"><span class="wz-l">Целевой уровень</span><div class="chips">' +
+      [[-60, '−60: видео и VoIP'], [-67, '−67: интернет'], [-72, '−72: минимум'], [-80, '−80: граница']].map(function (t) {
+        return '<button class="chip' + (st.target === t[0] ? ' on' : '') + '" data-cvtarget="' + t[0] + '">' + t[1] + '</button>';
+      }).join('') + '</div></div></section>';
+
+    html += '<section class="card cv-result"><h3 class="card-h">' + svg('iface', 15) + 'Результат</h3>' +
+      '<div class="cv-nums">' +
+      '<div class="cv-num"><b>' + res.eirp + '</b><span>dBm EIRP</span></div>' +
+      '<div class="cv-num"><b>' + cvFmt(res.targetDist) + '</b><span>радиус до ' + st.target + ' dBm</span></div>' +
+      '<div class="cv-num"><b>' + Math.round(res.cell) + ' м²</b><span>площадь одной точки</span></div>' +
+      '<div class="cv-num"><b>' + res.aps + '</b><span>точек на ' + Math.round(st.area) + ' м²</span></div>' +
+      '</div>' +
+      '<div class="cv-badge ' + (res.over ? 'bad' : 'ok') + '">' +
+      (res.over
+        ? 'EIRP ' + res.eirp + ' dBm выше лимита ' + res.limit + ' dBm для ' + st.band + ' ГГц — уменьшите мощность или усиление'
+        : 'EIRP ' + res.eirp + ' dBm — в пределах лимита ' + res.limit + ' dBm для ' + st.band + ' ГГц') + '</div>' +
+      '<div class="hint" style="margin-top:10px">Среда: ' + esc(res.env) + ' (n=' + res.n + '), стены: −' + res.wallLoss + ' dB (' +
+      st.walls + ' × ' + CV_MAT[st.mat].db + ' dB), запас на мебель и антенну клиента: −' + CV_MARGIN + ' dB. ' +
+      'Частота ' + res.f + ' МГц, потери на 1 м: ' + res.pl1.toFixed(1) + ' dB.</div>' +
+      cvSvg(res) +
+      '</section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('book', 15) + 'Расстояние по уровням сигнала</h3>' +
+      '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>RSSI</th><th>Расстояние</th><th>Что это даёт</th></tr></thead><tbody>' +
+      [[-50, 'максимальная скорость, 80 МГц'], [-60, 'видео и VoIP без запинок'], [-67, 'стабильный интернет'],
+        [-72, 'работает с просадками'], [-80, 'клиент почти отваливается']].map(function (l) {
+        return '<tr' + (l[0] === st.target ? ' class="wf-on"' : '') + '><td class="mono"><b>' + l[0] + ' dBm</b></td>' +
+          '<td class="mono">' + cvFmt(res.dist(l[0])) + '</td><td>' + esc(l[1]) + '</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      '<div class="hint" style="margin-top:10px">Каждые +6 dBm — вдвое больше расстояние и вчетверо больше площадь. Каждая кирпичная стена срезает примерно треть дальности.</div>' +
+      '</section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Что вписать в RouterOS</h3>' +
+      '<div class="cfg"><div class="cfg-h"><span>новое Wi-Fi (hAP ax2 / ax3)</span><span class="cfg-btns"><button class="copy">копировать</button></span></div>' +
+      '<pre>' + hlCfg('/interface wifi set wifi1 tx-power=' + st.power + ' antenna-gain=' + st.gain +
+        '\n/interface wifi set wifi1 channel.frequency=' + (st.band === '5' ? 5180 : 2437) + ' channel.width=' + (st.band === '5' ? 80 : 20) + 'mhz') + '</pre></div>' +
+      '<div class="cfg" style="margin-top:10px"><div class="cfg-h"><span>старое wireless</span><span class="cfg-btns"><button class="copy">копировать</button></span></div>' +
+      '<pre>' + hlCfg('/interface wireless set wlan1 tx-power-mode=all-rates-fixed tx-power=' + st.power +
+        '\n/interface wireless set wlan1 antenna-gain=' + st.gain) + '</pre></div>' +
+      '<div class="wz-actions"><a class="btn" href="#/wifi-power">Статья: мощность и покрытие</a>' +
+      '<a class="btn" href="#/wifi">Каналы Wi-Fi</a>' +
+      '<a class="btn" href="#/models">Порты и антенны моделей</a></div></section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('info', 15) + 'Справочник</h3>' +
+      '<div class="cv-refs">' +
+      '<div><b>dBm → мощность</b><ul class="clean">' + CV_DBM.map(function (r) {
+        return '<li><span class="mono">' + r[0] + ' dBm</span> — ' + r[1] + '</li>';
+      }).join('') + '</ul></div>' +
+      '<div><b>Потери материалов</b><ul class="clean">' + Object.keys(CV_MAT).map(function (k) {
+        return '<li>' + esc(CV_MAT[k].t) + ' — <span class="mono">−' + CV_MAT[k].db + ' dB</span></li>';
+      }).join('') + '</ul></div>' +
+      '</div>' +
+      '<div class="hint" style="margin-top:8px">Ориентиры: офис — одна точка на 60–80 м², квартира — 80–100 м² при одной-двух стенах, склад — считайте по площади из результата. ' +
+      'Для нескольких точек держите 14–17 dBm, чтобы клиенты переходили между ними, а не «прилипали» к дальней.</div></section></div>';
+    return html;
+  }
+
+  function cvField(id, label, value, hint) {
+    return '<label class="wz-row"><span class="wz-l">' + esc(label) + '</span>' +
+      '<input class="inp mono" id="' + id + '" value="' + esc(value) + '" inputmode="decimal">' +
+      (hint ? '<span class="wz-h">' + esc(hint) + '</span>' : '') + '</label>';
+  }
+
+  function bindCoverage() {
+    document.querySelectorAll('[data-cvband]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        store.set('cvBand', b.getAttribute('data-cvband'));
+        route();
+      });
+    });
+    document.querySelectorAll('[data-cvtarget]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        store.set('cvTarget', b.getAttribute('data-cvtarget'));
+        route();
+      });
+    });
+    const env = document.getElementById('cvEnv');
+    if (env) env.addEventListener('change', function () { store.set('cvEnv', env.value); route(); });
+    const mat = document.getElementById('cvMat');
+    if (mat) mat.addEventListener('change', function () { store.set('cvMat', mat.value); route(); });
+    [['cvPower', 'cvPower'], ['cvGain', 'cvGain'], ['cvLoss', 'cvLoss'], ['cvWalls', 'cvWalls'], ['cvArea', 'cvArea']].forEach(function (pair) {
+      const el = document.getElementById(pair[0]);
+      if (!el) return;
+      el.addEventListener('change', function () {
+        store.set(pair[1], el.value);
+        route();
+      });
+    });
+  }
+
   /* ================= шпаргалки ================= */
   function cheatsView() {
     const list = window.CHEATS || [];
@@ -2940,6 +3156,8 @@
           '<td class="mono">' + (x.f - st.width / 2) + '–' + (x.f + st.width / 2) + '</td>' +
           '<td>' + (o.length ? o.join(', ') : '<span class="wf-free">свободен</span>') + '</td></tr>';
       }).join('') + '</tbody></table></div>' +
+      '<div class="wz-actions"><a class="btn" href="#/coverage">Мощность и зона покрытия</a>' +
+      '<a class="btn" href="#/wifi-power">Статья про мощность</a></div>' +
       '<div class="hint" style="margin-top:10px">★ — каналы, которые не пересекаются при ширине 20 МГц: ' +
       WF_REC[st.band].join(', ') + '. В 2.4 ГГц ширина 40 МГц «съедает» почти весь диапазон — включайте её только если рядом нет соседей.</div>' +
       '</section></div>';
@@ -4116,7 +4334,8 @@
       vlsm: 'VLSM-планировщик', diff: 'Сравнить конфиги', quiz: 'Самопроверка',
       audit: 'Аудит конфига', diag: 'Диагностика по симптому', glossary: 'Глоссарий и порты',
       harden: 'Защита от взлома', course: 'Курс за 7 дней', models: 'Порты моделей',
-      starred: 'Избранное и заметки', wifi: 'Каналы Wi-Fi', keys: 'Пароли и ключи', cheats: 'Шпаргалки',
+      starred: 'Избранное и заметки', wifi: 'Каналы Wi-Fi', coverage: 'Мощность и покрытие',
+      keys: 'Пароли и ключи', cheats: 'Шпаргалки',
       backup: 'Данные и резервная копия'
     };
     if (TOOL_TITLES[id]) {
@@ -4124,7 +4343,7 @@
         tools: toolsView, wizard: wizardView, subnet: subnetView, vlsm: vlsmView, diff: diffView,
         quiz: quizView, audit: auditView, diag: diagView, glossary: glossaryView, harden: hardenView,
         course: courseView, models: modelsView, starred: starredView, wifi: wifiView,
-        keys: keysView, cheats: cheatsView, backup: backupView
+        keys: keysView, coverage: coverageView, cheats: cheatsView, backup: backupView
       };
       content.innerHTML = VIEWS[id]();
       content.scrollTop = 0;
@@ -4132,7 +4351,8 @@
       const BINDS = {
         wizard: bindWizard, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
         audit: bindAudit, glossary: bindGlossary, harden: bindHarden, course: bindCourse,
-        models: bindModels, starred: bindStarred, wifi: bindWifi, keys: bindKeys, backup: bindBackup
+        models: bindModels, starred: bindStarred, wifi: bindWifi, keys: bindKeys,
+        coverage: bindCoverage, backup: bindBackup
       };
       if (BINDS[id]) BINDS[id]();
       document.title = TOOL_TITLES[id] + ' · MikroTik';

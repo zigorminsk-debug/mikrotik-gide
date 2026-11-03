@@ -1148,3 +1148,23 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 .route-row{display:flex;gap:6px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
 .route-row .inp{flex:1 1 100px;min-width:0}
 .route-row .r-dist{flex:0 0 74px}
+
+/* =============== мощность и покрытие Wi-Fi =============== */
+.cv-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:4px 14px}
+.cv-grid .wz-row{margin-bottom:6px}
+.cv-target{margin-top:6px}
+.cv-target .wz-l{display:block;margin:8px 0 6px}
+.cv-nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px;margin:6px 0 12px}
+.cv-num{border:1px solid var(--line);border-radius:12px;background:var(--panel-2);padding:10px 12px}
+.cv-num b{display:block;font-size:calc(19px * var(--fsm, 1));line-height:1.2;color:var(--txt)}
+.cv-num span{font-size:calc(11px * var(--fsm, 1));color:var(--txt-mute)}
+.cv-badge{
+  font-size:calc(12.5px * var(--fsm, 1));padding:8px 11px;border-radius:9px;line-height:1.45;
+  border:1px solid var(--line);background:var(--panel-2);color:var(--txt-dim);
+}
+.cv-badge.ok{border-color:rgba(46,224,138,.4);color:var(--green);background:rgba(46,224,138,.08)}
+.cv-badge.bad{border-color:rgba(248,81,73,.45);color:var(--red);background:rgba(248,81,73,.08)}
+.cv-refs{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:6px 18px}
+.cv-refs b{display:block;margin:6px 0 4px;font-size:calc(13px * var(--fsm, 1))}
+.cv-refs ul{margin:0;padding-left:18px;font-size:calc(12.5px * var(--fsm, 1));color:var(--txt-dim)}
+#content svg[role="img"]{margin-top:10px}
