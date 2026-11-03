@@ -249,6 +249,17 @@ jobs:
           xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
           ps aux | grep -i winbox | grep -v grep > docs/shots/ps.txt || true
 
+      - name: Снимки в артефакт
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: winbox-shots
+          path: |
+            docs/shots/*.png
+            docs/shots/*.txt
+          if-no-files-found: warn
+          retention-days: 14
+
       - name: Отчёт и скриншоты в ветку
         if: always()
         run: |
@@ -266,4 +277,13 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A docs/shots
           git commit --allow-empty -m "CI: настоящие скриншоты Winbox 4 [skip ci]" || echo "нечего коммитить"
-          git push origin "HEAD:${{ github.ref_name }}" || echo "push не удался"
+          # пока идёт прогон (20 минут), в ветку успевают попасть чужие коммиты:
+          # поэтому подтягиваем их через rebase и пробуем отправить несколько раз.
+          ok=0
+          for i in 1 2 3 4; do
+            if git pull --rebase --autostash origin "${{ github.ref_name }}" && \
+               git push origin "HEAD:${{ github.ref_name }}"; then ok=1; break; fi
+            echo "попытка $i не удалась, ждём"
+            sleep 10
+          done
+          [ "$ok" = 1 ] && echo "снимки в ветке" || echo "push не удался после 4 попыток"
