@@ -1,18 +1,16 @@
 name: Winbox 4 — настоящие скриншоты окон
 
-# Запускается вручную: поднимает RouterOS CHR в QEMU, ставит настоящий
-# Winbox 4 (Linux) под Xvfb, подключается к CHR и снимает окна.
-# Всё, что получилось (скриншоты + отчёт), коммитится в ветку в docs/shots/,
-# поэтому результат виден даже без доступа к логам Actions.
+# Поднимает настоящий RouterOS CHR в QEMU, запускает настоящий Winbox 4 (Linux)
+# под Xvfb, подключается к роутеру и снимает окна.
+# Результат (PNG + отчёт) коммитится в ветку в docs/shots/ — видно без логов Actions.
 
 on:
   workflow_dispatch:
-  # workflow_dispatch по имени доступен только для файлов из main,
-  # поэтому запускаем и по пушу в файл-триггер
   push:
     paths:
       - 'ci/winbox-shots.trigger'
       - '.github/workflows/winbox-shots.yml'
+      - '.github/scripts/guest-shot.py'
 
 permissions:
   contents: write
@@ -21,9 +19,12 @@ jobs:
   shots:
     name: CHR + Winbox 4 + снимки
     runs-on: ubuntu-22.04
-    timeout-minutes: 40
+    timeout-minutes: 60
     env:
       DISPLAY: ':99'
+      CHR_VER: '7.24.6'
+      WINBOX_URL: 'https://download.mikrotik.com/routeros/winbox/4.4/WinBox_Linux.zip'
+
     steps:
       - uses: actions/checkout@v4
         with:
@@ -42,165 +43,120 @@ jobs:
       - name: Скачать CHR и Winbox 4
         run: |
           set -euxo pipefail
-          mkdir -p /tmp/wb
-          curl -fL --retry 3 -o /tmp/wb/chr.zip https://download.mikrotik.com/routeros/7.24.6/chr-7.24.6.img.zip
-          curl -fL --retry 3 -o /tmp/wb/winbox.zip https://download.mikrotik.com/routeros/winbox/4.4/WinBox_Linux.zip
+          mkdir -p /tmp/wb docs/shots
+          rm -f docs/shots/*.png docs/shots/report.txt docs/shots/*.txt || true
+          curl -fL --retry 3 -o /tmp/wb/chr.zip "https://download.mikrotik.com/routeros/${CHR_VER}/chr-${CHR_VER}.img.zip"
+          curl -fL --retry 3 -o /tmp/wb/winbox.zip "$WINBOX_URL"
           cd /tmp/wb
           unzip -o chr.zip
           unzip -o winbox.zip -d winbox
-          ls -lR /tmp/wb | head -60
-          qemu-img convert -f raw -O qcow2 chr-7.24.6.img chr.qcow2
-          qemu-img info chr.qcow2 | head -10
-
-      - name: Проба CPU — какой моделью CHR вообще загружается
-        run: |
-          set -x
-          mkdir -p docs/shots
-          cd /tmp/wb
-          for CPU in qemu64 max Haswell; do
-            qemu-img create -f qcow2 -b chr.qcow2 -F qcow2 probe.qcow2 >/dev/null
-            rm -f guest.ppm mon-probe.sock
-            qemu-system-x86_64 -m 1024 -smp 2 -machine pc -cpu "$CPU" \
-              -accel tcg,thread=multi \
-              -drive file=probe.qcow2,format=qcow2,if=ide,index=0 \
-              -display none -monitor unix:/tmp/wb/mon-probe.sock,server,nowait \
-              -daemonize -pidfile probe.pid || { echo "не запустился $CPU" >> docs/shots/report.txt; continue; }
-            for t in 60 120 180; do
-              sleep 60
-              python3 .github/scripts/guest-shot.py /tmp/wb/mon-probe.sock /tmp/wb/guest.ppm >/dev/null 2>&1 || true
-              [ -f /tmp/wb/guest.ppm ] && convert /tmp/wb/guest.ppm "docs/shots/07-cpu-$CPU-$t.png" 2>/dev/null || true
-            done
-            kill "$(cat probe.pid)" 2>/dev/null || true
-            sleep 3
-          done
+          ls -l
+          qemu-img convert -f raw -O qcow2 "chr-${CHR_VER}.img" chr.qcow2
+          qemu-img info chr.qcow2 | tee qemu-img-info.txt
 
       - name: Запустить CHR в QEMU
         run: |
           set -euxo pipefail
           cd /tmp/wb
-          qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi \
+          qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max \
+            -accel tcg,thread=multi \
             -drive file=chr.qcow2,format=qcow2,if=ide,index=0 \
             -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
-            -device virtio-net-pci,netdev=n0 \
+            -device e1000,netdev=n0 \
             -display none -monitor unix:/tmp/wb/mon.sock,server,nowait \
-            -serial file:/tmp/wb/chr-console.log \
             -daemonize -pidfile /tmp/wb/qemu.pid
-          ok=0
-          for i in $(seq 1 120); do
-            if nc -z 127.0.0.1 8291; then ok=1; echo "порт 8291 открыт через $((i*2)) c"; break; fi
-            sleep 2
-          done
-          test "$ok" = 1
-          python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm || true
+          sleep 5
+          ps -p "$(cat /tmp/wb/qemu.pid)" -o pid,etime,cmd || true
 
-      - name: Посмотреть, как грузится CHR
+      - name: Дождаться, когда RouterOS загрузится
         run: |
           set -x
-          mkdir -p docs/shots
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            sleep 20
-            python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm >/dev/null 2>&1 || true
-            [ -f /tmp/wb/guest.ppm ] && convert /tmp/wb/guest.ppm "docs/shots/08-chr-boot-$((i*20)).png" 2>/dev/null || true
-            echo "t=$((i*20))c: $(ls -l /tmp/wb/guest.ppm 2>/dev/null | awk '{print $5}') байт" >> docs/shots/report.txt
+          cd "$GITHUB_WORKSPACE"
+          ready=0
+          for i in $(seq 1 26); do
+            sleep 30
+            t=$((i*30))
+            # признак готовности: служба Winbox отвечает первым пакетом
+            head_bytes=$(timeout 5 bash -c 'exec 3<>/dev/tcp/127.0.0.1/8291; dd bs=1 count=4 <&3 2>/dev/null | od -An -tx1' 2>/dev/null || true)
+            echo "t=${t}c  winbox-head=[${head_bytes}]" >> docs/shots/report.txt
+            if [ -n "$head_bytes" ]; then ready=1; echo "RouterOS готов на ${t}c" >> docs/shots/report.txt; fi
+            # экран гостя — на память, каждый третий шаг
+            if [ $((i % 3)) -eq 1 ]; then
+              python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm >/dev/null 2>&1 || true
+              [ -f /tmp/wb/guest.ppm ] && convert /tmp/wb/guest.ppm "docs/shots/08-chr-$t.png" 2>/dev/null || true
+            fi
+            [ "$ready" = 1 ] && [ "$t" -ge 480 ] && break
           done
-          tail -20 /tmp/wb/chr-console.log >> docs/shots/report.txt 2>/dev/null || true
+          # если признак не сработал — ждём гарантированные 11 минут
+          if [ "$ready" != 1 ]; then echo "ждать по таймеру до 11 мин" >> docs/shots/report.txt; sleep 60; fi
 
       - name: Запустить Xvfb и Winbox 4
         run: |
           set -euxo pipefail
+          cd "$GITHUB_WORKSPACE"
           Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp > /tmp/wb/xvfb.log 2>&1 &
           sleep 2
-          xdpyinfo -display :99 | head -5
           cd /tmp/wb/winbox
-          ls -l
           BIN=$(find . -maxdepth 2 -type f -executable -exec file {} \; | grep -i ELF | head -1 | cut -d: -f1)
-          echo "BIN=$BIN" | tee /tmp/wb/bin.txt
+          echo "BIN=$BIN" >> "$GITHUB_WORKSPACE/docs/shots/report.txt"
           chmod +x "$BIN"
           export QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1
           nohup "$(pwd)/$BIN" > /tmp/wb/winbox.log 2>&1 &
           sleep 12
-          xdotool search --onlyvisible --name '.*' getwindowname %@ 2>/dev/null | head -20 || true
-          xwininfo -root -tree | head -40 || true
+          import -window root "$GITHUB_WORKSPACE/docs/shots/01-login.png" || true
 
-      - name: Снимок 1 — окно входа
+      - name: Подключиться к CHR
         run: |
           set -x
-          mkdir -p docs/shots
-          import -window root docs/shots/01-login.png || true
-          xwininfo -root -tree > docs/shots/xwininfo-1.txt || true
-
-      - name: Подключиться к CHR (127.0.0.1)
-        run: |
-          set -x
-          mkdir -p docs/shots
+          cd "$GITHUB_WORKSPACE"
           WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
-          echo "WID=$WID" >> docs/shots/report.txt
           xdotool windowactivate --sync "$WID" || true
           sleep 1
           xdotool type --delay 60 '127.0.0.1'
           sleep 1
           xdotool key Return
-          import -window root docs/shots/02-after-connect.png || true
-
-      - name: Дождаться рабочего стола и снять его
-        run: |
-          set -x
-          WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
-          for i in $(seq 1 24); do
-            sleep 20
+          sleep 3
+          for k in 1 2 3 4 5 6 7 8 9 10; do
+            sleep 6
             NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
-            echo "t=$((i*20))s window=\"$NAME\"" >> docs/shots/report.txt
-            python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm >/dev/null 2>&1 || true
-            if [ -f /tmp/wb/guest.ppm ]; then
-              convert /tmp/wb/guest.ppm "docs/shots/09-guest-$((i*20)).png" 2>/dev/null || true
-            fi
-            import -window root "docs/shots/10-wait-$((i*20)).png" || true
-            if [ "$NAME" != "WinBox 4.4" ] && [ -n "$NAME" ]; then
-              echo "подключились на $((i*20))c: $NAME" >> docs/shots/report.txt
-              break
-            fi
-            # CHR может ещё грузиться — повторяем «Connect» (кнопка на панели входа)
-            WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
-            xdotool windowactivate --sync "$WID" || true
-            xdotool mousemove 354 633 click 1 || true
-            sleep 2
+            echo "connect ${k}: window=[$NAME]" >> docs/shots/report.txt
+            import -window root "docs/shots/02-connect-$k.png" || true
+            case "$NAME" in *WinBox*4.4*) ;; *) break;; esac
           done
-          WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
           xdotool getwindowgeometry --shell "$WID" > docs/shots/geometry.txt 2>&1 || true
-          xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
-          import -window root docs/shots/11-desktop.png || true
+          xwininfo -root -tree > docs/shots/xwininfo.txt || true
 
-      - name: Проба клика по дереву разделов
+      - name: Проба кликов по дереву разделов
         run: |
           set -x
-          WID=$(xdotool search --name '^WinBox [0-9]' | head -1)
+          cd "$GITHUB_WORKSPACE"
+          WID=$(xdotool search --name '.' | tail -1)
+          WID=$(xdotool search --name '^WinBox' | head -1)
           xdotool windowactivate --sync "$WID" || true
           eval "$(xdotool getwindowgeometry --shell "$WID")"
           echo "окно X=$X Y=$Y W=$WIDTH H=$HEIGHT" >> docs/shots/report.txt
-          # дерево слева: пробуем попасть по первому пункту и по «IP»
-          xdotool mousemove $((X + 60)) $((Y + 40)) click 1
-          sleep 3
-          import -window root docs/shots/20-click-top.png || true
-          xdotool mousemove $((X + 60)) $((Y + 300)) click 1
-          sleep 3
-          import -window root docs/shots/21-click-mid.png || true
-          xwininfo -root -tree > docs/shots/xwininfo-3.txt || true
+          for dy in 40 80 120 160; do
+            xdotool mousemove $((X + 60)) $((Y + dy)) click 1
+            sleep 3
+            import -window root "docs/shots/20-click-$dy.png" || true
+          done
+          xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
 
       - name: Отчёт и скриншоты в ветку
         if: always()
         run: |
           set -x
+          cd "$GITHUB_WORKSPACE"
           mkdir -p docs/shots
           {
-            echo "=== uname ==="; uname -a
-            echo "=== qemu ==="; qemu-system-x86_64 --version || true
-            echo "=== winbox.log ==="; tail -80 /tmp/wb/winbox.log 2>/dev/null || true
-            echo "=== chr-console.log (хвост) ==="; tail -40 /tmp/wb/chr-console.log 2>/dev/null || true
+            echo "=== время ==="; date -u
+            echo "=== qemu-img ==="; cat /tmp/wb/qemu-img-info.txt 2>/dev/null || true
+            echo "=== winbox.log ==="; tail -60 /tmp/wb/winbox.log 2>/dev/null || true
             echo "=== процессы ==="; ps aux | grep -Ei 'qemu|winbox|xvfb' | grep -v grep || true
-            echo "=== файлы ==="; ls -l docs/shots || true
-          } > docs/shots/report.txt
+            echo "=== файлы ==="; ls -l docs/shots
+          } >> docs/shots/report.txt
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add docs/shots
+          git add -A docs/shots
           git commit -m "CI: настоящие скриншоты Winbox 4 [skip ci]" || echo "нечего коммитить"
           git push origin "HEAD:${{ github.ref_name }}" || echo "push не удался"
