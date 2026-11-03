@@ -126,54 +126,88 @@ jobs:
           xdotool getwindowgeometry --shell "$WID" > docs/shots/geometry.txt 2>&1 || true
           xwininfo -root -tree > docs/shots/xwininfo.txt || true
 
-      - name: Разобрать рабочий стол и снять окна
+      - name: Снять окна Winbox 4 по одному
         run: |
           set -x
           cd "$GITHUB_WORKSPACE"
-          # окно Winbox — самое большое на экране (у приложения есть служебные окна 1x1)
-          best=""; bestarea=0
-          for w in $(xdotool search --name '.' 2>/dev/null); do
-            eval "$(xdotool getwindowgeometry --shell "$w" 2>/dev/null)" || continue
-            area=$((WIDTH * HEIGHT))
-            if [ "$area" -gt "$bestarea" ]; then bestarea=$area; best=$w; fi
-          done
-          WID=$best
-          xdotool windowactivate --sync "$WID" || true
-          eval "$(xdotool getwindowgeometry --shell "$WID")"
-          echo "рабочее окно: X=$X Y=$Y W=$WIDTH H=$HEIGHT" >> docs/shots/report.txt
-          shot() { import -window root "docs/shots/$1.png" || true; sleep 0.5; }
-          tap() { xdotool mousemove $((X + $1)) $((Y + $2)) click 1; sleep 2; }
-          key() { xdotool key --clearmodifiers "$1"; sleep 2; }
 
-          # 1. диалог «Change Password Now» закрываем (Cancel)
-          tap 665 404
-          shot 30-desktop
+          biggest() {
+            best=""; bestarea=0
+            for w in $(xdotool search --name '.' 2>/dev/null); do
+              eval "$(xdotool getwindowgeometry --shell "$w" 2>/dev/null)" || continue
+              area=$((WIDTH * HEIGHT))
+              if [ "$area" -gt "$bestarea" ]; then bestarea=$area; best=$w; fi
+            done
+            echo "$best"
+          }
+          biggest_with_geo() {
+            WID=$(biggest)
+            eval "$(xdotool getwindowgeometry --shell "$WID")"
+          }
+          start_winbox() {
+            pkill -f 'winbox/./WinBox' 2>/dev/null || true
+            pkill -f '/WinBox$' 2>/dev/null || true
+            sleep 2
+            ( cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software \
+                QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 \
+                nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 & )
+            sleep 10
+          }
+          connect_chr() {
+            biggest_with_geo
+            xdotool windowactivate --sync "$WID" || true
+            sleep 1
+            xdotool mousemove $((X + 661)) $((Y + 282)) click 1
+            sleep 1
+            xdotool key --clearmodifiers ctrl+a
+            xdotool type --delay 30 '127.0.0.1'
+            sleep 1
+            xdotool key Return
+            for i in $(seq 1 10); do
+              sleep 3
+              NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+              case "$NAME" in admin@*) break;; esac
+            done
+            # диалог «Change Password Now» — закрываем
+            xdotool mousemove $((X + 665)) $((Y + 404)) click 1
+            sleep 2
+          }
+          shot() { import -window root "docs/shots/$1.png" || true; sleep 0.4; }
 
-          # 2. прямо открывающиеся разделы
-          tap 80 72;   shot 31-wifi
-          key ctrl+w;  shot 31-wifi-closed
-          tap 80 95;   shot 32-interfaces
-          key ctrl+w
-          tap 80 122;  shot 33-wireguard
-          key ctrl+w
-          tap 80 146;  shot 34-bridge
-          key ctrl+w
-          tap 80 170;  shot 35-ppp
-          key ctrl+w
-          tap 80 353;  shot 36-queues
-          key ctrl+w
-          tap 80 398;  shot 37-files
-          key ctrl+w
+          # args: имя  dy_дерева  dy_подменю  new(0/1)
+          capture() {
+            name=$1; tdy=$2; sdy=$3; newbtn=${4:-0}
+            start_winbox
+            connect_chr
+            biggest_with_geo
+            xdotool mousemove $((X + 80)) $((Y + tdy)) click 1
+            sleep 2
+            if [ -n "$sdy" ] && [ "$sdy" != "-" ]; then
+              xdotool mousemove $((X + 180)) $((Y + sdy)) click 1
+              sleep 2
+            fi
+            if [ "$newbtn" = 1 ]; then
+              xdotool mousemove $((X + 182)) $((Y + 164)) click 1
+              sleep 3
+            fi
+            shot "$name"
+          }
 
-          # 3. раздел IP — раскрываем подменю
-          tap 80 238;  shot 40-ip-menu
-          tap 260 238; shot 41-ip-first
-
-          # 4. настройки (шестерёнка) — там тема оформления
-          tap 1131 7;  shot 50-settings
-          key Escape
-          shot 51-after-settings
-
+          capture 31-quickset      50  -   0
+          capture 32-wifi          72  -   0
+          capture 33-interfaces    95  -   0
+          capture 34-wireguard    122  -   0
+          capture 35-bridge       146  -   0
+          capture 36-ppp          170  -   0
+          capture 37-queues       353  -   0
+          capture 38-files        398  -   0
+          capture 40-ip-address    238 53   0
+          capture 41-ip-dhcpserver 238 122  0
+          capture 42-ip-dns        238 144  0
+          capture 43-ip-firewall   238 168  0
+          capture 44-ip-routes     238 399  0
+          capture 45-ip-services   238 492  0
+          capture 46-fw-new        238 168  1
           xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
 
       - name: Отчёт и скриншоты в ветку
