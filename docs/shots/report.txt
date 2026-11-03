@@ -19,23 +19,65 @@ WBOXCONN status change "Looking up host..."
 WBOXCONN status change "Connecting..."
 WBOXCONN status change "Authenticating..."
 DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+WINBOXIMPL,ERR: QAbstractSocket::RemoteHostClosedError "The remote host closed the connection"
+WBOXCONN status change "ERR: The remote host closed the connection"
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 === chr-console.log (хвост) ===
 === процессы ===
-runner      3784  186  0.6 2316488 99532 ?       Sl   06:52   1:03 qemu-system-x86_64 -m 768 -smp 2 -machine pc -drive file=chr.qcow2,format=qcow2,if=virtio -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device virtio-net-pci,netdev=n0 -display none -serial file:/tmp/wb/chr-console.log -daemonize -pidfile /tmp/wb/qemu.pid
-runner      3792  0.3  0.4 225692 79152 ?        S    06:52   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      3809  0.7  0.5 859616 90988 ?        Sl   06:52   0:00 /tmp/wb/winbox/./WinBox
+runner      3816  199  0.7 3269324 116560 ?      Sl   06:56  16:54 qemu-system-x86_64 -m 1536 -smp 4 -machine pc -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=virtio -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device virtio-net-pci,netdev=n0 -display none -serial file:/tmp/wb/chr-console.log -daemonize -pidfile /tmp/wb/qemu.pid
+runner      3826  0.0  0.4 223680 78048 ?        S    06:56   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3844  0.1  0.5 859620 90928 ?        Sl   06:56   0:00 /tmp/wb/winbox/./WinBox
 === файлы ===
-total 500
--rw-r--r-- 1 runner runner 58867 Nov  3 06:52 01-login.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:52 02-after-connect.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:52 03-interfaces.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:52 03-ip-firewall.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:52 03-ip.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:53 10-wait-10.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:53 20-click-top.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:53 21-click-mid.png
--rw-r--r-- 1 runner runner    49 Nov  3 06:53 geometry.txt
--rw-r--r-- 1 runner runner  1860 Nov  3 06:53 report.txt
--rw-r--r-- 1 runner runner   349 Nov  3 06:52 xwininfo-1.txt
--rw-r--r-- 1 runner runner   349 Nov  3 06:53 xwininfo-2.txt
--rw-r--r-- 1 runner runner   349 Nov  3 06:53 xwininfo-3.txt
+total 2096
+-rw-r--r-- 1 runner runner 58867 Nov  3 06:57 01-login.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:57 02-after-connect.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:55 03-interfaces.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:55 03-ip-firewall.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:55 03-ip.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:55 10-wait-10.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 06:58 10-wait-100.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 06:59 10-wait-120.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 06:59 10-wait-140.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 06:59 10-wait-160.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:00 10-wait-180.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:57 10-wait-20.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:00 10-wait-200.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:00 10-wait-220.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:01 10-wait-240.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:01 10-wait-260.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:01 10-wait-280.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:02 10-wait-300.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:02 10-wait-320.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:02 10-wait-340.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:03 10-wait-360.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:03 10-wait-380.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:57 10-wait-40.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:03 10-wait-400.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:04 10-wait-420.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:04 10-wait-440.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:04 10-wait-460.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:05 10-wait-480.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:58 10-wait-60.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 06:58 10-wait-80.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:05 11-desktop.png
+-rw-r--r-- 1 runner runner 62160 Nov  3 07:05 20-click-top.png
+-rw-r--r-- 1 runner runner 62138 Nov  3 07:05 21-click-mid.png
+-rw-r--r-- 1 runner runner    58 Nov  3 07:05 geometry.txt
+-rw-r--r-- 1 runner runner  3323 Nov  3 07:05 report.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 06:57 xwininfo-1.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 07:05 xwininfo-2.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 07:05 xwininfo-3.txt
