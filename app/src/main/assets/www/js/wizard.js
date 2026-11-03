@@ -47,6 +47,7 @@
     snmp: false, snmpCommunity: 'mon-8f3c1a', snmpHost: '192.168.88.0/24',
     syslog: false, syslogHost: '192.168.88.10',
     nat: true, protect: true, resetBefore: false,   // сброс конфигурации перед применением
+    rosVersion: '', rosBoard: '', rosFirmware: '',   // паспорт роутера (опрос в Windows-версии)
     autobackup: false,
     tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org',
     author: '',            // объект или автор конфига — попадёт в шапку
@@ -513,6 +514,14 @@
     const errors = issues.filter(function (x) { return x.level === 'error'; }).map(function (x) { return x.msg; });
 
     const identity = clean(opt(o, 'identity')) || 'router';
+    /* паспорт роутера: заполняется опросом (Windows) или вручную. По нему
+       выбираются команды, имена радиоинтерфейсов и проверка версии в скрипте. */
+    const rosVer = clean(opt(o, 'rosVersion'));
+    const rosBoard = clean(opt(o, 'rosBoard'));
+    const rosFw = clean(opt(o, 'rosFirmware'));
+    const vp = (window.RosProbe && window.RosProbe.profile) ? window.RosProbe.profile(rosVer) : null;
+    const rosKnown = !!(vp && vp.known);
+    const rosV7 = !rosKnown || vp.v7;
     const wanMode = opt(o, 'wan');
     const wanPort = clean(opt(o, 'wanPort')) || 'ether1';
     const bridge = clean(opt(o, 'bridge')) || 'bridge-lan';
@@ -522,7 +531,7 @@
     const guestPort = clean(opt(o, 'guestPort')) || 'ether5';
     const guestIface = 'vlan-guest';
     const wifiOn = !!opt(o, 'wifi');
-    const wgOn = !!opt(o, 'wg');
+    const wgOn = !!opt(o, 'wg') && rosV7;   // WireGuard есть только в RouterOS 7
     const l2tpOn = !!opt(o, 'l2tp');
     const pppoeSrv = !!opt(o, 'pppoeServer');
     const ipv6Mode = opt(o, 'ipv6');
@@ -603,8 +612,29 @@
       '# Скрипт можно запускать повторно: объекты и правила с теми же именами/комментариями не дублируются.',
       '# На роутере с заводской настройкой удобнее начать с чистого конфига:',
       '# /system reset-configuration no-defaults=yes skip-backup=yes (роутер перезагрузится, адрес задаётся заново)');
+    if (rosKnown) {
+      push('# Цель: RouterOS ' + rosVer + (rosBoard ? ' · ' + rosBoard : '') +
+        (rosFw ? ' · прошивка RouterBOOT ' + rosFw : ''),
+        '# Версия и плата определены подключением к роутеру — команды подобраны под них.');
+    } else if (/^\d/.test(rosVer)) {
+      push('# Цель: RouterOS ' + rosVer + (rosBoard ? ' · ' + rosBoard : ''));
+    }
     if (authorLine) push('# Объект / автор: ' + authorLine);
     push('# Собрано: ' + new Date().toLocaleString('ru-RU') + ' · разделов: предпросмотр ниже');
+    if (rosKnown) {
+      push('', '# ---------- Проверка версии перед применением ----------',
+        '# Если на роутере другая ветка RouterOS, часть команд не выполнится.',
+        ':local rosVer [/system resource get version]',
+        ':if ([:pick $rosVer 0 1] != "' + vp.major + '") do={',
+        '  :put ("ВНИМАНИЕ! На роутере " . $rosVer . ", конфиг собран под ' + rosVer + '")',
+        '}');
+    }
+    if (rosKnown && !vp.v7) {
+      push('# RouterOS ' + rosVer + ' — ветка 6.x:',
+        '#   · нет /interface wireguard, /interface wifi и /ip firewall service-ports;',
+        '#   · Wi-Fi собран для пакета wireless (/interface wireless);',
+        '#   · обновление до 7.x: /system package update check-for-updates');
+    }
     if (opt(o, 'resetBefore')) {
       push('', '# ---------- 0. Сброс настроек перед применением ----------',
         '# ВЫПОЛНИТЕ ЭТУ СТРОКУ ОТДЕЛЬНО И ТОЛЬКО НА НОВОМ РОУТЕРЕ.',
@@ -811,9 +841,12 @@
       const w5 = width === 20 ? 80 : width;
       const wpass = q(opt(o, 'wifiPass'));
       const txp = clean(opt(o, 'wifiTxPower'));
-      const legacy = clean(opt(o, 'wifiKind')) === 'legacy';
-      const radio = clean(opt(o, 'wifiRadio')) || (legacy ? 'wlan1' : 'wifi1');
-      const radio5 = clean(opt(o, 'wifiRadio5')) || (legacy ? 'wlan2' : 'wifi2');
+      const legacy = clean(opt(o, 'wifiKind')) === 'legacy' || (rosKnown && !vp.v7);
+      let radio = clean(opt(o, 'wifiRadio')) || (legacy ? 'wlan1' : 'wifi1');
+      let radio5 = clean(opt(o, 'wifiRadio5')) || (legacy ? 'wlan2' : 'wifi2');
+      // 6.x не знает радиоинтерфейсов wifi1/wifi2 — приводим имена к wlan
+      if (legacy && /^wifi/.test(radio)) radio = 'wlan1';
+      if (legacy && /^wifi/.test(radio5)) radio5 = 'wlan2';
       const has5 = opt(o, 'wifi5') !== false;   // у одномастотных моделей (RB951G, hAP lite, L009) 5 ГГц нет
       if (legacy) {
         /* ---------- пакет wireless: RB951G-2HnD, 802.11n, ОДИН диапазон 2.4 ГГц ---------- */
@@ -1181,6 +1214,8 @@
     return {
       text: text,
       title: identity + ' · ' + wanTitle,
+      target: { version: rosVer, board: rosBoard, firmware: rosFw, known: rosKnown,
+        major: vp ? vp.major : 0, wifi: rosKnown ? (vp.v7 ? '7.x' : '6.x') : '' },
       sections: sections,
       warnings: warn,
       errors: errors,

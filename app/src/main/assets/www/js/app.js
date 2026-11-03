@@ -1670,6 +1670,8 @@
         : '<div class="hint" style="margin-top:8px">Сохранённых шаблонов пока нет.</div>') +
       '</section>';
 
+    html += rosCard(o);
+
     const models = (window.ConfigWizard && window.ConfigWizard.models) ? window.ConfigWizard.models() : [];
     html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Роутер и WAN</h3>' +
       (models.length ? wizSelect('w-model', 'Модель роутера', o.model, models.map(function (m) {
@@ -1875,6 +1877,181 @@
     return html;
   }
 
+  /* ------------------------------------------------------------------
+     Версия роутера: в Windows-версии паспорт (версия RouterOS, прошивка,
+     плата, пакет Wi-Fi) забирается прямо с роутера, в Android — вводится
+     руками. Мастер по этим полям выбирает команды и вставляет в скрипт
+     проверку версии.
+     ------------------------------------------------------------------ */
+  function rosCard(o) {
+    const can = !!(window.RosProbe && window.RosProbe.available());
+    let hint;
+    if (can) {
+      hint = '«Опросить» — программа подключится к роутеру (REST 443, API 8728 или api-ssl 8729), ' +
+        'узнает версию RouterOS, прошивку RouterBOOT, плату и пакет Wi-Fi и подставит их в мастер. ' +
+        'Пароль нигде не сохраняется.';
+    } else {
+      hint = 'Автоматический опрос есть в Windows-версии программы. Здесь впишите версию вручную — ' +
+        'мастер соберёт конфиг под неё и вставит в скрипт проверку версии.';
+    }
+    let html = '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Версия роутера</h3>' +
+      '<div class="hint" style="margin:-4px 0 8px">' + esc(hint) + '</div>' +
+      wizField('w-rosVersion', 'RouterOS', o.rosVersion, 'например 7.24.6') +
+      wizField('w-rosBoard', 'Плата', o.rosBoard, 'например RB951G-2HnD') +
+      wizField('w-rosFirmware', 'Прошивка RouterBOOT', o.rosFirmware, 'необязательно');
+    if (can) {
+      html += '<div class="tpl-save" style="margin:8px 0 4px">' +
+        '<input class="inp" id="rosAddr" placeholder="адрес" value="192.168.88.1" maxlength="40">' +
+        '<input class="inp" id="rosUser" placeholder="логин" value="admin" maxlength="40">' +
+        '<input class="inp" id="rosPass" type="password" placeholder="пароль" autocomplete="new-password" maxlength="64">' +
+        '</div>' +
+        '<div class="chips"><button class="chip" id="rosProbeBtn" type="button">Опросить роутер</button>' +
+        '<button class="chip" id="rosFindBtn" type="button">Найти в сети</button></div>';
+    }
+    html += '<div id="rosOut" class="hint" style="margin-top:8px">' +
+      (rosLast ? rosInfoHTML(rosLast) : '') + '</div></section>';
+    return html;
+  }
+
+  let rosLast = null;   // последний опрошенный роутер — переживает перерисовку мастера
+
+  function rosInfoHTML(info) {
+    const rows = [
+      ['Версия RouterOS', info.version],
+      ['Плата', info.board],
+      ['Прошивка', info.firmware ? info.firmware + (info.firmwareUpgrade && info.firmwareUpgrade !== info.firmware ? ' → ' + info.firmwareUpgrade : '') : ''],
+      ['Архитектура', info.arch],
+      ['Wi-Fi', info.wifi === 'wifi' ? 'пакет wifi (' + (info.radios || []).join(', ') + ')' :
+        info.wifi === 'legacy' ? 'пакет wireless (' + (info.radios || []).join(', ') + ')' : 'нет'],
+      ['Порты', (info.ports || []).join(', ')],
+      ['Сервисы', (info.services || []).join(', ')],
+      ['Пакеты', (info.packages || []).join(', ')],
+      ['Подключение', info.transport]
+    ].filter(function (r) { return r[1]; });
+    return '<b>' + esc(info.identity || info.address) + '</b> · ' + esc(window.RosProbe.summary(info)) + '<br>' +
+      rows.map(function (r) { return esc(r[0]) + ': ' + esc(String(r[1])); }).join('<br>') +
+      '<div class="chips" style="margin-top:8px"><button class="chip" id="rosApplyBtn" type="button">Подставить в мастер</button></div>';
+  }
+
+  function rosOut(html) {
+    const el = document.getElementById('rosOut');
+    if (el) el.innerHTML = html;
+  }
+
+  function rosExplain(e) {
+    return esc((e && e.message) ? e.message : String(e));
+  }
+
+  /* подставить паспорт роутера в ответы мастера */
+  function rosApply(info) {
+    if (!info || !window.RosProbe) return;
+    const f = window.RosProbe.fieldsFor(info);
+    let next = Object.assign({}, wizCollect(), f);
+    if (f.model && window.ConfigWizard && window.ConfigWizard.applyModel) {
+      next = window.ConfigWizard.applyModel(next, f.model);
+    }
+    if (f.rosVersion) next.rosVersion = f.rosVersion;
+    if (f.rosBoard) next.rosBoard = f.rosBoard;
+    if (f.rosFirmware) next.rosFirmware = f.rosFirmware;
+    wizStore(next);
+    route();
+    toast('Опрос: ' + (window.RosProbe.summary(info) || info.address));
+  }
+
+  function rosProbeRun(btn) {
+    if (!window.RosProbe || !window.RosProbe.available()) return;
+    const addr = (document.getElementById('rosAddr') || {}).value || '192.168.88.1';
+    const user = (document.getElementById('rosUser') || {}).value || 'admin';
+    const pass = (document.getElementById('rosPass') || {}).value || '';
+    const saved = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Подключаюсь…'; btn.disabled = true; }
+    rosOut('Пробую REST (443), затем API (8728) и api-ssl (8729)…');
+    window.RosProbe.probe(addr, user, pass).then(function (info) {
+      if (btn) { btn.textContent = saved; btn.disabled = false; }
+      const rows = [
+        ['Версия RouterOS', info.version],
+        ['Плата', info.board],
+        ['Прошивка', info.firmware ? info.firmware + (info.firmwareUpgrade && info.firmwareUpgrade !== info.firmware ? ' → ' + info.firmwareUpgrade : '') : ''],
+        ['Архитектура', info.arch],
+        ['Wi-Fi', info.wifi === 'wifi' ? 'пакет wifi (' + (info.radios || []).join(', ') + ')' :
+          info.wifi === 'legacy' ? 'пакет wireless (' + (info.radios || []).join(', ') + ')' : 'нет'],
+        ['Порты', (info.ports || []).join(', ')],
+        ['Сервисы', (info.services || []).join(', ')],
+        ['Пакеты', (info.packages || []).join(', ')],
+        ['Подключение', info.transport]
+      ].filter(function (r) { return r[1]; });
+      let html = '<b>' + esc(info.identity || info.address) + '</b> · ' + esc(window.RosProbe.summary(info)) + '<br>' +
+        rows.map(function (r) { return esc(r[0]) + ': ' + esc(String(r[1])); }).join('<br>') +
+        '<div class="chips" style="margin-top:8px"><button class="chip" id="rosApplyBtn" type="button">Подставить в мастер</button></div>';
+      rosLast = info;
+      rosApply(info);   // перерисовка мастера заодно покажет отчёт опроса
+    }).catch(function (e) {
+      if (btn) { btn.textContent = saved; btn.disabled = false; }
+      rosOut('<b>Не получилось:</b> ' + rosExplain(e));
+    });
+  }
+
+  function rosFind(btn) {
+    if (!window.RosProbe || !window.RosProbe.available()) return;
+    const saved = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Ищу…'; btn.disabled = true; }
+    rosOut('Слушаю MNDP (UDP 5678) и порты 8728/8291 в своей подсети…');
+    window.RosProbe.discover().then(function (found) {
+      if (btn) { btn.textContent = saved; btn.disabled = false; }
+      if (!found.length) {
+        rosOut('Никого не нашёл. Впишите адрес роутера руками (обычно 192.168.88.1) — ' +
+          'Windows-версия может быть не в той же сети, что роутер.');
+        return;
+      }
+      const html = found.map(function (d, i) {
+        const t = [d.identity, d.version ? 'RouterOS ' + d.version : '', d.board, d.source === 'mndp' ? 'MNDP' : 'порт ' + d.port]
+          .filter(Boolean).join(' · ');
+        return '<div><button class="chip" data-rosaddr="' + esc(d.address) + '" type="button">' +
+          esc(d.address) + '</button> ' + esc(t) + '</div>';
+      }).join('');
+      rosOut('<b>Найдено: ' + found.length + '</b><br>' + html +
+        '<div class="hint" style="margin-top:6px">Нажмите адрес — он подставится в поле, затем «Опросить роутер».</div>');
+      document.querySelectorAll('#rosOut [data-rosaddr]').forEach(function (b) {
+        b.addEventListener('click', function () {
+          const a = document.getElementById('rosAddr');
+          if (a) a.value = b.getAttribute('data-rosaddr');
+          const p = document.getElementById('rosPass');
+          if (p) p.focus();
+        });
+      });
+    }).catch(function (e) {
+      if (btn) { btn.textContent = saved; btn.disabled = false; }
+      rosOut('<b>Поиск не удался:</b> ' + rosExplain(e));
+    });
+  }
+
+  /* сохранённые паспорта: показать последний и дать подставить */
+  function rosSavedHint() {
+    if (!window.RosProbe || !window.RosProbe.available()) return;
+    window.RosProbe.saved().then(function (res) {
+      if (!res.last) return;
+      const l = res.last;
+      const t = [l.identity, l.version ? 'RouterOS ' + l.version : '', l.board, l.updated].filter(Boolean).join(' · ');
+      rosOut('Сохранённый роутер <b>' + esc(l.address) + '</b> — ' + esc(t) +
+        ' <button class="chip" id="rosUseSaved" type="button">Опросить снова</button>' +
+        ' <button class="chip" id="rosForget" type="button">Забыть</button>');
+      const use = document.getElementById('rosUseSaved');
+      if (use) use.addEventListener('click', function () {
+        const a = document.getElementById('rosAddr');
+        if (a) a.value = l.address;
+        const u = document.getElementById('rosUser');
+        if (u && l.user) u.value = l.user;
+        const p = document.getElementById('rosPass');
+        if (p) p.focus();
+      });
+      const fg = document.getElementById('rosForget');
+      if (fg) fg.addEventListener('click', function () {
+        window.RosProbe.forget(l.address).then(function () { rosOut('Запись удалена.'); })
+          .catch(function (e) { rosOut('<b>Не удалось:</b> ' + rosExplain(e)); });
+      });
+    }).catch(function () { });
+  }
+
   function wizCollect() {
     const g = function (id, def) {
       const el = document.getElementById(id);
@@ -1944,6 +2121,8 @@
         return out;
       })(),
       author: g('w-author', ''),
+      rosVersion: g('w-rosVersion', ''), rosBoard: g('w-rosBoard', ''),
+      rosFirmware: g('w-rosFirmware', ''),
       wifiCountry: g('w-wifiCountry', 'belarus'), wifiCh24: g('w-wifiCh24', 6),
       wifiCh5: g('w-wifiCh5', 36), wifiWidth: g('w-wifiWidth', 20), wifiTxPower: g('w-wifiTxPower', ''),
       devSeg: on('w-devSeg'),
@@ -2106,6 +2285,22 @@
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', function () { sync(); wizStore(wizCollect()); });
     });
+
+    const rosBtn = document.getElementById('rosProbeBtn');
+    if (rosBtn && window.RosProbe) {
+      rosBtn.addEventListener('click', function () { rosProbeRun(rosBtn); });
+      const findBtn = document.getElementById('rosFindBtn');
+      if (findBtn) findBtn.addEventListener('click', function () { rosFind(findBtn); });
+      const pass = document.getElementById('rosPass');
+      if (pass) pass.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); rosProbeRun(rosBtn); }
+      });
+      const applyBtn = document.getElementById('rosApplyBtn');
+      if (applyBtn && rosLast) {
+        applyBtn.addEventListener('click', function () { rosApply(rosLast); });
+      }
+      if (!rosLast) rosSavedHint();
+    }
 
     const modelSel = document.getElementById('w-model');
     if (modelSel) modelSel.addEventListener('change', function () {

@@ -1,0 +1,50 @@
+name: go-check
+
+# Быстрая проверка Go-кода Windows-версии: сборка под Windows и тесты.
+# Отдельный workflow нужен, чтобы опрос роутера (windows/ros*.go) проверялся
+# за пару минут, не дожидаясь полной сборки APK+EXE.
+
+on:
+  push:
+    paths:
+      - 'windows/**'
+      - 'go.mod'
+      - '.github/workflows/go-check.yml'
+  pull_request:
+    paths:
+      - 'windows/**'
+      - 'go.mod'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Форматирование
+        run: |
+          unformatted=$(gofmt -l windows/ 2>/dev/null || true)
+          if [ -n "$unformatted" ]; then
+            echo "::warning::gofmt предлагает поправить: $unformatted"
+            gofmt -d $unformatted | head -100
+          fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test ./... -count=1
+
+      - name: Сборка под Windows
+        run: GOOS=windows GOARCH=amd64 go build -trimpath -ldflags "-H windowsgui -s -w" -o /tmp/mikrotik-gide.exe ./windows
+
+      - name: Сборка под Linux (та же логика опроса)
+        run: GOOS=linux GOARCH=amd64 go build -trimpath -o /tmp/mikrotik-gide-linux ./windows
+
+      - name: Размер
+        run: ls -l /tmp/mikrotik-gide.exe /tmp/mikrotik-gide-linux
