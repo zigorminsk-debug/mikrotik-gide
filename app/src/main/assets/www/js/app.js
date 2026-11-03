@@ -1551,7 +1551,7 @@
     l2tp: false, l2tpPsk: 'IPsec-PSK-2026', l2tpPool: '10.20.20.10-10.20.20.99',
     pppoeServer: false, pppoeServerPort: 'ether5', pppoePool: '10.30.30.10-10.30.30.99',
     pppoeServerUser: '', pppoeServerPass: '', forwards: [], nat: true, protect: true,
-    autobackup: false, tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org'
+    autobackup: false, tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org', resetBefore: false
   };
 
   function wizSaved() {
@@ -1831,7 +1831,8 @@
       '<div class="wz-group' + (o.syslog ? '' : ' off') + '" data-g="syslog">' +
       wizField('w-syslogHost', 'IP сервера логов', o.syslogHost) +
       '</div>' +
-      wizSwitch('w-harden', 'Базовая защита от взлома', o.harden, 'MAC-сервер, discovery, blacklist') +
+      wizSwitch('w-reset', 'Сброс настроек перед применением', o.resetBefore, 'чистый конфиг: /system reset-configuration no-defaults=yes (строка в скрипте закомментирована — выполните её отдельно)') +
+      wizSwitch('w-harden', 'Базовая защита от взлома', o.harden, 'MAC-сервер, discovery, blacklist, закрыть SIP/PPTP/H.323') +
       '</section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Уведомления на e-mail</h3>' +
@@ -1966,7 +1967,7 @@
       })(),
       model: g('w-model', 'generic'),
       failover: on('w-failover'), wan2Port: g('w-wan2Port', 'lte1'), wan2Check: g('w-wan2Check', '8.8.8.8'),
-      harden: on('w-harden'),
+      harden: on('w-harden'), resetBefore: on('w-reset'),
       hotspot: on('w-hotspot'), hotspotPass: g('w-hotspotPass', 'guest-2026'),
       qos: on('w-qos'), wanDown: g('w-wanDown', 100), wanUp: g('w-wanUp', 100),
       snmp: on('w-snmp'), snmpCommunity: g('w-snmpCommunity', 'mon-8f3c1a'), snmpHost: g('w-snmpHost', '192.168.88.0/24'),

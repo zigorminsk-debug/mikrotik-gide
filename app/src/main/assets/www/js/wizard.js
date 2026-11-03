@@ -46,7 +46,7 @@
     qos: false, wanDown: 100, wanUp: 100,
     snmp: false, snmpCommunity: 'mon-8f3c1a', snmpHost: '192.168.88.0/24',
     syslog: false, syslogHost: '192.168.88.10',
-    nat: true, protect: true,
+    nat: true, protect: true, resetBefore: false,   // сброс конфигурации перед применением
     autobackup: false,
     tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org',
     author: '',            // объект или автор конфига — попадёт в шапку
@@ -605,6 +605,14 @@
       '# /system reset-configuration no-defaults=yes skip-backup=yes (роутер перезагрузится, адрес задаётся заново)');
     if (authorLine) push('# Объект / автор: ' + authorLine);
     push('# Собрано: ' + new Date().toLocaleString('ru-RU') + ' · разделов: предпросмотр ниже');
+    if (opt(o, 'resetBefore')) {
+      push('', '# ---------- 0. Сброс настроек перед применением ----------',
+        '# ВЫПОЛНИТЕ ЭТУ СТРОКУ ОТДЕЛЬНО И ТОЛЬКО НА НОВОМ РОУТЕРЕ.',
+        '# Роутер удалит конфигурацию и адреса, сессия оборвётся.',
+        '# /system reset-configuration no-defaults=yes skip-backup=yes',
+        '# Дальше: дождитесь перезагрузки → Winbox → кнопка Neighbors → выберите роутер по MAC,',
+        '# логин admin без пароля → и только потом вставляйте остаток скрипта, начиная с раздела 1.');
+    }
     if (errors.length) {
       push('# ВНИМАНИЕ: есть незаполненные или некорректные поля — исправьте их перед вставкой:');
       errors.forEach(function (e) { push('#   · ' + e); });
@@ -1127,14 +1135,32 @@
       push('# Полный чек-лист защиты — раздел «Защита от взлома» в приложении.');
     }
 
-    sec('Сервисы и время');
+    sec('Сервисы и доступ к роутеру');
     const lanNetBase = netCidr(lanIp, lanPrefix);
-    push('/ip service set winbox address=' + lanNetBase,
+    push('# Доступ к самому роутеру — только из LAN. Всё остальное выключено:',
+      '# winbox и ssh принимают подключения лишь с ' + lanNetBase + ',',
+      '# telnet/ftp/www/api/api-ssl/www-ssl отключены, облако DDNS и полоса-сервер — тоже.',
+      '/ip service set winbox address=' + lanNetBase,
       '/ip service set ssh address=' + lanNetBase,
-      '/ip service disable telnet,ftp,www,api,api-ssl',
-      '/system ntp client set enabled=yes servers=' + clean(opt(o, 'ntp')),
+      '/ip service disable telnet,ftp,www,api,api-ssl,www-ssl',
+      '/ip cloud set ddns-enabled=no update-time=no',
+      '/tool bandwidth-server set enabled=no',
+      '/tool romon set enabled=no',
+      '# Service Ports (Firewall → Service Ports) — это не открытые порты, а список служб,',
+      '# которые firewall умеет узнавать по номеру порта (удобно для правила protocol=... port=...).',
+      '# Лишние отключаем:',
+      '/ip firewall service-ports disable [find where name~"dccp|irc|rtsp|sctp|tftp|udplite"]');
+    if (opt(o, 'harden')) {
+      push('# Если VoIP/PPTP не нужны — закрываем и их (включить обратно: /ip firewall service-ports enable [find name~"sip|pptp|h323"])',
+        '/ip firewall service-ports disable [find where name~"sip|pptp|h323"]');
+    } else {
+      push('# SIP, PPTP и H.323 оставлены включёнными — они нужны для телефонии и VPN;',
+        '# отключить: /ip firewall service-ports disable [find where name~"sip|pptp|h323"]');
+    }
+    push('/system ntp client set enabled=yes servers=' + clean(opt(o, 'ntp')),
       '/system clock set time-zone-name=' + clean(opt(o, 'tz')),
-      '/system identity set name=' + q(identity));
+      '/system identity set name=' + q(identity),
+      '# Проверка: /ip service print (все сервисы кроме winbox/ssh — X), /ip cloud print');
 
     if (guestOn || segs.length || dsOn) {
       push('', '# VLAN-фильтрация включается в самом конце: все адреса, пулы и DHCP уже созданы',
