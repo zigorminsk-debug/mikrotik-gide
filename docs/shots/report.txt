@@ -21,16 +21,21 @@ WBOXCONN status change "Authenticating..."
 DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 === chr-console.log (хвост) ===
 === процессы ===
-runner      3807  190  0.5 2317744 97764 ?       Sl   06:49   1:27 qemu-system-x86_64 -m 768 -smp 2 -machine pc -drive file=chr.qcow2,format=qcow2,if=virtio -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device virtio-net-pci,netdev=n0 -display none -serial file:/tmp/wb/chr-console.log -daemonize -pidfile /tmp/wb/qemu.pid
-runner      3815  0.3  0.4 225896 78796 ?        S    06:49   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      3833  0.6  0.5 859584 90412 ?        Sl   06:49   0:00 /tmp/wb/winbox/./WinBox
+runner      3784  186  0.6 2316488 99532 ?       Sl   06:52   1:03 qemu-system-x86_64 -m 768 -smp 2 -machine pc -drive file=chr.qcow2,format=qcow2,if=virtio -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device virtio-net-pci,netdev=n0 -display none -serial file:/tmp/wb/chr-console.log -daemonize -pidfile /tmp/wb/qemu.pid
+runner      3792  0.3  0.4 225692 79152 ?        S    06:52   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3809  0.7  0.5 859616 90988 ?        Sl   06:52   0:00 /tmp/wb/winbox/./WinBox
 === файлы ===
-total 312
--rw-r--r-- 1 runner runner 58867 Nov  3 06:49 01-login.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:49 02-after-connect.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:49 03-interfaces.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:49 03-ip-firewall.png
--rw-r--r-- 1 runner runner 58187 Nov  3 06:49 03-ip.png
--rw-r--r-- 1 runner runner  1860 Nov  3 06:49 report.txt
--rw-r--r-- 1 runner runner   349 Nov  3 06:49 xwininfo-1.txt
--rw-r--r-- 1 runner runner   349 Nov  3 06:49 xwininfo-2.txt
+total 500
+-rw-r--r-- 1 runner runner 58867 Nov  3 06:52 01-login.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:52 02-after-connect.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:52 03-interfaces.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:52 03-ip-firewall.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:52 03-ip.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:53 10-wait-10.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:53 20-click-top.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:53 21-click-mid.png
+-rw-r--r-- 1 runner runner    49 Nov  3 06:53 geometry.txt
+-rw-r--r-- 1 runner runner  1860 Nov  3 06:53 report.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 06:52 xwininfo-1.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 06:53 xwininfo-2.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 06:53 xwininfo-3.txt
