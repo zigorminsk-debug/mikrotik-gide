@@ -153,7 +153,13 @@ jobs:
             WID=$(biggest); eval "$(xdotool getwindowgeometry --shell "$WID")"
             xdotool windowactivate --sync "$WID" || true
             sleep 1
-            xdotool mousemove $((X + 382)) $((Y + 119)) click --repeat 2 --delay 120 1
+            # поле «Connect to» (x 154..446, y 282..300 в координатах окна) и кнопка Connect
+            xdotool mousemove $((X + 300)) $((Y + 291)) click 1
+            sleep 1
+            xdotool key --clearmodifiers ctrl+a
+            xdotool type --delay 40 '127.0.0.1'
+            sleep 1
+            xdotool mousemove $((X + 192)) $((Y + 443)) click 1
             for i in $(seq 1 12); do
               sleep 3
               NAME=$(xdotool getwindowname "$WID" 2>/dev/null || true)
