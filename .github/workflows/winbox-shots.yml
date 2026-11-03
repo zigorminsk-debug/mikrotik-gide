@@ -52,11 +52,33 @@ jobs:
           qemu-img convert -f raw -O qcow2 chr-7.24.6.img chr.qcow2
           qemu-img info chr.qcow2 | head -10
 
+      - name: Проба CPU — какой моделью CHR вообще загружается
+        run: |
+          set -x
+          mkdir -p docs/shots
+          cd /tmp/wb
+          for CPU in qemu64 max Haswell; do
+            qemu-img create -f qcow2 -b chr.qcow2 -F qcow2 probe.qcow2 >/dev/null
+            rm -f guest.ppm mon-probe.sock
+            qemu-system-x86_64 -m 1024 -smp 2 -machine pc -cpu "$CPU" \
+              -accel tcg,thread=multi \
+              -drive file=probe.qcow2,format=qcow2,if=ide,index=0 \
+              -display none -monitor unix:/tmp/wb/mon-probe.sock,server,nowait \
+              -daemonize -pidfile probe.pid || { echo "не запустился $CPU" >> docs/shots/report.txt; continue; }
+            for t in 60 120 180; do
+              sleep 60
+              python3 .github/scripts/guest-shot.py /tmp/wb/mon-probe.sock /tmp/wb/guest.ppm >/dev/null 2>&1 || true
+              [ -f /tmp/wb/guest.ppm ] && convert /tmp/wb/guest.ppm "docs/shots/07-cpu-$CPU-$t.png" 2>/dev/null || true
+            done
+            kill "$(cat probe.pid)" 2>/dev/null || true
+            sleep 3
+          done
+
       - name: Запустить CHR в QEMU
         run: |
           set -euxo pipefail
           cd /tmp/wb
-          qemu-system-x86_64 -m 1536 -smp 4 -machine pc -accel tcg,thread=multi \
+          qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi \
             -drive file=chr.qcow2,format=qcow2,if=ide,index=0 \
             -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
             -device virtio-net-pci,netdev=n0 \
