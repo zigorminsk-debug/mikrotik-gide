@@ -277,7 +277,11 @@
         { l: 'Max UDP Packet Size', k: 'select' },
         { l: 'Cache Size', k: 'text' },
         { l: 'Cache Max TTL', k: 'text' },
-        { l: 'Cache Used', k: 'text' }
+        { l: 'Cache Used', k: 'text' },
+        { l: 'Query Server Timeout', k: 'select' },
+        { l: 'Use DoH Server', k: 'text' },
+        { l: 'DoH Server', k: 'text' },
+        { l: 'Verify DoH Certificate', k: 'check' }
       ]
     },
     'route': {
@@ -350,6 +354,7 @@
         { l: 'Use IPsec', k: 'select', core: 1 },
         { l: 'IPsec Secret', k: 'text' },
         { l: 'Allow Fast Path', k: 'check' },
+        { l: 'Authentication', k: 'select' },
         { l: 'Default Profile', k: 'select' }
       ]
     },
@@ -366,8 +371,10 @@
       title: 'SSTP Server',
       fields: [
         { l: 'Enabled', k: 'check', core: 1 },
+        { l: 'Port', k: 'text', core: 1 },
         { l: 'Default Profile', k: 'select', core: 1 },
         { l: 'Certificate', k: 'select' },
+        { l: 'Keepalive Timeout', k: 'text' },
         { l: 'Authentication', k: 'select' }
       ]
     },
@@ -381,6 +388,7 @@
         { l: 'Max MTU', k: 'text' },
         { l: 'Certificate', k: 'select' },
         { l: 'Require Client Certificate', k: 'check' },
+        { l: 'Cipher', k: 'select' },
         { l: 'Authentication', k: 'select' },
         { l: 'Default Profile', k: 'select' }
       ]
@@ -401,6 +409,7 @@
         { l: 'Contact', k: 'text' },
         { l: 'Location', k: 'text' },
         { l: 'Trap Community', k: 'text' },
+        { l: 'Trap Target', k: 'text' },
         { l: 'Trap Version', k: 'select' },
         { l: 'Trap Generators', k: 'text' },
         { l: 'Authentication', k: 'select' }
@@ -414,6 +423,7 @@
         { l: 'File Limit', k: 'text' },
         { l: 'Memory Limit', k: 'text' },
         { l: 'Filter', k: 'text' },
+        { l: 'Filter Stream', k: 'text' },
         { l: 'Streaming Enabled', k: 'check' },
         { l: 'Streaming Server', k: 'text' }
       ]
@@ -429,6 +439,7 @@
         { l: 'Service', k: 'text' },
         { l: 'AC Name', k: 'text' },
         { l: 'Keepalive Timeout', k: 'text' },
+        { l: 'MTU', k: 'text' },
         { l: 'Add Default Route', k: 'check' },
         { l: 'Use Peer DNS', k: 'check' },
         { l: 'Disabled', k: 'check' }

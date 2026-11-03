@@ -114,7 +114,8 @@ window.DATA.push({
               { l: 'IPsec Secret', v: '••••••••••••', m: 4 },
               { l: 'Authentication', v: 'mschap2', type: 'select' },
               { l: 'Keepalive Timeout', v: '30' },
-              { l: 'Max MTU / MRU', v: '1450 / 1450' }
+              { l: 'Max MTU', v: '1450' },
+              { l: 'Max MRU', v: '1450' }
             ]
           },
           notes: ['Включение L2TP-сервера', 'Профиль, который получают подключившиеся', 'Шифрование через IPsec', 'Общий ключ IPsec — сообщается клиентам отдельно от пароля']
