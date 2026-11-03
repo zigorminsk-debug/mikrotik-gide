@@ -126,20 +126,54 @@ jobs:
           xdotool getwindowgeometry --shell "$WID" > docs/shots/geometry.txt 2>&1 || true
           xwininfo -root -tree > docs/shots/xwininfo.txt || true
 
-      - name: Проба кликов по дереву разделов
+      - name: Разобрать рабочий стол и снять окна
         run: |
           set -x
           cd "$GITHUB_WORKSPACE"
-          WID=$(xdotool search --name '.' | tail -1)
-          WID=$(xdotool search --name '^WinBox' | head -1)
+          # окно Winbox — самое большое на экране (у приложения есть служебные окна 1x1)
+          best=""; bestarea=0
+          for w in $(xdotool search --name '.' 2>/dev/null); do
+            eval "$(xdotool getwindowgeometry --shell "$w" 2>/dev/null)" || continue
+            area=$((WIDTH * HEIGHT))
+            if [ "$area" -gt "$bestarea" ]; then bestarea=$area; best=$w; fi
+          done
+          WID=$best
           xdotool windowactivate --sync "$WID" || true
           eval "$(xdotool getwindowgeometry --shell "$WID")"
-          echo "окно X=$X Y=$Y W=$WIDTH H=$HEIGHT" >> docs/shots/report.txt
-          for dy in 40 80 120 160; do
-            xdotool mousemove $((X + 60)) $((Y + dy)) click 1
-            sleep 3
-            import -window root "docs/shots/20-click-$dy.png" || true
-          done
+          echo "рабочее окно: X=$X Y=$Y W=$WIDTH H=$HEIGHT" >> docs/shots/report.txt
+          shot() { import -window root "docs/shots/$1.png" || true; sleep 0.5; }
+          tap() { xdotool mousemove $((X + $1)) $((Y + $2)) click 1; sleep 2; }
+          key() { xdotool key --clearmodifiers "$1"; sleep 2; }
+
+          # 1. диалог «Change Password Now» закрываем (Cancel)
+          tap 665 404
+          shot 30-desktop
+
+          # 2. прямо открывающиеся разделы
+          tap 80 72;   shot 31-wifi
+          key ctrl+w;  shot 31-wifi-closed
+          tap 80 95;   shot 32-interfaces
+          key ctrl+w
+          tap 80 122;  shot 33-wireguard
+          key ctrl+w
+          tap 80 146;  shot 34-bridge
+          key ctrl+w
+          tap 80 170;  shot 35-ppp
+          key ctrl+w
+          tap 80 353;  shot 36-queues
+          key ctrl+w
+          tap 80 398;  shot 37-files
+          key ctrl+w
+
+          # 3. раздел IP — раскрываем подменю
+          tap 80 238;  shot 40-ip-menu
+          tap 260 238; shot 41-ip-first
+
+          # 4. настройки (шестерёнка) — там тема оформления
+          tap 1131 7;  shot 50-settings
+          key Escape
+          shot 51-after-settings
+
           xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
 
       - name: Отчёт и скриншоты в ветку
