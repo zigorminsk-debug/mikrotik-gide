@@ -270,122 +270,209 @@ code.inl{
   background:#e11d48;color:#fff;font-size:calc(11px * var(--fsm, 1));font-weight:700;margin-top:1px;
 }
 
-/* =============== Winbox 4 mockup (всегда светлая тема) =============== */
+/* =============== Winbox 4 (макет окна 1:1 с настоящим Winbox 4) ===============
+   Палитра и размеры сняты с реальных окон Winbox 4 (RouterOS 7):
+   заголовок активного окна #c7ddf3, фон окна #eef0f1, поле #ffffff с рамкой
+   #b9c0c7, кнопки Cancel #d8dbdd, Apply/OK #168ded, нижняя панель #e8eaec,
+   элементы «−»/«+»/«▾» — квадратные кнопки 24×24 рядом с полем.            */
 .wb{
-  --wb-bg:#f2f5f9; --wb-win:#ffffff; --wb-line:#d8e0ea; --wb-hd:#eef2f8; --wb-txt:#1b2432;
-  --wb-dim:#5a6a80; --wb-blue:#2f6fed; --wb-sel:#dbe9ff; --wb-green:#22b573; --wb-red:#e5484d;
-  width:1000px;background:var(--wb-bg);color:var(--wb-txt);
-  font-family:var(--sans);font-size:12px;line-height:1.35;position:relative;
-  padding:10px;display:flex;gap:9px;align-items:stretch;
+  --wb-desk:#e4e8eb; --wb-win:#eef0f1; --wb-line:#c3cace; --wb-txt:#14171a;
+  --wb-mute:#5b636b; --wb-blue:#168ded; --wb-tb:#c7ddf3; --wb-sel:#cfe3fb;
+  --wb-hd:#e9ecee; --wb-red:#d81f26; --wb-link:#1a6fd4;
+  width:1000px;background:var(--wb-desk);color:var(--wb-txt);
+  font-family:"Segoe UI",var(--sans);font-size:12.5px;line-height:1.3;position:relative;
+  padding:8px;display:flex;gap:8px;align-items:stretch;
 }
 .wb *{box-sizing:border-box}
+
+/* -------- дерево разделов Winbox 4 (левая панель) -------- */
 .wb-side{
-  width:150px;flex:0 0 150px;background:#e7ecf3;border:1px solid var(--wb-line);border-radius:8px;
-  padding:6px 5px;font-size:10.5px;color:#334155;overflow:hidden;
+  width:168px;flex:0 0 168px;background:#eef0f2;border:1px solid var(--wb-line);
+  padding:4px 3px;font-size:12.5px;color:#1d2023;overflow:hidden;
 }
 .wb-side .sb-search{
-  height:18px;border-radius:5px;background:#fff;border:1px solid var(--wb-line);color:#93a2b6;
-  display:flex;align-items:center;padding:0 6px;font-size:9.5px;margin-bottom:5px;
+  height:20px;background:#fff;border:1px solid #b9c0c7;border-radius:4px;color:#8b939a;
+  display:flex;align-items:center;padding:0 6px;font-size:11px;margin:2px 4px 5px;
 }
 .wb-side .sb-grp{
-  display:flex;align-items:center;gap:5px;padding:3.5px 5px;border-radius:4px;color:#4b5a6e;
+  display:flex;align-items:center;gap:7px;padding:3px 6px;border-radius:3px;color:#1d2023;
   white-space:nowrap;
 }
-.wb-side .sb-grp.hl{background:#d3e3fd;color:#0b4bb3;font-weight:700}
-.wb-side .sb-grp .car{margin-left:auto;font-size:8px;color:#9aa8b8}
-.wb-side .sb-sub{padding:2px 5px 2px 18px;color:#6b7a8f;white-space:nowrap;font-size:10px}
-.wb-side .sb-sub.hl{color:#0b4bb3;font-weight:700;background:#e8f1ff;border-radius:4px}
-.wb-side .sb-ico{width:12px;height:12px;border-radius:3px;background:#c3d0e0;display:inline-block;flex:0 0 auto}
-.wb-side .sb-grp.hl .sb-ico{background:#2f6fed}
+.wb-side .sb-grp.hl{background:var(--wb-sel)}
+.wb-side .sb-grp .car{margin-left:auto;font-size:9px;color:#5b636b}
+.wb-side .sb-sub{padding:2px 6px 2px 27px;color:#3a4148;font-size:11.5px;white-space:nowrap}
+.wb-side .sb-sub.hl{background:#dbe7f7;color:#0d4f9e;font-weight:600;border-radius:3px}
+.wb-side .sb-ico{width:14px;height:14px;flex:0 0 14px;display:block;color:#3f86c9}
+.wb-side .sb-ico svg{width:14px;height:14px;display:block}
 
+/* -------- окно -------- */
 .wb-main{
-  flex:1;min-width:0;background:var(--wb-win);border:1px solid #c9d4e2;border-radius:9px;
-  overflow:hidden;display:flex;flex-direction:column;
-  box-shadow:0 10px 24px rgba(15,30,60,.12);
+  flex:1;min-width:0;background:var(--wb-win);border:1px solid #9aa4ac;
+  display:flex;flex-direction:column;overflow:hidden;
 }
 .wb-tb{
-  height:30px;display:flex;align-items:center;gap:7px;padding:0 8px;background:linear-gradient(#fbfcfe,#eef2f8);
-  border-bottom:1px solid var(--wb-line);
+  height:30px;display:flex;align-items:center;gap:6px;padding:0 5px 0 7px;
+  background:var(--wb-tb);border-bottom:1px solid #9fb6cc;flex:0 0 30px;
 }
-.wb-tb .dot{width:9px;height:9px;border-radius:50%;background:#d7dfe9;display:block}
-.wb-tb .dot.r{background:#ff6058}.wb-tb .dot.y{background:#ffbd2e}.wb-tb .dot.g{background:#28c840}
-.wb-tb .tt{font-weight:700;font-size:12px;letter-spacing:.1px;margin-left:2px}
-.wb-tb .path{color:#7d8b9e;font-size:10.5px;margin-left:6px}
+.wb-tb .ico{width:15px;height:15px;flex:0 0 15px;display:grid;place-items:center;color:#243038}
+.wb-tb .ico svg{width:15px;height:15px;display:block}
+.wb-tb .tt{font-weight:600;font-size:12.5px;color:#0f1215;white-space:nowrap}
+.wb-tb .arr{color:#4b5560;font-size:12px;margin:0 -2px}
+.wb-tb .chip{
+  background:#fff;border:1px solid #b7c9dd;border-radius:4px;padding:2px 8px;
+  font-size:12.5px;font-weight:600;color:#0f1215;white-space:nowrap;
+  box-shadow:0 1px 0 rgba(0,0,0,.05);
+}
+.wb-tb .path{
+  margin-left:auto;color:#3c4b56;font-size:11px;white-space:nowrap;overflow:hidden;
+  text-overflow:ellipsis;
+}
+.wb-tb .wc{display:flex;gap:1px;flex:0 0 auto}
+.wb-tb .wc i{
+  width:19px;height:19px;display:grid;place-items:center;font-style:normal;font-size:11px;
+  color:#2b3238;border-radius:3px;
+}
+
+/* -------- вкладки-«чипы» окна -------- */
+.wb-tabs{
+  display:flex;align-items:center;gap:4px;padding:4px 6px;background:#e9edf0;
+  border-bottom:1px solid #c9d0d5;flex-wrap:wrap;
+}
+.wb-tab{
+  background:#dfe5ea;border:1px solid #c2cbd2;border-radius:4px;padding:2px 9px;
+  font-size:11.5px;color:#252b31;white-space:nowrap;
+}
+.wb-tab.on{background:#fff;border-color:#8fb3d6;color:#0f1215;font-weight:600;box-shadow:inset 0 -2px 0 var(--wb-blue)}
+.wb-tab.wsel{background:#fff;border-color:#b7c9dd}
+
+/* -------- панель инструментов окна -------- */
 .wb-tools{
-  display:flex;align-items:center;gap:4px;padding:5px 8px;border-bottom:1px solid #eef2f7;background:#fff;
+  display:flex;align-items:center;gap:4px;padding:4px 6px;background:#eceff1;
+  border-bottom:1px solid #d3d9dd;flex-wrap:wrap;
 }
 .wb-btn{
-  min-width:24px;height:22px;padding:0 7px;border:1px solid #d3dce7;background:#fff;border-radius:5px;
-  font-size:11px;color:#33425a;display:inline-flex;align-items:center;gap:4px;font-weight:600;
+  height:23px;padding:0 8px 0 6px;border:1px solid #bfc7cd;border-radius:4px;
+  background:linear-gradient(#fdfefe,#e9ecee);font-size:11.5px;color:#1d2023;
+  display:inline-flex;align-items:center;gap:4px;font-weight:500;white-space:nowrap;
 }
-.wb-btn.pri{background:#2f6fed;border-color:#2f6fed;color:#fff}
-.wb-btn.ghost{background:#f4f7fb}
-.wb-tabs{display:flex;gap:3px;padding:5px 8px 0;background:#fff;border-bottom:1px solid var(--wb-line);flex-wrap:wrap}
-.wb-tab{
-  padding:4px 10px;font-size:11px;color:#5a6a80;border-radius:6px 6px 0 0;border:1px solid transparent;
-  border-bottom:0;position:relative;top:1px;white-space:nowrap;
-}
-.wb-tab.on{background:#fff;border-color:var(--wb-line);color:#0b4bb3;font-weight:700;box-shadow:0 -2px 0 #2f6fed inset}
-.wb-body{padding:8px;flex:1;display:flex;gap:8px;align-items:flex-start}
+.wb-btn .bi{font-size:12px;line-height:1;color:#2b3238}
+.wb-btn.pri{background:linear-gradient(#3aa4f2,#168ded);border-color:#0f7fd6;color:#fff}
+.wb-btn.pri .bi{color:#fff}
+.wb-btn.ghost{background:#f4f6f7}
+.wb-btn.off{color:#9aa2a8}
 
-.wb-table{flex:1;min-width:0;border:1px solid var(--wb-line);border-radius:6px;overflow:hidden;background:#fff}
-.wb-tr{display:flex;border-bottom:1px solid #eef2f7}
+/* -------- рабочая область + правая панель инструментов -------- */
+.wb-work{flex:1;min-height:0;display:flex;align-items:stretch}
+.wb-body{flex:1;min-width:0;display:flex;gap:6px;padding:6px;align-items:flex-start;background:var(--wb-win)}
+.wb-right{
+  width:66px;flex:0 0 66px;border-left:1px solid #d3d9dd;background:#eceff1;
+  padding:4px 3px;display:flex;flex-direction:column;gap:2px;
+}
+.wb-right .rt{
+  display:flex;flex-direction:column;align-items:center;gap:3px;padding:5px 2px;
+  border-radius:4px;font-size:9.5px;color:#2b3238;text-align:center;line-height:1.15;
+}
+.wb-right .rt .ri{font-size:14px;line-height:1}
+.wb-right .rt.on{background:#dbe7f7}
+
+/* -------- таблица списка -------- */
+.wb-table{flex:1;min-width:0;background:#fff;border:1px solid #bfc7cd;overflow:hidden}
+.wb-tr{display:flex;border-bottom:1px solid #e2e6e9}
 .wb-tr:last-child{border-bottom:0}
-.wb-th{background:linear-gradient(#f6f8fc,#eaf0f7);font-weight:700;font-size:10.5px;color:#42526b}
+.wb-th{background:var(--wb-hd);font-weight:600;font-size:11.5px;color:#1d2023;border-bottom:1px solid #b9c1c7}
 .wb-th>div,.wb-td>div{
-  padding:4px 7px;border-right:1px solid #edf1f7;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  padding:3px 6px;border-right:1px solid #e2e6e9;overflow:hidden;text-overflow:ellipsis;
+  white-space:nowrap;
 }
 .wb-th>div:last-child,.wb-td>div:last-child{border-right:0}
-.wb-td{font-size:11px;color:#213045;background:#fff}
-.wb-tr.wb-td:nth-child(even){background:#fafcff}
+.wb-td{font-size:11.5px;color:#1d2023;background:#fff}
+.wb-tr.wb-td:nth-child(even){background:#fbfcfc}
 .wb-tr.sel.wb-td{background:var(--wb-sel)}
-.wb-tr.sel>div:first-child{box-shadow:inset 3px 0 0 #2f6fed}
-.wb-td .mono{font-family:var(--mono);font-size:10.5px}
-.wb-td .num{color:#8494a8}
-.wb-td .ok{color:#12855b;font-weight:700}
-.wb-td .no{color:#c62b31;font-weight:700}
-.wb-td .pill{background:#eef2f8;border-radius:4px;padding:0 4px;font-size:10px;color:#41536b}
+.wb-td .mono{font-family:var(--mono);font-size:11px}
+.wb-td .num{color:#5b636b}
+.wb-td .ok{color:#0f7a43;font-weight:600}
+.wb-td .no{color:#b3261e;font-weight:600}
+.wb-td .pill{background:#e7eaec;border-radius:3px;padding:0 4px;font-size:10.5px;color:#333b42}
 
-.wb-form{
-  width:330px;flex:0 0 330px;border:1px solid var(--wb-line);border-radius:7px;background:#fff;
-  box-shadow:0 8px 18px rgba(15,30,60,.10);overflow:hidden;
+/* -------- диалог: поля как в Winbox 4 (подпись справа + поле + «−»/«▾»/«+») -------- */
+.wb-form{flex:1;min-width:0;display:flex;flex-direction:column;align-self:stretch;background:var(--wb-win)}
+.wb-form-h{display:none}
+.wb-form-body{padding:8px 10px 6px;flex:1}
+.wb-f{display:flex;align-items:flex-start;gap:7px;margin-bottom:6px;min-height:24px}
+.wb-f>label{
+  width:150px;flex:0 0 150px;text-align:right;color:#14171a;font-size:12.5px;
+  line-height:24px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
-.wb-form-h{
-  display:flex;align-items:center;gap:6px;padding:5px 8px;background:linear-gradient(#fbfcfe,#eaf0f7);
-  border-bottom:1px solid var(--wb-line);font-weight:700;font-size:11px;color:#22324a;
-}
-.wb-form-body{padding:7px 8px}
-.wb-f{display:flex;align-items:center;gap:6px;margin-bottom:5px;min-height:19px}
-.wb-f>label{width:104px;flex:0 0 104px;text-align:right;color:#42526b;font-size:10.5px}
+.wb-f>label.link,.wb-f .lbl-box .lb.link{color:var(--wb-link)}
+.wb-f .lbl-box{width:150px;flex:0 0 150px;text-align:right;line-height:1.15;padding-top:5px}
+.wb-f .lbl-box .lb{font-size:12.5px;font-weight:600;color:#14171a;white-space:nowrap}
+.wb-f .lbl-box .err{color:var(--wb-red);font-size:11px;font-weight:600;margin-top:1px}
 .wb-f .ctl{
-  flex:1;min-width:0;height:19px;border:1px solid #ccd7e4;border-radius:4px;background:#fff;
-  padding:0 5px;font-size:10.5px;color:#16233a;display:flex;align-items:center;
+  flex:1;min-width:70px;height:24px;border:1px solid #b9c0c7;border-radius:4px;background:#fff;
+  padding:0 7px;font-size:12.5px;color:#14171a;display:flex;align-items:center;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
 }
-.wb-f .ctl.sel::after{content:"▾";margin-left:auto;color:#8b9bad;font-size:9px}
-.wb-f .ctl.ro{background:#f4f7fb;color:#5d6d82}
-.wb-f .chk{width:12px;height:12px;border:1px solid #b9c6d6;border-radius:3px;background:#fff;display:grid;place-items:center;font-size:9px;color:#2f6fed}
-.wb-f .chk.on{background:#2f6fed;border-color:#2f6fed;color:#fff}
+.wb-f .ctl.ro{background:#f2f4f5;color:#4c545b}
+.wb-f .combo{flex:1;min-width:70px;display:flex;height:24px}
+.wb-f .combo .ctl{border-radius:4px 0 0 4px;border-right:0;flex:1}
+.wb-f .combo .car{
+  width:20px;flex:0 0 20px;border:1px solid #b9c0c7;border-left:1px solid #dfe3e6;
+  border-radius:0 4px 4px 0;background:linear-gradient(#fdfefe,#e9ecee);display:grid;
+  place-items:center;font-size:9px;color:#4c545b;
+}
+.wb-f .sq{
+  width:24px;height:24px;flex:0 0 24px;border:1px solid #b9c0c7;border-radius:4px;
+  background:linear-gradient(#fdfefe,#e9ecee);display:grid;place-items:center;font-size:13px;
+  color:#1d2023;line-height:1;padding:0;
+}
+.wb-f .sq.off{color:#a7aeb4}
+.wb-f .chk{
+  width:15px;height:15px;margin-top:4px;border:1px solid #7d868d;border-radius:3px;background:#fff;
+  display:grid;place-items:center;font-size:10px;color:#fff;
+}
+.wb-f .chk.on{background:var(--wb-blue);border-color:#0f7fd6}
 .wb-f .chk.on::after{content:"✓"}
-.wb-form-foot{display:flex;gap:5px;padding:6px 8px;border-top:1px solid #eef2f7;background:#f8fafd;justify-content:flex-end}
+.wb-f .fnote{flex:1;color:#5b636b;font-size:11px;line-height:24px}
+.wb-form-foot{
+  display:flex;gap:6px;padding:5px 8px;background:#e8eaec;border-top:1px solid #cfd5d9;
+  justify-content:flex-end;
+}
+.wb-form-foot .wb-btn{height:25px;padding:0 13px;font-size:12px;font-weight:600;justify-content:center}
+.wb-form-foot .wb-btn.def{background:linear-gradient(#3aa4f2,#168ded);border-color:#0f7fd6;color:#fff}
+.wb-form-foot .wb-btn.sec{background:#d8dbdd;border-color:#c3c7ca;color:#14171a}
+.wb-form-foot .wb-btn.off{background:#cfd6dc;border-color:#c3c9ce;color:#97a1a8}
 .wb-status{
-  display:flex;align-items:center;gap:10px;padding:3px 8px;border-top:1px solid var(--wb-line);
-  background:#f4f7fb;font-size:10px;color:#6b7b91;
+  display:flex;align-items:center;gap:10px;padding:3px 8px;border-top:1px solid #cfd5d9;
+  background:#e8eaec;font-size:11px;color:#3f474e;
 }
 .wb-status .sp{margin-left:auto}
 
-/* terminal scene */
+/* -------- «путь по меню» (окно ещё не открыто) -------- */
+.wb-navpath{display:flex;flex-wrap:wrap;gap:5px;align-items:center;font-size:12.5px;color:#14171a}
+.wb-navpath .np{background:#fff;border:1px solid #b9c0c7;border-radius:4px;padding:2px 8px}
+.wb-navpath .narr{color:#5b636b}
+.wb-navhint{margin-top:8px;color:#5b636b;font-size:11.5px}
+
+/* -------- терминал RouterOS -------- */
 .wb-term{
-  width:1000px;background:#0b1016;border-radius:10px;padding:0;color:#cfe3f7;
-  font-family:var(--mono);font-size:12px;border:1px solid #22303f;overflow:hidden;position:relative;
+  width:1000px;background:var(--wb-desk);border:1px solid #9aa4ac;overflow:hidden;position:relative;
+  font-family:var(--sans);
 }
 .wb-term-h{
-  display:flex;align-items:center;gap:8px;padding:6px 10px;background:#131c26;border-bottom:1px solid #22303f;
-  font-family:var(--sans);font-size:11px;color:#8b9bad;
+  height:30px;display:flex;align-items:center;gap:6px;padding:0 6px;background:var(--wb-tb);
+  border-bottom:1px solid #9fb6cc;font-size:12.5px;color:#0f1215;font-weight:600;
 }
-.wb-term-h .dots{display:flex;gap:5px}
-.wb-term-h .dots i{width:9px;height:9px;border-radius:50%;background:#2a3a4a;display:block}
-.wb-term pre{margin:0;padding:10px 12px;white-space:pre;line-height:1.55;overflow:hidden}
+.wb-term-h .ico{width:15px;height:15px;flex:0 0 15px;display:grid;place-items:center;color:#243038}
+.wb-term-h .dots{display:none}
+.wb-term-h .path{margin-left:auto;font-weight:400;font-size:11px;color:#3c4b56}
+.wb-term-h .copy{
+  border:1px solid #bfc7cd;border-radius:4px;background:linear-gradient(#fdfefe,#e9ecee);
+  font-size:11px;color:#1d2023;padding:2px 7px;
+}
+.wb-term pre{
+  margin:0;padding:8px 10px;white-space:pre;line-height:1.5;overflow:hidden;background:#0b1016;
+  color:#cfe3f7;font-family:var(--mono);font-size:12px;
+}
 .wb-term pre .pr{color:#5ee0a0}
 .wb-term pre .cm{color:#e6edf3}
 .wb-term pre .out{color:#9fb6cc}

@@ -21,27 +21,86 @@
 (function () {
   'use strict';
 
+  /* Дерево Winbox 4 — порядок и названия как в настоящем Winbox 4. */
   const MENU = [
-    { g: 'Interface', items: ['Interface', 'Ethernet', 'VLAN', 'Bonding', 'Bridge', 'WireGuard'] },
-    { g: 'Bridge', items: ['Bridge', 'Ports', 'VLANs', 'Hosts', 'Filters', 'MSTP'] },
-    { g: 'PPP', items: ['Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'] },
-    { g: 'Switch', items: ['Switch', 'Ports', 'VLANs', 'Rules'] },
-    { g: 'IP', items: ['Address', 'ARP', 'Cloud', 'DHCP Client', 'DHCP Server', 'DNS', 'Firewall', 'Hotspot',
+    { g: 'Quick Set', ic: 'quick' },
+    { g: 'WiFi', ic: 'wifi', items: ['WiFi', 'Security', 'Access List', 'Registration', 'CAPsMAN', 'Provisioning'] },
+    { g: 'Interfaces', ic: 'port', items: ['Interface', 'Ethernet', 'VLAN', 'Bonding', 'Bridge', 'WireGuard', 'VXLAN', 'Lists', 'Detect Internet', 'LTE'] },
+    { g: 'WireGuard', ic: 'shield', items: ['WireGuard', 'Peers'] },
+    { g: 'Bridge', ic: 'bridge', items: ['Bridge', 'Ports', 'VLANs', 'Hosts', 'Filters', 'MSTP', 'NAT'] },
+    { g: 'PPP', ic: 'ppp', items: ['Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'] },
+    { g: 'Switch', ic: 'switch', items: ['Switch', 'Ports', 'VLANs', 'Rules'] },
+    { g: 'Mesh', ic: 'mesh' },
+    { g: 'IP', ic: 'ip', items: ['Address', 'ARP', 'Cloud', 'DHCP Client', 'DHCP Server', 'DNS', 'Firewall', 'Hotspot',
       'IPsec', 'Kid Control', 'Neighbor Discovery', 'Pool', 'Routes', 'Services', 'Settings', 'SNTP Client',
       'SMB', 'UPnP', 'VRF', 'Web Proxy'] },
-    { g: 'IPv6', items: ['Address', 'DHCP Client', 'DHCP Server', 'ND', 'Firewall', 'Routes'] },
-    { g: 'MPLS', items: ['MPLS', 'Forwarding', 'LDP', 'Traffic Eng'] },
-    { g: 'Routing', items: ['Table', 'Rules', 'Nexthops', 'Filters', 'BGP', 'OSPF', 'RIP', 'Prefix Lists', 'BFD'] },
-    { g: 'Queues', items: ['Simple Queues', 'Queue Tree', 'Queue Types', 'Interface Queues'] },
-    { g: 'System', items: ['Identity', 'Clock', 'NTP Client', 'Users', 'Certificates', 'Files', 'Logging',
+    { g: 'IPv6', ic: 'ipv6', items: ['Address', 'DHCP Client', 'DHCP Server', 'ND', 'Firewall', 'Routes'] },
+    { g: 'MPLS', ic: 'mpls', items: ['MPLS', 'Forwarding', 'LDP', 'Traffic Eng'] },
+    { g: 'Routing', ic: 'route', items: ['Table', 'Rules', 'Nexthops', 'Filters', 'BGP', 'OSPF', 'RIP', 'Prefix Lists', 'BFD'] },
+    { g: 'System', ic: 'system', items: ['Identity', 'Clock', 'NTP Client', 'Users', 'Certificates', 'Files', 'Logging',
       'Packages', 'RouterBOOT', 'Scheduler', 'Scripts', 'Backup', 'Reset Configuration', 'Resources',
       'Health', 'Watchdog', 'Auto Upgrade', 'Note'] },
-    { g: 'Tools', items: ['Ping', 'Traceroute', 'Torch', 'Profiler', 'Sniffer', 'Netwatch', 'Graphing',
+    { g: 'Queues', ic: 'queue', items: ['Simple Queues', 'Queue Tree', 'Queue Types', 'Interface Queues'] },
+    { g: 'Dot1X', ic: 'key' },
+    { g: 'Tools', ic: 'tool', items: ['Ping', 'Traceroute', 'Torch', 'Profiler', 'Sniffer', 'Netwatch', 'Graphing',
       'Bandwidth Test', 'Traffic Generator', 'Email', 'Wake on LAN', 'RoMON', 'Fetch', 'Speed Test'] },
-    { g: 'WiFi', items: ['WiFi', 'Security', 'Access List', 'Registration', 'CAPsMAN', 'Provisioning'] },
-    { g: 'WireGuard', items: ['WireGuard', 'Peers'] },
-    { g: 'Certificates', items: ['Certificates'] }
+    { g: 'Files', ic: 'file' },
+    { g: 'Log', ic: 'log' }
   ];
+
+  /* Линейные иконки разделов — те же по смыслу, что у Winbox 4. */
+  const ICO = {
+    quick: 'M13 2 4 14h6l-1 8 9-12h-6z',
+    wifi: 'M3.5 9a14 14 0 0 1 17 0M6.5 12.5a10 10 0 0 1 11 0M9.5 16a5.5 5.5 0 0 1 5 0',
+    port: 'M4 6h16v4H4zM4 14h16v4H4z',
+    shield: 'M12 3l8 3v6c0 5-7.5 9-8 9s-8-4-8-9V6z',
+    bridge: 'M3 12h18M7 12V8M17 12V8M5 8h4M15 8h4',
+    ppp: 'M4 7h16v10H4zM8 12h.01M12 12h.01M16 12h.01',
+    switch: 'M4 8h16l-3-3M20 16H4l3 3',
+    mesh: 'M12 4l8 15H4z',
+    ip: 'M3 6h10v12H3zM17 9l3 3-3 3',
+    ipv6: 'M3 6h10v12H3zM17 9l3 3-3 3M6.5 10.5h3',
+    mpls: 'M12 3l9 9-9 9-9-9z',
+    route: 'M4 12h6l4-6h6M4 12h6l4 6h6',
+    system: 'M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7zM12 3v3M12 18v3M4.5 7.5l2.5 2M17 14.5l2.5 2M4.5 16.5l2.5-2M17 9.5l2.5-2',
+    queue: 'M4 5v14M9 8v11M14 11v8M19 14v5',
+    key: 'M15 8.5a3.5 3.5 0 1 0-3.4 3.5L4 19.5V21h2v-1.5h1.5V18H9v-1.5h1.5l1.6-1.6',
+    tool: 'M20 5.5a4 4 0 0 1-5.2 4.9L7 18.2 5.8 17l7.8-7.8A4 4 0 0 1 18.5 5z',
+    file: 'M4 6h5l2 2h9v10H4z',
+    log: 'M5 6h14M5 11h14M5 16h9',
+    win: 'M3 5h18v14H3zM3 9h18'
+  };
+
+  function ico(name, size) {
+    const d = ICO[name] || ICO.win;
+    const s = size || 14;
+    return '<svg viewBox="0 0 24 24" width="' + s + '" height="' + s + '" fill="none" stroke="currentColor"' +
+      ' stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="' + d + '"/></svg>';
+  }
+
+  /* Названия в статьях иногда пишут по-старому (Interface, Certificates) —
+     в дереве Winbox 4 это Interfaces и System → Certificates. */
+  const GROUP_ALIAS = {
+    interface: 'interfaces', interfaces: 'interfaces',
+    certificates: 'system', certificate: 'system',
+    firewall: 'ip', nat: 'ip', dns: 'ip', dhcp: 'ip', routes: 'ip', route: 'ip',
+    'wireguard peers': 'wireguard', peers: 'wireguard',
+    files: 'files', log: 'log', logs: 'log', login: 'quick set'
+  };
+
+  function groupName(g) {
+    const k = String(g || '').toLowerCase().trim();
+    return GROUP_ALIAS[k] || k;
+  }
+
+  function groupIcon(path) {
+    const g = String(path || '').split('→')[0].trim();
+    const key = groupName(g);
+    for (let i = 0; i < MENU.length; i++) if (MENU[i].g.toLowerCase() === key) return MENU[i].ic;
+    if (/wireguard/i.test(path || '')) return 'shield';
+    if (/files/i.test(path || '')) return 'file';
+    return 'win';
+  }
 
   function el(tag, cls, html) {
     const n = document.createElement(tag);
@@ -56,21 +115,20 @@
 
   /* ---------- боковое меню Winbox (мини-копия) ---------- */
   function sidebar(path) {
-    const parts = String(path || '').split('→').map(s => s.trim());
-    const g0 = parts[0] || '';
-    const i0 = parts[1] || '';
+    const parts = String(path || '').split('→').map(function (s) { return s.trim(); }).filter(Boolean);
+    const g0 = groupName(parts[0] || '');
+    const i0 = (parts[1] || '').toLowerCase();
     const box = el('div', 'wb-side');
-    box.appendChild(el('div', 'sb-search', 'Поиск…'));
+    box.appendChild(el('div', 'sb-search', 'Search'));
     MENU.forEach(function (grp) {
-      const hl = grp.g.toLowerCase() === g0.toLowerCase();
-      const multi = /IPv6|^I/i.test(grp.g);
+      const hl = groupName(grp.g) === g0;
+      const open = !!(grp.items && grp.items.length) || hl;
       box.appendChild(el('div', 'sb-grp' + (hl ? ' hl' : ''),
-        '<span class="sb-ico"></span><span>' + esc(grp.g) + '</span>' +
-        (multi || hl ? '<span class="car">▸</span>' : '')));
-      if (hl) {
-        const show = grp.items.length <= 6 ? grp.items : [i0].filter(Boolean);
-        show.forEach(function (it) {
-          const on = it.toLowerCase() === i0.toLowerCase() || grp.items.length <= 6;
+        '<span class="sb-ico">' + ico(grp.ic, 14) + '</span><span>' + esc(grp.g) + '</span>' +
+        (open ? '<span class="car">›</span>' : '')));
+      if (hl && grp.items) {
+        grp.items.forEach(function (it) {
+          const on = it.toLowerCase() === i0;
           box.appendChild(el('div', 'sb-sub' + (on ? ' hl' : ''), esc(it)));
         });
       }
@@ -115,59 +173,409 @@
     return wrap;
   }
 
+  /* ---------- реальные окна Winbox 4 (RouterOS 7) ----------
+     Каталог нужен, чтобы макет диалога совпадал с настоящим окном: тот же
+     порядок полей, те же чекбоксы, поля-списки с «+» и вкладки.
+     core:1 — поле есть в окне всегда, даже если в статье его не заполняли. */
+  const WIN4 = {
+    'wireguard peer': {
+      title: 'WireGuard Peer',
+      fields: [
+        { l: 'Enabled', k: 'check', core: 1 },
+        { l: 'Comment', k: 'text', core: 1 },
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Interface', k: 'select', core: 1 },
+        { l: 'Public Key', k: 'text', core: 1 },
+        { l: 'Private Key', k: 'select', core: 1 },
+        { l: 'Endpoint', k: 'plus', core: 1 },
+        { l: 'Endpoint Port', k: 'plus', core: 1 },
+        { l: 'Allowed Address', k: 'multi', core: 1 },
+        { l: 'Preshared Key', k: 'select', core: 1 },
+        { l: 'Persistent Keepalive', k: 'plus', core: 1 },
+        { l: 'Responder', k: 'check', core: 1 },
+        { l: 'Current Endpoint Address', k: 'text' },
+        { l: 'Current Endpoint Port', k: 'text' },
+        { l: 'Rx', k: 'text' },
+        { l: 'Tx', k: 'text' },
+        { l: 'Last Handshake', k: 'text' },
+        { l: 'Client Address', k: 'multi' },
+        { l: 'Client DNS', k: 'multi' },
+        { l: 'Client Endpoint', k: 'text' },
+        { l: 'Client Keepalive', k: 'plus' },
+        { l: 'Client Listen Port', k: 'plus' },
+        { l: 'Client MTU', k: 'plus' },
+        { l: 'Client Allowed Address', k: 'multi' },
+        { l: 'Client Config', k: 'area' }
+      ]
+    },
+    'wireguard': {
+      title: 'WireGuard',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Listen Port', k: 'text', core: 1 },
+        { l: 'Private Key', k: 'text', core: 1 },
+        { l: 'Public Key', k: 'text', core: 1 },
+        { l: 'MTU', k: 'text' }
+      ]
+    },
+    'filter rule': {
+      title: 'Filter Rule',
+      tabs: ['General', 'Advanced', 'Extra', 'Action', 'Statistics'],
+      fields: [
+        { l: 'Chain', k: 'select', core: 1 },
+        { l: 'Src. Address', k: 'text' },
+        { l: 'Dst. Address', k: 'text' },
+        { l: 'Protocol', k: 'select' },
+        { l: 'Src. Port', k: 'text' },
+        { l: 'Dst. Port', k: 'text' },
+        { l: 'In. Interface', k: 'select' },
+        { l: 'Out. Interface', k: 'select' },
+        { l: 'In. Interface List', k: 'select' },
+        { l: 'Out. Interface List', k: 'select' },
+        { l: 'Connection State', k: 'select' },
+        { l: 'Connection NAT State', k: 'select' },
+        { l: 'Action', k: 'select', core: 1 },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'nat rule': {
+      title: 'NAT Rule',
+      tabs: ['General', 'Advanced', 'Extra', 'Action', 'Statistics'],
+      fields: [
+        { l: 'Chain', k: 'select', core: 1 },
+        { l: 'Src. Address', k: 'text' },
+        { l: 'Dst. Address', k: 'text' },
+        { l: 'Protocol', k: 'select' },
+        { l: 'Dst. Port', k: 'text' },
+        { l: 'In. Interface', k: 'select' },
+        { l: 'Out. Interface', k: 'select' },
+        { l: 'In. Interface List', k: 'select' },
+        { l: 'Out. Interface List', k: 'select' },
+        { l: 'Action', k: 'select', core: 1 },
+        { l: 'To Addresses', k: 'text' },
+        { l: 'To Ports', k: 'text' },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'dhcp setup': {
+      title: 'DHCP Setup',
+      fields: [
+        { l: 'DHCP Server Interface', k: 'select', core: 1 },
+        { l: 'DHCP Address Space', k: 'text', core: 1 },
+        { l: 'Gateway for DHCP Network', k: 'text', core: 1 },
+        { l: 'Addresses to Give Out', k: 'text', core: 1 },
+        { l: 'DNS Servers', k: 'text', core: 1 },
+        { l: 'Lease Time', k: 'text', core: 1 }
+      ]
+    },
+    'dns settings': {
+      title: 'DNS Settings',
+      fields: [
+        { l: 'Servers', k: 'text', core: 1 },
+        { l: 'Dynamic Servers', k: 'text', core: 1 },
+        { l: 'Allow Remote Requests', k: 'check', core: 1 },
+        { l: 'Max UDP Packet Size', k: 'select' },
+        { l: 'Cache Size', k: 'text' },
+        { l: 'Cache Max TTL', k: 'text' },
+        { l: 'Cache Used', k: 'text' }
+      ]
+    },
+    'route': {
+      title: 'Route',
+      fields: [
+        { l: 'Dst. Address', k: 'text', core: 1 },
+        { l: 'Gateway', k: 'text', core: 1 },
+        { l: 'Pref. Source', k: 'text' },
+        { l: 'Distance', k: 'text' },
+        { l: 'Scope', k: 'select' },
+        { l: 'Target Scope', k: 'select' },
+        { l: 'Routing Table', k: 'select' },
+        { l: 'Check Gateway', k: 'select' },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'ip pool': {
+      title: 'IP Pool',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Addresses', k: 'text', core: 1 },
+        { l: 'Next Pool', k: 'select' }
+      ]
+    },
+    'ppp secret': {
+      title: 'PPP Secret',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Password', k: 'text', core: 1 },
+        { l: 'Service', k: 'select', core: 1 },
+        { l: 'Profile', k: 'select', core: 1 },
+        { l: 'Local Address', k: 'text' },
+        { l: 'Remote Address', k: 'text' },
+        { l: 'Routes', k: 'text' },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'interface': {
+      title: 'Interface',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Type', k: 'select', core: 1 },
+        { l: 'MTU', k: 'text' },
+        { l: 'L2 MTU', k: 'text' },
+        { l: 'MAC Address', k: 'text' },
+        { l: 'ARP', k: 'select' },
+        { l: 'Comment', k: 'text' }
+      ]
+    }
+  };
+
+  /* как в статьях называют одно и то же поле */
+  const FIELD_SYN = {
+    'allowed ips': 'allowed address', 'allowed ip': 'allowed address',
+    'allowedaddress': 'allowed address', 'allowed-address': 'allowed address',
+    'preshared key (psk)': 'preshared key', 'psk': 'preshared key',
+    'keepalive': 'persistent keepalive', 'keepalive time': 'persistent keepalive',
+    'persistent keepalive (s)': 'persistent keepalive',
+    'publickey': 'public key', 'privatekey': 'private key',
+    'mtu (l2)': 'l2 mtu', 'comment (примечание)': 'comment',
+    'address space': 'dhcp address space', 'gateway': 'gateway for dhcp network',
+    'addresses to give out (pool)': 'addresses to give out',
+    'pool': 'addresses to give out', 'dns server': 'dns servers',
+    'lease time (dhcp)': 'lease time',
+    'dst address': 'dst. address', 'src address': 'src. address',
+    'dst port': 'dst. port', 'src port': 'src. port',
+    'in interface': 'in. interface', 'out interface': 'out. interface',
+    'in interface list': 'in. interface list', 'out interface list': 'out. interface list',
+    'gateway (nexthop)': 'gateway', 'distance (metric)': 'distance',
+    'routing table': 'routing table', 'table': 'routing table'
+  };
+
+  function normLabel(s) {
+    return String(s == null ? '' : s).toLowerCase()
+      .replace(/ё/g, 'е')
+      .replace(/[*:]+$/, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  function dialogName(spec) {
+    const t = String((spec.form && spec.form.title) || spec.win || '').toLowerCase().trim();
+    const strip = function (s) {
+      return s.replace(/^new\s+/, '').replace(/\s*\(.*?\)\s*$/, '').replace(/\s*-\s*.*$/, '').trim();
+    };
+    const a = strip(t);
+    if (WIN4[a]) return a;
+    const b = t.replace(/^new\s+/, '').trim();
+    if (WIN4[b]) return b;
+    return '';
+  }
+
+  /* «Enabled», «yes/no» и подобные поля в Winbox 4 — это чекбоксы */
+  const CHECK_RE = /^(enabled|responder|passive|use ipsec|add default route|no default config|don't encrypt|allow remote requests|secure mode|upgrade firmware|keep users|run post-boot|dynamic|invalid)$/i;
+
+  function guessType(fd) {
+    const v = fd.v == null ? '' : String(fd.v).trim();
+    if (CHECK_RE.test(fd.l)) return 'check';
+    if (/^(yes|no)$/i.test(v)) return 'check';
+    if (fd.ro) return 'text';
+    return fd.v === '' ? 'text' : '';
+  }
+
+  function prepareForm(spec) {
+    const src = spec.form || {};
+    const out = {};
+    for (const k in src) out[k] = src[k];
+
+    let fields = (src.fields || []).map(function (fd) {
+      const o = {};
+      for (const k in fd) o[k] = fd[k];
+      o._l = normLabel(o.l);
+      return o;
+    });
+
+    const key = dialogName(spec);
+    const cat = key ? WIN4[key] : null;
+    if (cat) {
+      const by = {};
+      fields.forEach(function (fd) {
+        if (!by[fd._l]) by[fd._l] = fd;
+        const syn = FIELD_SYN[fd._l];
+        if (syn && !by[syn]) by[syn] = fd;
+      });
+      const used = [];
+      const list = [];
+      /* показываем окно так, как оно выглядит: все поля сверху до последнего
+         заполненного в статье, пустые — пустыми, как в настоящем диалоге */
+      let last = -1;
+      const need = {};
+      cat.fields.forEach(function (c, i) {
+        const nk = normLabel(c.l);
+        if (by[nk]) last = i;
+        /* если у поля-«+» в статье есть значение, покажем и поле Current … */
+        if (c.k === 'plus' && by[nk] && String(by[nk].v || '').trim()) {
+          need[normLabel('Current ' + c.l)] = 1;
+          need[normLabel('Current ' + c.l + ' Address')] = 1;
+        }
+      });
+      cat.fields.forEach(function (c, i) {
+        const nk = normLabel(c.l);
+        const a = by[nk] || null;
+        if (a) used.push(a);
+        if (!a && !c.core && i > last && !need[nk]) return;
+        const o = a || { l: c.l };
+        o.l = c.l;
+        if (!o.type && c.k && c.k !== 'text') o.type = c.k;
+        list.push(o);
+      });
+      fields.forEach(function (fd) { if (used.indexOf(fd) < 0 && list.indexOf(fd) < 0) list.push(fd); });
+      fields = list;
+      if (!src.tabs && cat.tabs) out.tabs = cat.tabs.slice();
+      if (!src.title) out.title = cat.title;
+    }
+
+    /* у полей-списков («+») значение относится к соседнему полю Current … */
+    fields.forEach(function (fd) {
+      if (fd.type !== 'plus' && !(fd.type === 'check' && fd.plus)) return;
+      const v = fd.v == null ? '' : String(fd.v).trim();
+      if (!v) return;
+      const wants = [normLabel('Current ' + fd.l), normLabel('Current ' + fd.l + ' Address')];
+      for (let i = 0; i < fields.length; i++) {
+        if (wants.indexOf(normLabel(fields[i].l)) >= 0 && !fields[i].v) {
+          fields[i].v = v;
+          fields[i].type = fields[i].type || '';
+          fd.v = '';
+          break;
+        }
+      }
+    });
+
+    fields.forEach(function (fd) {
+      const v = fd.v == null ? '' : String(fd.v).trim();
+      if (!fd.type) fd.type = guessType(fd);
+      if (fd.type === 'check') {
+        if (!('v' in fd) || v === '') fd.v = !/^disabled$/i.test(fd.l);
+        else fd.v = /^(yes|true|1|on)$/i.test(v);
+      }
+    });
+    out.fields = fields;
+    return out;
+  }
+
   /* ---------- форма ---------- */
   function form(spec) {
-    const f = spec.form || {};
+    const f = prepareForm(spec);
     const box = el('div', 'wb-form');
-    const head = el('div', 'wb-form-h');
-    head.innerHTML = '<span style="opacity:.5">✥</span>' + esc(f.title || 'New');
-    if (f.tabs) {
-      head.innerHTML += '<span style="margin-left:auto;font-size:10px;color:#8b9bad">' +
-        esc(f.tabs.slice(0, 3).join(' · ')) + '</span>';
-    }
-    box.appendChild(head);
+
     const body = el('div', 'wb-form-body');
     (f.fields || []).forEach(function (fd, i) {
       const row = el('div', 'wb-f');
-      const lab = el('label', null, esc(fd.l));
-      row.appendChild(lab);
-      if (fd.type === 'check') {
-        const c = el('div', 'chk' + (fd.v ? ' on' : ''));
-        c.id = 'f-' + i;
-        if (fd.m) { c.setAttribute('data-m', fd.m); c.classList.add('wb-target'); }
-        if (fd.foc) c.classList.add('foc');
-        row.appendChild(c);
+      const linkCls = fd.link ? ' link' : '';
+      if (fd.err) {
+        row.appendChild(el('div', 'lbl-box',
+          '<div class="lb' + linkCls + '">' + esc(fd.l) + '</div>' +
+          '<div class="err">' + esc(fd.err) + '</div>'));
       } else {
-        const c = el('div', 'ctl' + (fd.type === 'select' ? ' sel' : '') + (fd.ro ? ' ro' : ''),
-          esc(fd.v == null ? '' : fd.v));
-        c.id = 'f-' + i;
-        if (fd.m) { c.setAttribute('data-m', fd.m); c.classList.add('wb-target'); }
-        if (fd.foc) c.classList.add('foc');
+        row.appendChild(el('label', linkCls.trim(), esc(fd.l)));
+      }
+
+      const target = function (node) {
+        node.id = 'f-' + i;
+        if (fd.m) { node.setAttribute('data-m', fd.m); node.classList.add('wb-target'); }
+        if (fd.foc) node.classList.add('foc');
+        return node;
+      };
+      const sq = function (glyph, cls, off) {
+        const b = el('button', 'sq' + (cls ? ' ' + cls : '') + (off ? ' off' : ''), glyph);
+        b.type = 'button';
+        return b;
+      };
+
+      if (fd.type === 'check') {
+        row.appendChild(target(el('div', 'chk' + (fd.v ? ' on' : ''))));
+        if (fd.plus) row.appendChild(sq('+', 'plus'));
+      } else if (fd.type === 'plus') {
+        /* поле-список, куда значения добавляют кнопкой «+» (Endpoint, Port …) */
+        row.appendChild(target(sq('+', 'plus')));
+        if (fd.v) row.appendChild(el('div', 'fnote', esc(fd.v)));
+      } else if (fd.type === 'area') {
+        const c = target(el('div', 'ctl', esc(fd.v == null ? '' : fd.v)));
+        c.style.height = 'auto';
+        c.style.minHeight = '46px';
+        c.style.whiteSpace = 'pre-wrap';
+        c.style.alignItems = 'flex-start';
+        c.style.padding = '4px 7px';
         row.appendChild(c);
+      } else if (fd.multi || fd.type === 'multi') {
+        /* значение + «−» + «▾» + «+» — как у Allowed Address в WireGuard Peer */
+        const wrap = el('div', 'combo');
+        const c = target(el('div', 'ctl', esc(fd.v == null ? '' : fd.v)));
+        wrap.appendChild(c);
+        wrap.appendChild(el('div', 'car', '▾'));
+        row.appendChild(wrap);
+        row.appendChild(sq('−', 'minus'));
+        row.appendChild(sq('+', 'plus'));
+      } else {
+        const c = target(el('div', 'ctl' + (fd.ro ? ' ro' : ''), esc(fd.v == null ? '' : fd.v)));
+        if (fd.type === 'select') {
+          const wrap = el('div', 'combo');
+          wrap.appendChild(c);
+          wrap.appendChild(el('div', 'car', '▾'));
+          row.appendChild(wrap);
+        } else {
+          row.appendChild(c);
+        }
+        if (fd.plus) row.appendChild(sq('+', 'plus'));
       }
       body.appendChild(row);
     });
-    if (f.note) body.appendChild(el('div', 'wb-f', '<label></label><div style="color:#8494a8;font-size:10px">' + esc(f.note) + '</div>'));
+
+    if (f.note) body.appendChild(el('div', 'wb-f', '<label></label><div class="fnote">' + esc(f.note) + '</div>'));
     box.appendChild(body);
+
     if (f.buttons !== false) {
       const foot = el('div', 'wb-form-foot');
-      (f.buttons || ['OK', 'Cancel', 'Apply']).forEach(function (b, i) {
-        const btn = el('button', 'wb-btn' + (i === 0 ? ' pri' : ''), esc(b));
+      const list = (f.buttons || ['Cancel', 'Apply', 'OK']).slice();
+      /* Winbox 4 держит внизу справа Cancel / Apply / OK, остальные кнопки — слева.
+         В статьях подписи бывают по-русски, поэтому приводим их к стандартным. */
+      const SYN = {
+        cancel: 'Cancel', 'отмена': 'Cancel', back: 'Back', 'назад': 'Back',
+        apply: 'Apply', 'применить': 'Apply', ok: 'OK', 'ок': 'OK', 'готово': 'OK',
+        next: 'Next', 'далее': 'Next'
+      };
+      const norm = function (b) {
+        const k = String(b).toLowerCase().replace(/[.!…]+$/g, '').trim();
+        return SYN[k] || b;
+      };
+      const STD = ['Cancel', 'Apply', 'OK'];
+      const acts = list.filter(function (b) { return STD.indexOf(norm(b)) < 0; });
+      const std = STD.filter(function (b) { return list.some(function (x) { return norm(x) === b; }); });
+      if (!std.length) std.push('OK');
+
+      acts.forEach(function (b) {
+        const btn = el('button', 'wb-btn', '<span class="bi">⋯</span>' + esc(b));
+        btn.type = 'button';
         btn.id = 'btn-' + b.toLowerCase().replace(/[^a-zа-я0-9]/gi, '');
+        btn.style.marginRight = 'auto';
+        foot.appendChild(btn);
+      });
+      std.forEach(function (b) {
+        const cls = b === 'Cancel' ? ' sec' : ' def';
+        const btn = el('button', 'wb-btn' + cls, esc(b));
+        btn.type = 'button';
+        btn.id = 'btn-' + b.toLowerCase();
         foot.appendChild(btn);
       });
       box.appendChild(foot);
     }
     return box;
   }
-
   /* ---------- терминал ---------- */
   function terminal(spec) {
     const t = el('div', 'wb-term');
     const h = el('div', 'wb-term-h');
-    h.innerHTML = '<span class="dots"><i></i><i></i><i></i></span><span>' +
-      esc(spec.win || 'New Terminal') + '</span><span style="margin-left:auto">' + esc(spec.path || '') +
-      '</span><button class="copy">копировать</button>';
+    h.innerHTML = '<span class="ico">' + ico('log', 15) + '</span><span>' + esc(spec.win || 'New Terminal') + '</span>' +
+      '<span class="path">' + esc(spec.path || '') + '</span>' +
+      '<button class="copy" type="button">Copy</button>';
     t.appendChild(h);
     const pre = document.createElement('pre');
     const html = (spec.lines || []).map(function (ln) {
@@ -184,7 +592,6 @@
     t.appendChild(pre);
     return t;
   }
-
   /* ---------- аннотации ----------
      Правило: номер-бейдж ставится на сам элемент (в его правый верхний угол),
      чтобы стрелка не тянулась через всю таблицу и не перечёркивала текст.
@@ -231,7 +638,8 @@
 
       // мелкие управляющие элементы (кнопки, чекбоксы) — бейдж выносим наружу со стрелкой;
       // ячейки, поля, вкладки — бейдж внутри самого элемента, у правого края
-      const isCtrl = t.classList.contains('wb-btn') || t.classList.contains('chk');
+      const isCtrl = t.classList.contains('wb-btn') || t.classList.contains('chk') ||
+        t.classList.contains('sq') || t.classList.contains('car');
       const small = isCtrl || w < 20 || h < 16;
       let cx, cy;
 
@@ -346,6 +754,7 @@
       s.form = form;
       s._ff = f.field;
       const F = form.fields[f.field];
+      s._fL = String((F && F.l) || '').toLowerCase();
       s.notes = ['Поле «' + (F.l || '') + '»' + (F.v != null && F.v !== '' ? ' → ' + F.v : '')];
       return s;
     }
@@ -387,8 +796,13 @@
 
   function applyDim(body, spec) {
     if (spec._ff != null) {
-      Array.prototype.forEach.call(body.querySelectorAll('.wb-form-body > .wb-f'), function (r, i) {
-        r.classList.toggle('dim', i !== spec._ff);
+      /* порядок полей может отличаться от авторского (каталог Winbox 4),
+         поэтому ориентируемся на подпись поля, а не на индекс */
+      const want = String(spec._fL || '').toLowerCase();
+      Array.prototype.forEach.call(body.querySelectorAll('.wb-form-body > .wb-f'), function (r) {
+        const lb = r.querySelector('label, .lbl-box .lb');
+        const txt = lb ? lb.textContent.trim().toLowerCase() : '';
+        r.classList.toggle('dim', !want || txt !== want);
       });
     }
     if (spec._fr != null) {
@@ -412,36 +826,51 @@
     root.appendChild(sidebar(spec.path));
 
     const main = el('div', 'wb-main');
+
+    /* строка заголовка: «Окно › Диалог», справа — путь в меню и кнопки окна */
+    const pf = spec.form ? prepareForm(spec) : null;
+    const fTitle = pf ? (pf.title || '') : '';
+    /* «New WireGuard Peer» — это окно WireGuard Peer с диалогом New… */
+    const isNew = /^new\s+/i.test(String(spec.win || '')) || /^new\b/i.test(fTitle);
+    /* названия окон, как они подписаны в Winbox 4 */
+    const WIN_TITLE = {
+      firewall: 'IP Firewall', 'address list': 'IP Address', 'address lists': 'IP Address',
+      'route list': 'IP Routes', routes: 'IP Routes', 'ip routes': 'IP Routes',
+      'dhcp leases': 'DHCP Server', nat: 'IP Firewall', 'filter rules': 'IP Firewall',
+      services: 'IP Services', 'ip services': 'IP Services', users: 'User'
+    };
+    const winRaw = String(spec.win || 'Winbox 4').replace(/^new\s+/i, '') || 'Winbox 4';
+    const winType = WIN_TITLE[winRaw.toLowerCase()] || winRaw;
+    /* в шапке Winbox 4 рядом с именем окна стоит имя открытого диалога */
+    let child = '';
+    if (isNew) child = fTitle && !/^new\b/i.test(fTitle) ? fTitle : 'New…';
+    else if (fTitle && fTitle.toLowerCase() !== winType.toLowerCase()) {
+      child = fTitle.replace(new RegExp('^' + winType.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s*', 'i'), '')
+        .replace(/^[([\s]+|[)\]]+$/g, '').trim();
+    }
     const tb = el('div', 'wb-tb');
-    tb.innerHTML = '<span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>' +
-      '<span class="tt">' + esc(spec.win || 'Winbox') + '</span>' +
-      '<span class="path">' + esc(spec.path || '') + '</span>';
+    tb.innerHTML = '<span class="ico">' + ico(groupIcon(spec.path), 15) + '</span>' +
+      '<span class="tt">' + esc(winType) + '</span>' +
+      (child ? '<span class="arr">›</span><span class="chip">' + esc(child) + '</span>' : '') +
+      '<span class="path">' + esc(spec.path || '') + '</span>' +
+      '<span class="wc"><i>⤢</i><i>✕</i></span>';
     if (spec._fp) {
       const pEl = tb.querySelector('.path');
       if (pEl) { pEl.id = 'wpath'; pEl.setAttribute('data-m', '1'); pEl.classList.add('wb-target'); pEl.classList.add('foc'); }
     }
     main.appendChild(tb);
 
-    if (!spec.noTools) {
-      const tools = el('div', 'wb-tools');
-      const btns = spec.tools || [
-        { t: '+', title: 'Add new' }, { t: '−', title: 'Remove' },
-        { t: '✓', title: 'Enable' }, { t: '✕', title: 'Disable' },
-        { t: '⇅', title: 'Sort' }, { t: '⌕', title: 'Find' }
-      ];
-      btns.forEach(function (b, i) {
-        const btn = el('button', 'wb-btn' + (b.pri ? ' pri' : (i > 1 ? ' ghost' : '')), esc(b.t));
-        btn.id = 'tb-' + (b.id || ('b' + i));
-        btn.title = b.title || '';
-        if (b.m) { btn.setAttribute('data-m', b.m); btn.classList.add('wb-target'); }
-        if (b.foc) btn.classList.add('foc');
-        tools.appendChild(btn);
+    const dlgTabs = (pf && pf.tabs) || null;
+    if (dlgTabs && dlgTabs.length) {
+      const tabs = el('div', 'wb-tabs');
+      const onT = pf.tab || dlgTabs[0];
+      dlgTabs.forEach(function (t, i) {
+        tabs.appendChild(el('div', 'wb-tab' + (t === onT ? ' on' : ''), esc(t)));
       });
-      if (spec.toolsNote) tools.appendChild(el('span', null, '<span style="margin-left:8px;color:#8b9bad;font-size:10.5px">' + esc(spec.toolsNote) + '</span>'));
-      main.appendChild(tools);
+      main.appendChild(tabs);
     }
 
-    if (spec.tabs) {
+    if (spec.tabs && spec.tabs.length) {
       const tabs = el('div', 'wb-tabs');
       spec.tabs.forEach(function (t, i) {
         const on = (spec.tab || spec.tabs[0]) === t;
@@ -453,17 +882,59 @@
       main.appendChild(tabs);
     }
 
+    if (!spec.noTools && !(spec.form && !spec.tools)) {
+      const tools = el('div', 'wb-tools');
+      const btns = spec.tools || [
+        { t: 'New', i: '+', title: 'Add new' }, { t: 'Enable', i: '✓', title: 'Enable' },
+        { t: 'Disable', i: '✕', title: 'Disable' }, { t: 'Remove', i: '−', title: 'Remove' },
+        { t: 'Comment', i: '✎', title: 'Comment' }
+      ];
+      const TOOLMAP = {
+        '+': ['New', '+'], '−': ['Remove', '−'], '-': ['Remove', '−'],
+        '✓': ['Enable', '✓'], '✕': ['Disable', '✕'], '⌕': ['Find', '⌕'],
+        '⇅': ['Sort', '⇅'], '↻': ['Refresh', '↻'], '↑': ['Up', '↑'], '↓': ['Down', '↓']
+      };
+      btns.forEach(function (b, i) {
+        /* в статьях кнопки заданы значком — подписываем их как в Winbox 4 */
+        const m = TOOLMAP[b.t];
+        const bi = b.i || (m ? m[1] : '');
+        const bt = m ? m[0] : b.t;
+        const btn = el('button', 'wb-btn' + (b.pri ? ' pri' : (i > 1 ? ' ghost' : '')),
+          '<span class="bi">' + esc(bi) + '</span>' + esc(bt));
+        btn.type = 'button';
+        btn.id = 'tb-' + (b.id || ('b' + i));
+        btn.title = b.title || '';
+        if (b.m) { btn.setAttribute('data-m', b.m); btn.classList.add('wb-target'); }
+        if (b.foc) btn.classList.add('foc');
+        tools.appendChild(btn);
+      });
+      if (spec.toolsNote) tools.appendChild(el('span', null, '<span style="margin-left:8px;color:#5b636b;font-size:11px">' + esc(spec.toolsNote) + '</span>'));
+      main.appendChild(tools);
+    }
+
+    const work = el('div', 'wb-work');
     const body = el('div', 'wb-body');
     if (spec.cols) body.appendChild(table(spec));
     if (spec.form) body.appendChild(form(spec));
     if (spec.bodyHtml) body.insertAdjacentHTML('beforeend', spec.bodyHtml);
     applyDim(body, spec);
-    main.appendChild(body);
+    work.appendChild(body);
 
-    if (spec.status) {
+    /* правая панель окна (Copy, Find …) — как в настоящем Winbox 4 */
+    if (spec.rightTools !== false) {
+      const right = el('div', 'wb-right');
+      (spec.rightTools || [{ t: 'Copy', i: '⧉' }, { t: 'Find', i: '⌕' }]).forEach(function (r, i) {
+        right.appendChild(el('div', 'rt' + (i === 0 ? ' on' : ''),
+          '<span class="ri">' + esc(r.i || '⧉') + '</span><span>' + esc(r.t) + '</span>'));
+      });
+      work.appendChild(right);
+    }
+    main.appendChild(work);
+
+    const stText = spec.status || (spec.cols ? '3 items' : '');
+    if (stText) {
       const st = el('div', 'wb-status');
-      st.innerHTML = '<span>' + esc(spec.status) + '</span><span class="sp">' +
-        esc(spec.statusRight || '') + '</span>';
+      st.innerHTML = '<span>' + esc(stText) + '</span><span class="sp">' + esc(spec.statusRight || '') + '</span>';
       main.appendChild(st);
     }
 
@@ -487,7 +958,6 @@
     block._compact = !!spec.compact;
     return block;
   }
-
   /* ---------- меню Winbox: «где нажать», когда окно ещё не открыто ---------- */
   function renderNav(spec) {
     const block = el('div', 'scene-block');
@@ -501,14 +971,18 @@
 
     const main = el('div', 'wb-main');
     const tb = el('div', 'wb-tb');
-    tb.innerHTML = '<span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>' +
-      '<span class="tt">Winbox 4</span><span class="path">меню слева → раздел</span>';
+    tb.innerHTML = '<span class="ico">' + ico('win', 15) + '</span><span class="tt">Winbox 4</span>' +
+      '<span class="path">чтение по дереву меню</span><span class="wc"><i>⤢</i><i>✕</i></span>';
     main.appendChild(tb);
+
+    const work = el('div', 'wb-work');
     const body = el('div', 'wb-body');
     body.innerHTML = '<div class="wb-navpath">' +
-      String(spec.path || '').split('→').map(function (p) { return '<span class="np">' + esc(p.trim()) + '</span>'; }).join('<span class="narr">→</span>') +
-      '</div><div class="wb-navhint">Нажмите раздел в дереве меню — откроется окно настроек</div>';
-    main.appendChild(body);
+      String(spec.path || '').split('→').map(function (p) { return '<span class="np">' + esc(p.trim()) + '</span>'; })
+        .join('<span class="narr">›</span>') +
+      '</div><div class="wb-navhint">Откройте этот раздел в дереве Winbox 4 — появится окно настроек.</div>';
+    work.appendChild(body);
+    main.appendChild(work);
     root.appendChild(main);
 
     scale.appendChild(root);
@@ -541,7 +1015,6 @@
     block._compact = true;
     return block;
   }
-
   function renderTerminal(spec) {
     const block = el('div', 'scene-block');
     if (spec.cap) {
@@ -549,7 +1022,7 @@
         '<svg viewBox="0 0 24 24" width="13" height="13"><path d="M4 5l5 5-5 5M11 17h8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg> <b>' + esc(spec.cap) + '</b>'));
     }
     const host = el('div', 'scene-host');
-    host.style.background = '#0b1016';
+    host.style.background = '#e4e8eb';
     const scale = el('div', 'scene-scale');
     scale.appendChild(terminal(spec));
     host.appendChild(scale);
@@ -863,5 +1336,6 @@
     });
   }
 
-  window.Scene = { render: render, renderTerminal: renderTerminal, renderNav: renderNav, mount: mount, fit: fit };
+  window.Scene = { render: render, renderTerminal: renderTerminal, renderNav: renderNav, mount: mount, fit: fit,
+    _prepareForm: prepareForm, _dialogName: dialogName, _win4: WIN4 };
 })();

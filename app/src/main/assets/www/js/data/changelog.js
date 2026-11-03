@@ -5,6 +5,20 @@ window.CHANGELOG = [
   {
     v: 'auto',
     date: '2026-11-03',
+    title: 'Окна нарисованы по настоящему Winbox 4',
+    items: [
+      'Новый вид окон: светлая тема Winbox 4, синий заголовок с именем окна и диалога («WireGuard Peer › New…»), вкладки-чипы, правая панель Copy.',
+      'Поля в диалогах — как в настоящем Winbox 4: подпись справа, поле, квадратные кнопки «−», «▾» и «+»; у полей-списков (Allowed Address) сразу три кнопки.',
+      'Порядок и состав полей берутся из каталога реальных окон: WireGuard Peer, WireGuard, Filter Rule, NAT Rule, DHCP Setup, DNS Settings, Route, IP Pool, PPP Secret, Interface.',
+      'Кнопки внизу диалога — Cancel / Apply / OK, слева — дополнительные (Comment, Copy, Назад, Далее).',
+      'Панель инструментов списков подписана как в Winbox 4: New, Enable, Disable, Remove, Comment.',
+      'Дерево разделов слева — настоящий порядок Winbox 4: Quick Set, WiFi, Interfaces, WireGuard, Bridge, PPP, Switch, Mesh, IP, IPv6, MPLS, Routing, System, Queues, Dot1X, Tools, Files, Log — со значками разделов.',
+      'Терминал RouterOS: светлый заголовок окна и кнопка Copy, как в Winbox 4.',
+    ],
+  },
+  {
+    v: 'auto',
+    date: '2026-11-03',
     title: 'Значок программы, кнопка «Назад» и четыре отдельные сети в мастере',
     items: [
       'У приложения появился значок: тёмный квадрат с белым роутером и зелёными дугами Wi-Fi — для exe, окна Windows и вкладки браузера.',
