@@ -1,6 +1,7 @@
 package main
 
 import (
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -43,12 +44,15 @@ func openAppWindow(url, profile string) (func() error, bool) {
 			"--user-data-dir="+profile,
 			"--no-first-run",
 			"--no-default-browser-check",
+			"--disable-background-mode",
 			"--disable-features=Translate",
 			"--window-size=1280,900",
 		)
 		if err := cmd.Start(); err != nil {
+			log.Printf("не удалось запустить %s: %v", exe, err)
 			continue
 		}
+		log.Printf("окно открывает %s", exe)
 		windowMu.Lock()
 		windowCmd = cmd
 		windowMu.Unlock()

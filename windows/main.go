@@ -63,6 +63,21 @@ func main() {
 		waitPortFree(*port, 8*time.Second)
 	}
 
+	// Второй двойной клик во время медленного первого запуска (проверка
+	// антивирусом, распаковка) не должен поднимать второй сервер на соседнем
+	// порту: несколько секунд ждём, пока первый экземпляр начнёт отвечать.
+	if !*noWindow && portBusy(*port) {
+		deadline := time.Now().Add(5 * time.Second)
+		for time.Now().Before(deadline) {
+			if u, ok := findRunning(*port); ok {
+				log.Printf("приложение уже запущено: %s", u)
+				openUI(u, *browserOnly, profile)
+				return
+			}
+			time.Sleep(150 * time.Millisecond)
+		}
+	}
+
 	srv := newServer(version, buildNo, dir)
 	ln, err := listen(*port)
 	if err != nil {
@@ -81,17 +96,63 @@ func main() {
 		select {}
 	}
 
+	// Не открываем окно, пока сервер не отвечает: иначе первый запуск
+	// показывает пустую страницу и кажется, что программа не стартовала.
+	if !waitServer(url, 5*time.Second) {
+		log.Printf("сервер не ответил за 5 с — открываю окно всё равно")
+	}
+
 	wait, ok := openUI(url, *browserOnly, profile)
-	if !ok {
+	if !ok || wait == nil {
 		// Окно приложения недоступно — работаем как локальный сервер для браузера
 		// и завершаемся, когда страница перестанет присылать heartbeat.
-		srv.watchIdle(2 * time.Minute)
+		log.Printf("окно приложения недоступно — работаю сервером до закрытия страницы")
+		srv.watchIdle(idleLimit)
 		select {}
 	}
+	opened := time.Now()
 	_ = wait()
+	// Edge/Chrome с тем же профилем уже запущен: новый процесс лишь передаёт
+	// адрес старому окну и сразу завершается. Раньше из-за этого приложение
+	// закрывалось вместе с ним — окно мигало, и помогала только вторая попытка.
+	if elapsed := time.Since(opened); elapsed < 3*time.Second {
+		log.Printf("окно передано уже запущенному браузеру за %v — сервер остаётся работать", elapsed.Round(time.Millisecond))
+		srv.watchIdle(idleLimit)
+		select {}
+	}
 	log.Printf("окно закрыто, завершение работы")
 	srv.close()
 	time.Sleep(150 * time.Millisecond)
+}
+
+// idleLimit — сколько ждём без heartbeat от страницы, прежде чем завершиться.
+const idleLimit = 3 * time.Minute
+
+// portBusy сообщает, занят ли порт (значит, кто-то уже слушает).
+func portBusy(port int) bool {
+	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", port))
+	if err != nil {
+		return true
+	}
+	_ = ln.Close()
+	return false
+}
+
+// waitServer проверяет, что локальный сервер уже отвечает на /api/version.
+func waitServer(url string, limit time.Duration) bool {
+	client := &http.Client{Timeout: 500 * time.Millisecond}
+	deadline := time.Now().Add(limit)
+	for time.Now().Before(deadline) {
+		resp, err := client.Get(url + "api/version")
+		if err == nil {
+			resp.Body.Close()
+			if resp.StatusCode == http.StatusOK {
+				return true
+			}
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+	return false
 }
 
 func listen(port int) (net.Listener, error) {

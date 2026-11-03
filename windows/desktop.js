@@ -133,11 +133,11 @@
   };
 
   // heartbeat: локальный сервер понимает, что страница ещё открыта
+  // ping идёт всегда, в том числе когда окно свёрнуто: иначе локальный сервер
+  // решает, что страницу закрыли, и завершает процесс
   setInterval(function () {
-    if (document.visibilityState === 'visible') {
-      fetch('/api/ping', { cache: 'no-store' }).catch(function () {});
-    }
-  }, 20000);
+    fetch('/api/ping', { cache: 'no-store' }).catch(function () {});
+  }, 15000);
 
   api('/api/version').then(function (v) {
     if (v && v.version) {
