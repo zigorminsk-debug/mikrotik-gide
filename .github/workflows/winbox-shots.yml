@@ -1,0 +1,138 @@
+name: Winbox 4 — настоящие скриншоты окон
+
+# Запускается вручную: поднимает RouterOS CHR в QEMU, ставит настоящий
+# Winbox 4 (Linux) под Xvfb, подключается к CHR и снимает окна.
+# Всё, что получилось (скриншоты + отчёт), коммитится в ветку в docs/shots/,
+# поэтому результат виден даже без доступа к логам Actions.
+
+on:
+  workflow_dispatch:
+    inputs:
+      keep_alive:
+        description: 'Сколько секунд держать Winbox открытым перед снимками'
+        required: false
+        default: '25'
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    name: CHR + Winbox 4 + снимки
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    env:
+      DISPLAY: ':99'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Зависимости (QEMU, Xvfb, Qt, xdotool, ImageMagick)
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            qemu-system-x86 qemu-utils xvfb x11-utils xdotool imagemagick unzip \
+            netcat-openbsd libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 \
+            libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core
+
+      - name: Скачать CHR и Winbox 4
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/wb
+          curl -fL --retry 3 -o /tmp/wb/chr.zip https://download.mikrotik.com/routeros/7.24.6/chr-7.24.6.img.zip
+          curl -fL --retry 3 -o /tmp/wb/winbox.zip https://download.mikrotik.com/routeros/winbox/4.4/WinBox_Linux.zip
+          cd /tmp/wb
+          unzip -o chr.zip
+          unzip -o winbox.zip -d winbox
+          ls -lR /tmp/wb | head -60
+          qemu-img convert -f raw -O qcow2 chr-7.24.6.img chr.qcow2
+          qemu-img info chr.qcow2 | head -10
+
+      - name: Запустить CHR в QEMU
+        run: |
+          set -euxo pipefail
+          cd /tmp/wb
+          qemu-system-x86_64 -m 768 -smp 2 -machine pc \
+            -drive file=chr.qcow2,format=qcow2,if=virtio \
+            -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
+            -device virtio-net-pci,netdev=n0 \
+            -display none -serial file:/tmp/wb/chr-console.log \
+            -daemonize -pidfile /tmp/wb/qemu.pid
+          ok=0
+          for i in $(seq 1 120); do
+            if nc -z 127.0.0.1 8291; then ok=1; echo "порт 8291 открыт через $((i*2)) c"; break; fi
+            sleep 2
+          done
+          test "$ok" = 1
+
+      - name: Запустить Xvfb и Winbox 4
+        run: |
+          set -euxo pipefail
+          Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp > /tmp/wb/xvfb.log 2>&1 &
+          sleep 2
+          xdpyinfo -display :99 | head -5
+          cd /tmp/wb/winbox
+          ls -l
+          BIN=$(find . -maxdepth 2 -type f -executable -exec file {} \; | grep -i ELF | head -1 | cut -d: -f1)
+          echo "BIN=$BIN" | tee /tmp/wb/bin.txt
+          chmod +x "$BIN"
+          export QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1
+          nohup "$(pwd)/$BIN" > /tmp/wb/winbox.log 2>&1 &
+          sleep 12
+          xdotool search --onlyvisible --name '.*' getwindowname %@ 2>/dev/null | head -20 || true
+          xwininfo -root -tree | head -40 || true
+
+      - name: Снимок 1 — окно входа
+        run: |
+          set -x
+          mkdir -p docs/shots
+          import -window root docs/shots/01-login.png || true
+          xwininfo -root -tree > docs/shots/xwininfo-1.txt || true
+
+      - name: Подключиться к CHR (127.0.0.1)
+        run: |
+          set -x
+          WID=$(xdotool search --name 'WinBox' | head -1)
+          echo "WID=$WID" >> docs/shots/report.txt
+          xdotool windowactivate --sync "$WID" || true
+          sleep 1
+          # обычно фокус уже в поле "Connect To"
+          xdotool type --delay 60 '127.0.0.1'
+          sleep 1
+          xdotool key Return
+          sleep "${{ github.event.inputs.keep_alive }}"
+          import -window root docs/shots/02-after-connect.png || true
+
+      - name: Открыть окна и снять (черновой проход)
+        run: |
+          set -x
+          WID=$(xdotool search --name 'WinBox' | head -1)
+          xdotool windowactivate --sync "$WID" || true
+          # слева дерево разделов; координаты подбираются по снимку 02
+          for name in ip ip-firewall interfaces; do
+            import -window root "docs/shots/03-$name.png" || true
+            sleep 1
+          done
+          xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
+
+      - name: Отчёт и скриншоты в ветку
+        if: always()
+        run: |
+          set -x
+          mkdir -p docs/shots
+          {
+            echo "=== uname ==="; uname -a
+            echo "=== qemu ==="; qemu-system-x86_64 --version || true
+            echo "=== winbox.log ==="; tail -80 /tmp/wb/winbox.log 2>/dev/null || true
+            echo "=== chr-console.log (хвост) ==="; tail -40 /tmp/wb/chr-console.log 2>/dev/null || true
+            echo "=== процессы ==="; ps aux | grep -Ei 'qemu|winbox|xvfb' | grep -v grep || true
+            echo "=== файлы ==="; ls -l docs/shots || true
+          } > docs/shots/report.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/shots
+          git commit -m "CI: настоящие скриншоты Winbox 4 [skip ci]" || echo "нечего коммитить"
+          git push origin "HEAD:${{ github.ref_name }}" || echo "push не удался"
