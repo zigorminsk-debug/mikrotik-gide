@@ -81,17 +81,23 @@ func rosReadLength(br *bufio.Reader) (int, error) {
 	}
 }
 
-// sendSentence отправляет одну команду (набор слов).
-func (c *rosConn) sendSentence(words ...string) error {
+// writeSentence отправляет одно предложение (набор слов).
+// Отдельная функция, чтобы тем же кодом можно было отвечать в тестовом сервере.
+func writeSentence(w io.Writer, words ...string) error {
 	buf := make([]byte, 0, 128)
-	for _, w := range words {
-		buf = append(buf, rosWordLength(len(w))...)
-		buf = append(buf, w...)
+	for _, word := range words {
+		buf = append(buf, rosWordLength(len(word))...)
+		buf = append(buf, word...)
 	}
 	buf = append(buf, 0) // конец предложения
-	_ = c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
-	_, err := c.conn.Write(buf)
+	_, err := w.Write(buf)
 	return err
+}
+
+// sendSentence отправляет одну команду (набор слов).
+func (c *rosConn) sendSentence(words ...string) error {
+	_ = c.conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
+	return writeSentence(c.conn, words...)
 }
 
 // readSentence читает одно предложение (до пустого слова).
@@ -99,9 +105,14 @@ func (c *rosConn) sendSentence(words ...string) error {
 // обрывал опрос, если роутер отвечал по частям дольше нескольких секунд.
 func (c *rosConn) readSentence() ([]string, error) {
 	_ = c.conn.SetReadDeadline(time.Now().Add(15 * time.Second))
+	return readSentenceFrom(c.br)
+}
+
+// readSentenceFrom читает предложение из любого потока.
+func readSentenceFrom(br *bufio.Reader) ([]string, error) {
 	var words []string
 	for {
-		n, err := rosReadLength(c.br)
+		n, err := rosReadLength(br)
 		if err != nil {
 			return words, err
 		}
@@ -112,7 +123,7 @@ func (c *rosConn) readSentence() ([]string, error) {
 			return words, errors.New("слишком длинное слово в ответе роутера")
 		}
 		w := make([]byte, n)
-		if _, err := io.ReadFull(c.br, w); err != nil {
+		if _, err := io.ReadFull(br, w); err != nil {
 			return words, err
 		}
 		words = append(words, string(w))
