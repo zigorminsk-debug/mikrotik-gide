@@ -1,0 +1,36 @@
+=== uname ===
+Linux runnervmcwoy2 6.8.0-1070-azure #78~22.04.1-Ubuntu SMP Thu Sep 24 18:46:45 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux
+=== qemu ===
+QEMU emulator version 6.2.0 (Debian 1:6.2+dfsg-2ubuntu6.31)
+Copyright (c) 2003-2021 Fabrice Bellard and the QEMU Project developers
+=== winbox.log ===
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: no cache dir
+APP,UPDATE: version fetched: "4.4"
+APP,UPDATE: nothing to update
+WBOXCONN status change "Looking up host..."
+WBOXCONN status change "Connecting..."
+WBOXCONN status change "Authenticating..."
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+=== chr-console.log (хвост) ===
+=== процессы ===
+runner      3807  190  0.5 2317744 97764 ?       Sl   06:49   1:27 qemu-system-x86_64 -m 768 -smp 2 -machine pc -drive file=chr.qcow2,format=qcow2,if=virtio -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device virtio-net-pci,netdev=n0 -display none -serial file:/tmp/wb/chr-console.log -daemonize -pidfile /tmp/wb/qemu.pid
+runner      3815  0.3  0.4 225896 78796 ?        S    06:49   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3833  0.6  0.5 859584 90412 ?        Sl   06:49   0:00 /tmp/wb/winbox/./WinBox
+=== файлы ===
+total 312
+-rw-r--r-- 1 runner runner 58867 Nov  3 06:49 01-login.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:49 02-after-connect.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:49 03-interfaces.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:49 03-ip-firewall.png
+-rw-r--r-- 1 runner runner 58187 Nov  3 06:49 03-ip.png
+-rw-r--r-- 1 runner runner  1860 Nov  3 06:49 report.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 06:49 xwininfo-1.txt
+-rw-r--r-- 1 runner runner   349 Nov  3 06:49 xwininfo-2.txt
