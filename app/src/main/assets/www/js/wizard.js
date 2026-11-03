@@ -1189,6 +1189,12 @@
     if (g) { key = 'comment'; val = g[2] !== undefined ? g[2] : g[1]; }
     else if ((g = /(?:^|\s)name=("([^"]*)"|\S+)/.exec(args))) { key = 'name'; val = g[2] !== undefined ? g[2] : g[1]; }
     if (!key) return ':do {' + line + '} on-error={}';
+    // Профили Wi-Fi и Wi-Fi-безопасности: мало создать — важно, чтобы значения совпадали
+    // с ответами мастера. Поэтому сначала add (ошибку «уже есть» глушим), затем set по имени.
+    if (key === 'name' && /^\/interface (wifi (security|datapath|configuration)|wireless security-profiles)$/.test(menu)) {
+      const rest = args.replace(/(^|\s)name=("([^"]*)"|\S+)/, ' ').replace(/\s+/g, ' ').trim();
+      return ':do {' + line + '} on-error={}\n' + menu + ' set [find where name="' + val + '"] ' + rest;
+    }
     return ':if ([:len [' + menu + ' find where ' + key + '="' + val + '"]] = 0) do={' + line + '}';
   }
 

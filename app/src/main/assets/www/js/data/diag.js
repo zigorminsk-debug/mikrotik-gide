@@ -27,6 +27,18 @@ window.DIAG = [
     ]
   },
   {
+    id: 'wifi-not-applied', t: 'Wi-Fi не переименовался: SSID прежний, профиль безопасности не назначен', ic: 'wifi', art: 'wifi-interface',
+    why: 'Команда настройки ссылается на профиль, которого ещё нет: /interface wireless set … security-profile=sec-lan при отсутствии профиля возвращает «no such item» и НЕ применяет остальные параметры строки — SSID остаётся заводским (MikroTik-XXXXXX).',
+    steps: [
+      { t: 'Какой пакет Wi-Fi на устройстве: если в меню есть /interface wifi — драйвер новый, если только /interface wireless — старый (wlan1)', cmd: '/system package print\n/interface wireless print\n/interface wifi print', art: 'wifi-interface' },
+      { t: 'Профиля безопасности нет — создайте его ДО команды set (проверка: список профилей)', cmd: '/interface wireless security-profiles add name=sec-lan mode=dynamic-keys authentication-types=wpa2-psk wpa2-pre-shared-key="WiFi-Pass-2026"\n/interface wireless security-profiles print', art: 'wifi-security' },
+      { t: 'Теперь одна команда set: SSID, профиль, страна, канал, включение', cmd: '/interface wireless set wlan1 mode=ap-bridge ssid="Office" security-profile=sec-lan country=belarus band=2ghz-b/g/n frequency=2437 channel-width=20mhz disabled=no', art: 'wifi-interface' },
+      { t: 'Проверка: в списке радиоинтерфейсов поменялись SSID и Security Profile, флаг R (running)', cmd: '/interface wireless print\n/interface wireless registration-table print', art: 'wifi-interface' },
+      { t: 'Для пакета wifi то же самое, но имена другие: профиль security + профиль configuration, затем set интерфейса', cmd: '/interface wifi security add name=sec-lan authentication-types=wpa2-psk,wpa3-psk passphrase="WiFi-Pass-2026"\n/interface wifi configuration add name=cfg-lan ssid="Office" country=belarus security=sec-lan\n/interface wifi set [find where name="wifi1"] configuration=cfg-lan disabled=no', art: 'wifi-security' },
+      { t: 'Если профиль есть, а SSID всё равно прежний: смотрите, на каком радио вы смотрите (wlan1/wlan2, wifi1/wifi2) и не отключён ли интерфейс', cmd: '/interface print where name~"wlan|wifi"', art: 'wifi-interface' }
+    ]
+  },
+  {
     id: 'wifi-no-net', t: 'Wi-Fi подключён, но интернета нет', ic: 'iface', art: 'task-guest-wifi',
     why: 'Клиент получает адрес, но его трафик упирается в изоляцию, VLAN или DNS.',
     steps: [
