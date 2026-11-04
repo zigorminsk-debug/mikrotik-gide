@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -17,10 +18,26 @@ import (
 
    Что поддерживается:
      · обычные команды  /ip address add address=… interface=…
-     · обёртки мастера  :do { … } on-error={}       — ошибку считаем нормой
+     · обёртки мастера  :do { … } on-error={}       — ошибку показываем честно
                         :if ([:len […]] = 0) do={…} — команда уже есть, это ок
      · прочие выражения (:local, :put, :if со сложным условием) собираются
        в один временный скрипт и выполняются на роутере целиком
+
+   ВАЖНО (исправление «применил, а ничего не поменялось»):
+   1) В протоколе API нет выражений в квадратных скобках. Строку
+      «/interface wireless set [find default-name=wlan1] ssid=X» нельзя
+      разложить на путь и аргументы: из «[find default-name=wlan1]»
+      получался аргумент «default-name=wlan1]», роутер отвечал
+      «unknown parameter», а обёртка :do … on-error={} превращала это
+      в отчёт «уже есть». Теперь строка с [ … ] уходит на роутер
+      целиком, скриптом — с той же семантикой, что в .rsc.
+   2) Позиционное слово-селектор («set wlan1 ssid=…») раньше отбрасывалось,
+      если рядом были аргументы: команда уходила без указания объекта,
+      и SSID с паролем оставались заводскими. Теперь это numbers=…
+   3) Порядок строк сохраняется: скриптовые строки идут вперемешку с
+      обычными, а не «всё в конце».
+   4) После применения программа перечитывает /ip address, /interface
+      wireless и /interface wifi и показывает, что реально стало на роутере.
 */
 
 // rosCommand — одна строка конфига, разобранная на путь, действие и аргументы.
@@ -32,6 +49,7 @@ type rosCommand struct {
 	Order  []string          `json:"-"`
 	Ignore bool              `json:"ignore"`
 	Script bool              `json:"script"`
+	Expr   bool              `json:"expr"` // строка содержит [ … ] — её выполняет роутер
 }
 
 // rosActionWords — слова-действия RouterOS. По ним отделяем путь от аргументов.
@@ -42,6 +60,29 @@ var rosActionWords = map[string]bool{
 	"check-for-updates": true, "reboot": true, "shutdown": true, "reset": true,
 	"move": true, "comment": true, "find": true, "get": true, "monitor": true,
 	"save": true, "load": true, "edit": true, "snoop": true, "refresh": true,
+}
+
+// hasBracketExpr сообщает, есть ли в строке выражение в квадратных скобках:
+// [find default-name=wlan1], [/ip firewall filter find where comment="…"],
+// place-before=[…]. Внутри кавычек скобки не считаются.
+func hasBracketExpr(s string) bool {
+	quote := byte(0)
+	for i := 0; i < len(s); i++ {
+		ch := s[i]
+		switch {
+		case quote != 0:
+			if ch == quote {
+				quote = 0
+			}
+		case ch == '"' || ch == '\'':
+			quote = ch
+		case ch == '[':
+			return true
+		case ch == '#':
+			return false // дальше комментарий
+		}
+	}
+	return false
 }
 
 // tokenizeLine делит строку на слова, учитывая кавычки "…" и '…'.
@@ -145,6 +186,17 @@ func parseConfigLine(line string) (rosCommand, bool) {
 	}
 	body, guarded := unwrapGuard(raw)
 	cmd := rosCommand{Raw: raw, Args: map[string]string{}, Ignore: guarded}
+	// Выражения в квадратных скобках ([find …], place-before=[…]) в API не
+	// существуют. Такие строки выполняет сам RouterOS — целиком, как в .rsc
+	// (обёртка :do { … } on-error={} остаётся в тексте строки).
+	// Смотрим именно тело после снятия обёрток: условие вида
+	// :if ([:len [/ip … find …]] = 0) do={…} — это нормальная идемпотентная
+	// проверка, её команду можно отправить обычным путём.
+	if hasBracketExpr(body) {
+		cmd.Script = true
+		cmd.Expr = true
+		return cmd, true
+	}
 	if !strings.HasPrefix(body, "/") {
 		cmd.Script = true
 		return cmd, true
@@ -184,8 +236,12 @@ func parseConfigLine(line string) (rosCommand, bool) {
 			positional = append(positional, w)
 		}
 	}
-	if len(positional) > 0 && len(cmd.Args) == 0 {
-		// например «/ip service disable telnet,ftp» — в API это numbers=
+	if len(positional) > 0 && (len(cmd.Args) == 0 || cmd.Action != "add") {
+		// Позиционное слово — это указание объекта, в API это numbers=:
+		//   «/ip service disable telnet,ftp»        → numbers=telnet,ftp
+		//   «/interface wireless set wlan1 ssid=X»  → numbers=wlan1 + ssid=X
+		// Раньше при наличии аргументов слово молча терялось, и «set» уходил
+		// без объекта: SSID и пароль Wi-Fi оставались заводскими.
 		cmd.Args["numbers"] = strings.Join(positional, ",")
 		cmd.Order = append(cmd.Order, "numbers")
 	}
@@ -256,7 +312,6 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 
 	steps, script := splitConfig(text)
 	results := make([]rosApplyResult, 0, len(steps)+2)
-	failed := 0
 
 	// Перед изменениями делаем бэкап на самом роутере: если что-то пойдёт не так,
 	// конфиг возвращается через Files → Restore.
@@ -270,7 +325,44 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 	}
 	results = append(results, backup)
 
-	for _, step := range steps {
+	// Строки идут в том порядке, в котором они записаны в конфиге: раньше все
+	// «скриптовые» строки выполнялись в самом конце, из-за чего порядок
+	// «создать → настроить» мог нарушаться.
+	all := make([]rosStep, 0, len(steps)+len(script))
+	all = append(all, steps...)
+	all = append(all, script...)
+	sort.SliceStable(all, func(i, j int) bool { return all[i].Line < all[j].Line })
+
+	// Строки, которые выключают сам API (наш канал связи), выполняем в самом
+	// конце: иначе связь оборвётся на середине конфига, а остальные команды
+	// просто не дойдут до роутера.
+	var late []rosStep
+
+	for i := 0; i < len(all); i++ {
+		step := all[i]
+
+		if isApiKill(step.Cmd) {
+			late = append(late, step)
+			continue
+		}
+
+		// Скриптовые строки (выражения [ … ], :local, :put) выполняем пачкой
+		// подряд идущих — так меньше обращений к роутеру и сохранён порядок.
+		if step.Cmd.Script {
+			batch := []rosStep{step}
+			for i+1 < len(all) && all[i+1].Cmd.Script {
+				i++
+				batch = append(batch, all[i])
+			}
+			got, bad := runScriptBatch(c, batch)
+			results = append(results, got...)
+			if bad > 0 && stopOnError {
+				results = append(results, rosApplyResult{Status: "skipped", Message: "остановлено на ошибке"})
+				return results, nil
+			}
+			continue
+		}
+
 		cmd := step.Cmd
 		res := rosApplyResult{
 			Line:    step.Line,
@@ -289,12 +381,14 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 				res.Status = "exists"
 				res.Message = "уже настроено — пропущено"
 			case cmd.Ignore:
-				res.Status = "exists"
-				res.Message = err.Error()
+				// Раньше здесь стояло «уже есть» — и настоящая ошибка внутри
+				// :do … on-error={} выглядела как успех. Теперь честно:
+				// строка не применилась, текст роутера в отчёте.
+				res.Status = "skipped"
+				res.Message = "не применилось (обёртка :do … on-error): " + err.Error()
 			default:
 				res.Status = "error"
 				res.Message = err.Error()
-				failed++
 			}
 		} else {
 			res.Status = "ok"
@@ -306,39 +400,162 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 		}
 	}
 
-	if len(script) > 0 {
-		name := "mtg-wizard-" + time.Now().Format("150405")
-		srcLines := make([]string, 0, len(script))
-		for _, st := range script {
-			srcLines = append(srcLines, strings.TrimSpace(st.Cmd.Raw))
+	// Что реально стало на роутере: адреса и SSID. Без этого человек видит
+	// «выполнено», а на деле адрес или имя сети остались прежними.
+	results = append(results, verifyApplyState(c)...)
+
+	for _, step := range late {
+		cmd := step.Cmd
+		res := rosApplyResult{
+			Line:    step.Line,
+			Raw:     strings.TrimSpace(cmd.Raw),
+			Command: strings.TrimSpace(cmd.Path + "/" + cmd.Action + " " + strings.Join(cmd.words()[1:], " ")),
 		}
-		src := strings.Join(srcLines, "\n")
-		res := rosApplyResult{Status: "script", Message: "выражения скрипта: строк " + fmt.Sprint(len(script))}
-		if _, err := c.runCommand("/system script add", "=name="+name, "=source="+src, "=policy=read,write,policy,test,romon"); err != nil {
-			if isAlreadyThere(err.Error()) {
-				_, _ = c.runCommand("/system script remove", "=numbers="+name)
-				_, err = c.runCommand("/system script add", "=name="+name, "=source="+src, "=policy=read,write,policy,test,romon")
-			}
-			if err != nil {
-				res.Status = "error"
-				res.Message = "не удалось создать временный скрипт: " + err.Error()
-				failed++
-				results = append(results, res)
-				return results, nil
-			}
-		}
-		if _, err := c.runCommand("/system script run", "=number="+name); err != nil {
+		if _, err := c.runCommand(cmd.words()...); err != nil {
 			res.Status = "error"
 			res.Message = err.Error()
-			failed++
 		} else {
-			res.Message += " — выполнены"
+			res.Status = "ok"
 		}
-		_, _ = c.runCommand("/system script remove", "=numbers="+name)
+		res.Message = strings.TrimSpace(res.Message + " Внимание: этим выключается API — программа " +
+			"больше не сможет подключаться к роутеру. Вернуть: /ip service enable api (api-ssl, www-ssl) " +
+			"в Winbox → New Terminal.")
 		results = append(results, res)
+		if res.Status == "error" && stopOnError {
+			break
+		}
 	}
-	_ = failed
+
+	// Итоговая сводка: сколько строк реально не применилось. Считаем и жёсткие
+	// ошибки, и «не применилось» внутри :do … on-error={} — именно их раньше
+	// показывали как «уже есть», из-за чего казалось, что всё применилось.
+	hard, soft := 0, 0
+	for _, r := range results {
+		switch {
+		case r.Status == "error":
+			hard++
+		case r.Status == "skipped" && strings.Contains(r.Message, "не применилось"):
+			soft++
+		}
+	}
+	if hard+soft > 0 {
+		results = append(results, rosApplyResult{
+			Status: "note",
+			Message: fmt.Sprintf("не применилось: %d строк (с отказом роутера: %d) — текст рядом с каждой строкой",
+				hard+soft, hard),
+		})
+	}
 	return results, nil
+}
+
+// isApiKill — выключает ли строка сервис, через который мы сейчас работаем
+// (api / api-ssl / www-ssl). Такие строки выполняются последними: иначе
+// программа теряет связь с роутером на середине применения конфига.
+func isApiKill(cmd rosCommand) bool {
+	if cmd.Script || cmd.Action != "disable" {
+		return false
+	}
+	if !strings.Contains(strings.ToLower(cmd.Path), "ip service") {
+		return false
+	}
+	n := strings.ToLower(cmd.Args["numbers"])
+	return strings.Contains(n, "api") || strings.Contains(n, "www-ssl")
+}
+
+// runScriptBatch выполняет пачку скриптовых строк одним временным скриптом
+// на роутере. Возвращает строки отчёта и число неудач.
+//
+// Почему скриптом, а не по API: выражения [find …], place-before=[…] и
+// :local существуют только в языке RouterOS. Отправить их по протоколу API
+// нельзя — их надо именно выполнить на роутере, как при /import.
+func runScriptBatch(c *rosConn, batch []rosStep) ([]rosApplyResult, int) {
+	results := make([]rosApplyResult, 0, len(batch))
+	srcLines := make([]string, 0, len(batch))
+	for _, st := range batch {
+		results = append(results, rosApplyResult{
+			Line:    st.Line,
+			Raw:     strings.TrimSpace(st.Cmd.Raw),
+			Status:  "script",
+			Message: "выполняется скриптом на роутере",
+		})
+		srcLines = append(srcLines, strings.TrimSpace(st.Cmd.Raw))
+	}
+	src := strings.Join(srcLines, "\n")
+	name := "mtg-wizard-" + time.Now().Format("150405.000")
+
+	add := func() error {
+		_, err := c.runCommand("/system script add", "=name="+name, "=source="+src,
+			"=policy=read,write,policy,test,romon")
+		return err
+	}
+	if err := add(); err != nil {
+		if isAlreadyThere(err.Error()) {
+			_, _ = c.runCommand("/system script remove", "=numbers="+name)
+			err = add()
+		}
+		if err != nil {
+			for i := range results {
+				results[i].Status = "error"
+				results[i].Message = "не удалось создать временный скрипт: " + err.Error()
+			}
+			return results, len(results)
+		}
+	}
+	_, runErr := c.runCommand("/system script run", "=number="+name)
+	_, _ = c.runCommand("/system script remove", "=numbers="+name)
+	if runErr != nil {
+		for i := range results {
+			results[i].Status = "error"
+			results[i].Message = "скрипт не выполнился: " + runErr.Error()
+		}
+		return results, len(results)
+	}
+	for i := range results {
+		results[i].Message = "выполнено скриптом"
+	}
+	return results, 0
+}
+
+// verifyApplyState читает фактическое состояние после применения.
+// Строки со статусом "state" интерфейс показывает отдельным блоком
+// «Сейчас на роутере»: по ним видно, поменялся ли адрес и SSID.
+func verifyApplyState(c *rosConn) []rosApplyResult {
+	checks := []struct {
+		path   string
+		fields []string
+	}{
+		{"/ip address", []string{"address", "interface"}},
+		{"/interface wireless", []string{"name", "ssid"}},
+		{"/interface wifi", []string{"name", "ssid"}},
+	}
+	const maxRows = 40
+	var out []rosApplyResult
+	for _, ch := range checks {
+		rows, err := c.runCommand(ch.path + " print")
+		if err != nil {
+			continue // меню может отсутствовать (нет пакета wifi и т.п.)
+		}
+		for _, row := range rows {
+			if len(out) >= maxRows {
+				return out
+			}
+			parts := make([]string, 0, len(ch.fields))
+			for _, f := range ch.fields {
+				if v := strings.TrimSpace(row[f]); v != "" {
+					parts = append(parts, v)
+				}
+			}
+			if len(parts) == 0 {
+				continue
+			}
+			out = append(out, rosApplyResult{
+				Status:  "state",
+				Raw:     ch.path,
+				Message: strings.Join(parts, " · "),
+			})
+		}
+	}
+	return out
 }
 
 // rosPlanItem — одна строка «что изменится» до применения.
@@ -364,7 +581,11 @@ func planConfig(text string, snapshot map[string][]map[string]string) []rosPlanI
 		item := rosPlanItem{Line: i + 1, Raw: strings.TrimSpace(line), Path: cmd.Path, Action: cmd.Action}
 		if cmd.Script {
 			item.Kind = "script"
-			item.Note = "выражение скрипта — выполнится на роутере"
+			if cmd.Expr {
+				item.Note = "строка с [ … ] — выполнится на роутере целиком (как в .rsc)"
+			} else {
+				item.Note = "выражение скрипта — выполнится на роутере"
+			}
 			out = append(out, item)
 			continue
 		}

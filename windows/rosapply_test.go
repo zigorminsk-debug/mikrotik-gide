@@ -40,6 +40,20 @@ func TestParseConfigLine(t *testing.T) {
 		{line: ":local rosVer [/system resource get version]", script: true, ok: true},
 		{line: "/system note set show-at-login=no", path: "/system note", action: "set",
 			args: map[string]string{"show-at-login": "no"}, ok: true},
+
+		// Селектор без скобок — это numbers. Раньше он терялся, если рядом
+		// были аргументы, и «set» уходил без указания интерфейса: SSID и
+		// пароль Wi-Fi оставались заводскими.
+		{line: `/interface wireless set wlan1 mode=ap-bridge ssid="Дом" security-profile=sec-lan`,
+			path: "/interface wireless", action: "set",
+			args: map[string]string{"numbers": "wlan1", "ssid": "Дом", "security-profile": "sec-lan"}, ok: true},
+
+		// Выражения [ … ] по API отправить нельзя — строку выполняет роутер.
+		{line: `/interface wireless set [find default-name=wlan1] ssid="Дом"`, script: true, ok: true},
+		{line: `/ip firewall filter add chain=input action=drop place-before=[/ip/firewall/filter find where comment="drop wan input"]`,
+			script: true, ok: true},
+		{line: `:do {/ip address set [/ip address find where address="192.168.90.1/24"] interface=bridge} on-error={}`,
+			script: true, ok: true},
 	}
 	for _, c := range cases {
 		cmd, ok := parseConfigLine(c.line)
@@ -67,6 +81,45 @@ func TestParseConfigLine(t *testing.T) {
 				t.Errorf("%q: аргумент %s = %q, хотели %q", c.line, k, cmd.Args[k], v)
 			}
 		}
+	}
+}
+
+// Строка с [ … ] должна уходить на роутер целиком (Expr), а не превращаться
+// в аргумент «default-name=wlan1]» — именно из-за этого Wi-Fi не менялся.
+func TestParseConfigLineExpr(t *testing.T) {
+	cases := []string{
+		`/interface wireless set [find default-name=wlan1] ssid="Дом"`,
+		`:do {/ip address remove [/ip address find where address="192.168.88.1/24"]} on-error={}`,
+		`/ip firewall filter add chain=input action=accept place-before=[/ip/firewall/filter find where comment="x"]`,
+	}
+	for _, line := range cases {
+		cmd, ok := parseConfigLine(line)
+		if !ok || !cmd.Script || !cmd.Expr {
+			t.Errorf("%q: ждали Script+Expr, получили script=%v expr=%v ok=%v", line, cmd.Script, cmd.Expr, ok)
+		}
+		if cmd.Raw != line {
+			t.Errorf("%q: исходная строка потеряна (%q) — обёртка :do on-error не выполнится", line, cmd.Raw)
+		}
+	}
+	// Комментарий с квадратной скобкой — не выражение.
+	cmd, ok := parseConfigLine(`# см. [ip address]`)
+	if ok {
+		t.Errorf("комментарий разобран как команда: %+v", cmd)
+	}
+}
+
+// Позиционный селектор и обычные аргументы должны ехать вместе.
+func TestParseConfigLinePositionalSelector(t *testing.T) {
+	cmd, ok := parseConfigLine(`/interface wireless set wlan1 ssid="Дом"`)
+	if !ok || cmd.Script {
+		t.Fatalf("разбор: ok=%v script=%v", ok, cmd.Script)
+	}
+	words := strings.Join(cmd.words(), " ")
+	if !strings.Contains(words, "=numbers=wlan1") {
+		t.Fatalf("в команде нет numbers=wlan1: %s", words)
+	}
+	if !strings.Contains(words, "=ssid=Дом") {
+		t.Fatalf("в команде нет ssid: %s", words)
 	}
 }
 
@@ -180,6 +233,124 @@ func TestApplyConfigAgainstFakeRouter(t *testing.T) {
 	}
 	if strings.Contains(sent, "/ip/route/print") {
 		t.Error("команда только для чтения всё-таки отправлена")
+	}
+}
+
+// Главная проверка исправления «применил — ничего не поменялось»:
+//
+//	· строка с [find …] уходит на роутер целиком (скриптом), а не превращается
+//	  в аргумент «default-name=wlan1]»;
+//	· позиционный селектор едет как numbers, поэтому set применяется к нужному
+//	  интерфейсу, а не «куда-нибудь»;
+//	· отказ внутри :do … on-error={} показывается как «не применилось»,
+//	  а не как «уже есть»;
+//	· в конце отчёта видно фактическое состояние (адреса и SSID).
+func TestApplyConfigExprAndHonestStatuses(t *testing.T) {
+	f := newFakeROS(t, false)
+	f.rows["/ip/address"] = []map[string]string{{"address": "192.168.90.1/24", "interface": "bridge-lan"}}
+	f.rows["/interface wireless"] = []map[string]string{{"name": "wlan1", "ssid": "Дом"}}
+	f.fail["/ip/cloud/set"] = "no permission"
+
+	text := strings.Join([]string{
+		"/ip address add address=192.168.90.1/24 interface=bridge-lan",
+		`:do {/ip cloud set ddns-enabled=yes} on-error={}`,
+		`/interface wireless set [find default-name=wlan1] ssid="Дом"`,
+		`/interface wireless set wlan1 ssid="Дом2" security-profile=sec-lan`,
+	}, "\n")
+
+	host, port := f.addr()
+	results, err := rosApply(host+":"+strconv.Itoa(port), "admin", "secret", text, false)
+	if err != nil {
+		t.Fatalf("применение: %v", err)
+	}
+
+	byRaw := map[string]rosApplyResult{}
+	for _, r := range results {
+		if r.Raw != "" {
+			byRaw[r.Raw] = r
+		}
+	}
+
+	guarded := byRaw[`:do {/ip cloud set ddns-enabled=yes} on-error={}`]
+	if guarded.Status != "skipped" {
+		t.Errorf("отказ внутри :do on-error должен быть «не применилось», получили %q (%s)",
+			guarded.Status, guarded.Message)
+	}
+	if !strings.Contains(guarded.Message, "не применилось") {
+		t.Errorf("в отчёте нет пояснения: %q", guarded.Message)
+	}
+
+	expr := byRaw[`/interface wireless set [find default-name=wlan1] ssid="Дом"`]
+	if expr.Status != "script" {
+		t.Errorf("строка с [find …] должна выполняться скриптом, получили %q", expr.Status)
+	}
+
+	sent := strings.Join(f.commands(), "\n")
+	if !strings.Contains(sent, "[find default-name=wlan1]") {
+		t.Errorf("скрипт не содержит исходную строку с [find …]:\n%s", sent)
+	}
+	// Испорченный аргумент видно по команде: путь set и в нём default-name.
+	// В исходной строке скрипта «default-name=wlan1]» быть и должно.
+	for _, line := range f.commands() {
+		if strings.HasPrefix(line, "/interface/wireless/set") && strings.Contains(line, "default-name") {
+			t.Errorf("на роутер ушёл испорченный аргумент: %s", line)
+		}
+	}
+	if !strings.Contains(sent, "=numbers=wlan1") {
+		t.Errorf("set должен указывать объект (numbers=wlan1):\n%s", sent)
+	}
+
+	stateOK := false
+	for _, r := range results {
+		if r.Status == "state" && strings.Contains(r.Message, "192.168.90.1/24") {
+			stateOK = true
+		}
+	}
+	if !stateOK {
+		t.Errorf("в отчёте нет фактического состояния после применения: %v", results)
+	}
+}
+
+// Строка «/ip service disable … api …» обрывает наш же канал связи, поэтому
+// она должна выполняться последней — после проверки состояния.
+func TestApiKillGoesLast(t *testing.T) {
+	cmd, ok := parseConfigLine("/ip service disable telnet,ftp,www,api,api-ssl,www-ssl")
+	if !ok || !isApiKill(cmd) {
+		t.Fatalf("не распознали выключение API: %+v", cmd)
+	}
+	safe, _ := parseConfigLine("/ip service disable telnet,ftp")
+	if isApiKill(safe) {
+		t.Error("telnet/ftp не имеют отношения к каналу связи программы")
+	}
+
+	f := newFakeROS(t, false)
+	text := strings.Join([]string{
+		"/ip service disable telnet,ftp,www,api,api-ssl,www-ssl",
+		"/ip address add address=192.168.90.1/24 interface=bridge-lan",
+	}, "\n")
+	host, port := f.addr()
+	results, err := rosApply(host+":"+strconv.Itoa(port), "admin", "secret", text, false)
+	if err != nil {
+		t.Fatalf("применение: %v", err)
+	}
+	// в ответе роутеру выключение API должно идти после добавления адреса
+	sent := strings.Join(f.commands(), "\n")
+	addrIdx := strings.Index(sent, "/ip/address/add")
+	killIdx := strings.Index(sent, "/ip/service/disable")
+	if addrIdx < 0 || killIdx < 0 {
+		t.Fatalf("команды не отправлены:\n%s", sent)
+	}
+	if killIdx < addrIdx {
+		t.Errorf("API выключен раньше остальных команд — связь оборвётся:\n%s", sent)
+	}
+	warned := false
+	for _, r := range results {
+		if strings.Contains(r.Message, "программа больше не сможет подключаться") {
+			warned = true
+		}
+	}
+	if !warned {
+		t.Errorf("нет предупреждения о выключении API: %v", results)
 	}
 }
 
