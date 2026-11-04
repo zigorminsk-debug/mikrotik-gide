@@ -184,13 +184,17 @@ func (s *server) handleUpdateApply(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, map[string]interface{}{"ok": false, "error": "скачивание: " + err.Error()})
 		return
 	}
-	if err := installUpdate(exe, data); err != nil {
+	if err := applyUpdate(exe, info, data); err != nil {
 		s.busy.Store(false)
-		writeJSON(w, map[string]interface{}{"ok": false, "error": "замена файла: " + err.Error()})
+		verb := "замена файла: "
+		if info.Setup {
+			verb = "запуск установщика: "
+		}
+		writeJSON(w, map[string]interface{}{"ok": false, "error": verb + err.Error()})
 		return
 	}
 
-	writeJSON(w, map[string]interface{}{"ok": true, "version": info.Latest, "restart": true})
+	writeJSON(w, map[string]interface{}{"ok": true, "version": info.Latest, "restart": true, "setup": info.Setup})
 	go func() {
 		time.Sleep(600 * time.Millisecond)
 		log.Printf("перезапуск в версии %s", info.Latest)

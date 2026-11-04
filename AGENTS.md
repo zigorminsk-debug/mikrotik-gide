@@ -151,7 +151,10 @@ Go-тесты лежат рядом с кодом (`windows/*_test.go`). Клю�
 ## 6. Подключение к роутеру: как устроено и где грабли
 
 Цепочка: `js/rosprobe.js` → `POST /api/router/probe` → `windows/roshttp.go`
-→ `probeRouter()` в `rosapi.go` → по очереди REST 443 → API 8728 → API-SSL 8729.
+→ `probeRouter()` в `rosapi.go` → по очереди REST 443 → REST 80 → API 8728 → API-SSL 8729.
+
+Две схемы REST нужны, чтобы проверять пароль независимо от политики `api`
+(у REST своя политика — `rest-api`).
 
 ### Каждый отказ классифицируется (`windows/rosdiag.go`)
 
@@ -162,6 +165,10 @@ Go-тесты лежат рядом с кодом (`windows/*_test.go`). Клю�
 | `auth` | роутер сам отклонил логин/пароль | текст роутера дословно + 2FA + политики |
 | `permission` | вход принят, но нет прав на API | политика `api` / `rest-api` |
 | `protocol` | ответил не RouterOS | адрес из поиска — чужой |
+
+RouterOS отвечает `invalid user name or password` **и при отсутствии политики
+`api`, и при ограничении `address` у пользователя, и при 2FA** — поэтому
+подсказки `loginRefusedHints()` перечисляют все четыре причины с командами.
 
 **Никогда не возвращайте короткое «отклонил логин или пароль» без разбора:**
 именно это и была жалоба пользователя — пароль верный, а сообщение врёт.
@@ -238,9 +245,31 @@ curl.exe -k -u admin:ПАРОЛЬ https://192.168.88.1/rest/system/resource
 
 | Workflow | Что делает | Триггер |
 | --- | --- | --- |
-| `android.yml` | vet + тесты Go, сборка Windows `.exe`, сборка APK, подпись, релиз `build-N` с контент-паком | push, PR, ручной запуск |
+| `android.yml` | vet + тесты Go, сборка Windows `.exe`, установщик Inno Setup, сборка APK, подпись, релиз `build-N` (APK + портативный EXE + setup + контент-пак) | push, PR, ручной запуск |
 | `go-check.yml` | быстрый `go vet`/`go test` | push, PR |
 | `winbox-shots.yml` | поднимает CHR в QEMU и снимает окна Winbox 4 | только по файлу `ci/winbox-shots.trigger` |
+
+### Установщик Windows и версии
+
+* Скрипт: `windows/installer/mtg.iss` (Inno Setup 6). Ставит в
+  `%LOCALAPPDATA%\Programs\MikroTik Gide` без прав администратора, `AppId`
+  постоянный — новая версия обновляет прежнюю, а не встаёт рядом.
+  `CloseApplications=yes` (перед заменой файлов закрывает запущенную копию),
+  `RestartApplications=no` (перезапуском занимается программа).
+* Сборка в CI: шаг «Установщик (Inno Setup)» в job `windows`,
+  `ISCC /DAppVersion=<ver> /DAppBuild=<N> /DSourceExe=<абсолютный путь>`.
+  **Путь к exe только абсолютный**: `Source` в `.iss` считается от папки
+  скрипта, а не от рабочего каталога. `ISCC` при отсутствии ставится через
+  `choco install innosetup`.
+* Обновление: `pickWindowsAsset` предпочитает установщик (`isSetupAsset` — по
+  слову `setup` в имени), `applyUpdate` выбирает `installSetup` (тихий запуск
+  `/VERYSILENT /CLOSEAPPLICATIONS`) или `installUpdate` (подмена exe рядом).
+  Ответ `/api/update/apply` содержит `setup`, и `desktop.js` в этом случае не
+  перезагружает страницу, а пишет «Установщик запущен…».
+* `findRunning` + `runningVersion` + `sameBuild` в `main.go`: занятый порт —
+  не повод открывать чужое окно. Сборка другая → поднимаем свою копию и
+  пишем в лог, какую версию нашли. Иначе повторяется «запустил новый файл,
+  а открылась старая версия».
 
 **Грабли CI (проверено на практике):**
 

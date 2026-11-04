@@ -229,6 +229,48 @@ func TestBroadcastOf(t *testing.T) {
 	}
 }
 
+// Жалоба «пароль верный, а программа говорит про пароль»: RouterOS отдаёт
+// один и тот же текст при отсутствии политики api, при ограничении адреса,
+// при 2FA и при неверном пароле. Подсказки обязаны перечислять все варианты
+// и содержать готовые команды с именем пользователя.
+func TestLoginRefusedHints(t *testing.T) {
+	hints := strings.Join(loginRefusedHints("csladmin"), " | ")
+	for _, want := range []string{
+		"policy",                                 // политика api у группы
+		"name=csladmin",                          // ограничение адреса у конкретного пользователя
+		"address",                                // поле address
+		"192.168.88.0/24",                        // типичный остаток после смены подсети
+		"TOTP",                                   // двухфакторный вход
+		"/user set csladmin password=Test123456", // безопасная проверка пароля
+		"apiuser",                                // контрольный пользователь
+		"/log print",                             // журнал роутера
+	} {
+		if !strings.Contains(hints, want) {
+			t.Errorf("в подсказках нет %q:\n%s", want, hints)
+		}
+	}
+	if empty := strings.Join(loginRefusedHints(""), " | "); !strings.Contains(empty, "name=admin") {
+		t.Errorf("без имени пользователя подсказка должна подставлять admin: %s", empty)
+	}
+
+	// Итоговая ошибка при отказе API собирает эти подсказки и не называет
+	// виноватым только пароль.
+	e := newProbeError("192.168.90.1", "csladmin", []rosAttempt{
+		{Transport: "rest", Port: 443, Kind: kindProtocol, Detail: "tls: handshake failure"},
+		{Transport: "api", Port: 8728, Stage: "login", Kind: kindAuth,
+			Detail: "роутер: invalid user name or password (6)"},
+	})
+	if e.Kind != kindAuth {
+		t.Fatalf("вид %q, ожидали auth", e.Kind)
+	}
+	if !strings.Contains(e.Message, "не всегда пароль") {
+		t.Errorf("сообщение снова сводит всё к паролю: %q", e.Message)
+	}
+	if !strings.Contains(strings.Join(e.Hints, " | "), "policy") {
+		t.Errorf("в подсказках нет политики api: %v", e.Hints)
+	}
+}
+
 // Разбор отказа роутера: «неверный пароль» и «нет прав» — разные ситуации,
 // и человеку нужны разные подсказки.
 func TestClassifyTrap(t *testing.T) {
@@ -255,7 +297,7 @@ func TestClassifyTrap(t *testing.T) {
 // Итоговая ошибка должна выбирать самый осмысленный вид: если один путь
 // закрыт, а другой сказал «пароль не тот» — показываем «пароль».
 func TestNewProbeErrorPrefersAuth(t *testing.T) {
-	e := newProbeError("192.168.88.1", []rosAttempt{
+	e := newProbeError("192.168.88.1", "csladmin", []rosAttempt{
 		{Transport: "rest", Port: 443, Kind: kindConnect, Detail: "порт закрыт"},
 		{Transport: "api", Port: 8728, Stage: "login", Kind: kindAuth, Detail: "роутер: invalid user name or password (6)"},
 	})

@@ -137,16 +137,24 @@ async function checkProbeFailure() {
   const win = boot('windows');
   await go(win, '#/router');
 
+  // Тексты как у Go-сервера (windows/rosdiag.go: loginRefusedHints).
   win.__routes['/api/router/probe'] = () => ({
     ok: false,
-    error: 'Роутер отклонил логин или пароль (ответил сам роутер, не программа)',
+    error: 'Роутер отклонил вход по API (invalid user name or password). ' +
+      'Это не всегда пароль — проверьте по списку ниже',
     kind: 'auth',
-    address: '192.168.88.1',
+    address: '192.168.90.1',
     attempts: [
-      { transport: 'rest', port: 443, stage: 'connect', ok: false, kind: 'connect', detail: 'порт закрыт — сервис выключен' },
+      { transport: 'rest', port: 443, stage: 'connect', ok: false, kind: 'protocol', detail: 'tls: handshake failure' },
+      { transport: 'rest-http', port: 80, stage: 'connect', ok: false, kind: 'connect', detail: 'порт закрыт — сервис выключен' },
       { transport: 'api', port: 8728, stage: 'login', ok: false, kind: 'auth', detail: 'роутер: invalid user name or password (6)' }
     ],
-    hints: ['Проверьте раскладку и лишние пробелы в пароле', 'Проверьте политику api у группы']
+    hints: [
+      'Политика api у группы: /user group print detail — в строке policy должна быть api',
+      'Ограничение адреса у пользователя: /user print detail where name=csladmin — поле address ' +
+        'должно включать адрес этого компьютера. После смены подсети там часто остаётся старая 192.168.88.0/24.',
+      'Двухфакторный вход (TOTP): с ним вход по API невозможен вообще — только Winbox или веб.'
+    ]
   });
 
   const pass = q(win, '#rosPass');
@@ -155,12 +163,17 @@ async function checkProbeFailure() {
   await new Promise(r => setTimeout(r, 80));
 
   const out = text(q(win, '#rosOut'));
-  ok('показан текст ошибки', /отклонил логин или пароль/.test(out));
+  ok('показан текст ошибки', /отклонил вход по API/.test(out));
+  ok('сказано, что это не всегда пароль', /не всегда пароль/.test(out));
+  ok('подсказка про политику api', /policy должна быть api/.test(out));
+  ok('подсказка про адрес пользователя с его логином', /name=csladmin/.test(out) && /192\.168\.88\.0\/24/.test(out));
+  ok('подсказка про 2FA', /TOTP/.test(out));
   ok('показана таблица попыток', !!q(win, '#rosOut table'), 'человек должен видеть, где споткнулись');
   ok('видны оба транспорта', /rest/.test(out) && /api/.test(out));
   ok('виден ответ роутера дословно', /invalid user name or password/.test(out));
-  ok('видны подсказки', /Проверьте раскладку/.test(out) && /политику api/.test(out));
+  ok('видны подсказки', /policy должна быть api/.test(out) && /TOTP/.test(out));
   ok('порт 443 и 8728 в таблице', /443/.test(out) && /8728/.test(out));
+  ok('видно, что REST по http (80) тоже пробовали', /rest-http/.test(out) && /80/.test(out));
 }
 
 async function checkPortCheck() {
@@ -220,6 +233,29 @@ async function checkAndroidHint() {
   ok('объяснено, что API есть только в Windows-версии', /Windows-версии/.test(card));
   ok('памятка про политики доступна и на Android', !!q(win, '.ros-help'));
   ok('кнопки опроса не показаны', !q(win, '#rosProbeBtn'));
+}
+
+/* Если API закрыт, а REST отвечает, программа так и говорит: путь для
+   проверки пароля есть, политики у путей разные. */
+async function checkPortCheckRestOnly() {
+  console.log('\nМой роутер: открыт только REST');
+  const win = boot('windows');
+  await go(win, '#/router');
+  win.__routes['/api/router/check'] = () => ({
+    ok: true,
+    address: '192.168.90.1',
+    open: [80, 8291],
+    ports: [
+      { port: 8291, label: 'Winbox', open: true, detail: 'открыт — Winbox подключится' },
+      { port: 8728, label: 'API', open: false, detail: 'закрыт — включите /ip service enable api' },
+      { port: 80, label: 'REST (www)', open: true, detail: 'открыт — REST по http:// тоже работает' }
+    ]
+  });
+  q(win, '#rosCheckBtn').click();
+  await new Promise(r => setTimeout(r, 80));
+  const out = text(q(win, '#rosOut'));
+  ok('сказано, что опрос пойдёт через REST', /опрос пойдёт через него/.test(out));
+  ok('различаются политики rest-api и api', /rest-api/.test(out) && /api/.test(out));
 }
 
 /* Мастер должен не «добавлять адрес рядом», а заменять заводскую адресацию:
@@ -321,6 +357,7 @@ async function checkAllRoutes() {
     await checkPortCheck();
     await checkDiscovery();
     await checkAndroidHint();
+    await checkPortCheckRestOnly();
     await checkWizardLan();
     await checkAllRoutes();
   } catch (e) {

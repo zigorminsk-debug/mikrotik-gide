@@ -196,6 +196,7 @@ jobs:
     outputs:
       file: ${{ steps.build.outputs.file }}
       sha: ${{ steps.build.outputs.sha }}
+      setup: ${{ steps.setup.outputs.file }}
 
     steps:
       - name: Checkout
@@ -248,11 +249,38 @@ jobs:
             echo "| \`$OUT\` | $SIZE Б | \`$SHA\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Артефакт EXE
+      - name: Установщик (Inno Setup)
+        id: setup
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            Write-Host 'ISCC.exe не найден — ставлю Inno Setup'
+            choco install innosetup -y --no-progress
+          }
+          if (-not (Test-Path $iscc)) { throw 'не найден ISCC.exe' }
+          $ver = "1.0.${{ github.run_number }}"
+          # Source в .iss считается от папки скрипта, поэтому путь к exe — абсолютный
+          $exe = (Resolve-Path '${{ steps.build.outputs.file }}').Path
+          & $iscc "/DAppVersion=$ver" "/DAppBuild=${{ github.run_number }}" `
+                  "/DSourceExe=$exe" `
+                  'windows\installer\mtg.iss'
+          if ($LASTEXITCODE -ne 0) { throw "ISCC завершился с кодом $LASTEXITCODE" }
+          $built = "windows\installer\dist\mikrotik-gide-setup-v$ver.exe"
+          if (-not (Test-Path $built)) { throw "установщик не собран: $built" }
+          $out = "mikrotik-gide-setup-v$ver.exe"
+          Copy-Item $built $out
+          Get-Item $out | Format-List Name,Length
+          "file=$out" >> $env:GITHUB_OUTPUT
+
+      - name: Артефакт EXE и установщика
         uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: ${{ steps.build.outputs.file }}
+          path: |
+            ${{ steps.build.outputs.file }}
+            ${{ steps.setup.outputs.file }}
           if-no-files-found: error
           compression-level: 0
           retention-days: 90
@@ -300,9 +328,15 @@ jobs:
 
             **Android:** APK подписан постоянным ключом проекта — устанавливается поверх предыдущих версий.
 
-            **Windows:** `mikrotik-gide-windows-*.exe` — портативная программа (один файл, без установки).
-            Внутри то же содержимое учебника; обновление ставится из самого приложения
-            («О программе» → «Проверить обновление») или вручную заменой файла.
+            **Windows — установщик (рекомендуется):** `mikrotik-gide-setup-*.exe`.
+            Ставит программу в `%LOCALAPPDATA%\Programs\MikroTik Gide` без прав администратора,
+            делает ярлыки, закрывает запущенную копию перед заменой файлов и удаляется
+            штатно через «Программы и компоненты». Путь один, поэтому «запустил новый файл,
+            а открылась старая версия» больше не случается.
+
+            **Windows — портативно:** `mikrotik-gide-windows-*.exe` — один файл, без установки.
+            Обновление ставится из самого приложения («О программе» → «Проверить обновление»):
+            если в релизе есть установщик, программа скачивает и запускает его тихо.
 
             `content-pack.json` — дополнительный контент: приложение скачивает его
             из последнего релиза и добавляет статьи без переустановки.
@@ -310,6 +344,7 @@ jobs:
             dist/${{ needs.android.outputs.apk }}
             dist/content-pack.json
             dist/${{ needs.windows.outputs.file }}
+            dist/${{ needs.windows.outputs.setup }}
           fail_on_unmatched_files: true
           draft: false
           prerelease: false

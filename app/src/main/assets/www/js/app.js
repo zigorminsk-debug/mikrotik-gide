@@ -2080,9 +2080,16 @@
       if (!res.open.length) {
         tail = '<b>Ни один порт не отвечает.</b> Проверьте адрес: скорее всего, это не роутер ' +
           'или компьютер в другой сети. Нажмите «Найти в сети» — программа покажет, кто ответил.';
-      } else if (res.open.indexOf(8728) < 0 && res.open.indexOf(8729) < 0 && res.open.indexOf(443) < 0) {
+      } else if (res.open.indexOf(8728) < 0 && res.open.indexOf(8729) < 0 &&
+                 res.open.indexOf(443) < 0 && res.open.indexOf(80) < 0) {
         tail = 'Winbox (8291) открыт, а API и REST закрыты — поэтому опрос не проходит. ' +
-          'На роутере: <code>/ip service enable api</code> (или <code>api-ssl</code> / <code>www-ssl</code> для REST).';
+          'На роутере: <code>/ip service enable api</code> (или <code>api-ssl</code>, ' +
+          '<code>www-ssl</code> / <code>www</code> для REST).';
+      } else if (res.open.indexOf(8728) < 0 && res.open.indexOf(8729) < 0) {
+        // API закрыт, но REST отвечает: этим путём можно проверить пароль
+        // отдельно от политики api — программа так и делает при опросе.
+        tail = 'API (8728/8729) закрыт, зато REST отвечает — опрос пойдёт через него. ' +
+          'Политики для путей разные: REST требует <b>rest-api</b>, API — <b>api</b>.';
       } else {
         tail = 'Сервисы открыты — можно нажимать «Опросить». Если пароль при этом отклонён, ' +
           'проверьте политику <b>api</b> у пользователя (см. памятку ниже).';

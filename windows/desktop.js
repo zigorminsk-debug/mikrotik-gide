@@ -95,6 +95,14 @@
         if (btn) { btn.disabled = false; btn.textContent = 'Скачать и установить'; }
         return;
       }
+      if (r.setup) {
+        // Установщик сам закроет программу и поставит новую версию по
+        // единственному пути — перезагружать страницу нечего.
+        setState('Установщик запущен: программа закроется и откроется уже ' +
+          esc(r.version) + '.', 'ok');
+        if (btn) btn.textContent = 'Установка…';
+        return;
+      }
       setState('Готово. Приложение перезапускается…', 'ok');
       if (btn) btn.textContent = 'Перезапуск…';
       if (window.MTG) window.MTG.restarting = true;
