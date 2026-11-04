@@ -230,6 +230,13 @@ curl.exe -k -u admin:ПАРОЛЬ https://192.168.88.1/rest/system/resource
   После прогона обязательно смотреть артефакты глазами.
 * Логи прогона: `gh run view --log` часто отдаёт `EOF`, а
   `gh api .../actions/runs/<id>/jobs` работает.
+* **Текст ошибки компиляции достаётся из аннотаций**, даже когда логи
+  недоступны:
+  ```bash
+  gh api repos/<owner>/<repo>/commits/<sha>/check-runs --jq '.check_runs[]|{id,name,conclusion}'
+  gh api repos/<owner>/<repo>/check-runs/<id>/annotations --jq '.[]|{path,start_line,message}'
+  ```
+  Так видно, например, `"fmt" imported and not used` без скачивания логов.
 * Голый `git push` отбивается: workflow коммитит снимки. Всегда
   `git fetch && git pull --rebase`.
 
