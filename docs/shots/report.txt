@@ -27,14 +27,20 @@ t=780c  winbox-head=[]
 ждать по таймеру до 11 мин
 BIN=./WinBox
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: quickset (пункт y=+50)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: interfaces (пункт y=+95)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: bridge (пункт y=+146)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
   [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
   снято: ip-address (пункт y=+238, подпункт y=+53)
@@ -58,7 +64,16 @@ BIN=./WinBox
   снято: ppp (пункт y=+170)
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
   [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: system (пункт y=+530)
+  снято: system (пункт y=+338)
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  снято: dot1x (пункт y=+385)
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  снято: radius (пункт y=+477)
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  снято: tools (пункт y=+500)
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
   [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
   снято: bridge-new (пункт y=+146, кнопка New)
@@ -70,24 +85,8 @@ BIN=./WinBox
   снято: system-users (пункт y=+530, подпункт y=+76)
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
   [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-=== разведка меню ip (пункт y=+238) ===
-  [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-=== разведка меню system (пункт y=+530) ===
-  [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  пункт y=+445 → окна: Qt Selection Owner for WinBox|WinBox|admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox|
-  [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  пункт y=+468 → окна: Qt Selection Owner for WinBox|WinBox|admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox|
-  [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  пункт y=+491 → окна: Qt Selection Owner for WinBox|WinBox|admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox|
-  [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  пункт y=+514 → окна: Qt Selection Owner for WinBox|WinBox|admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox|
 === время ===
-Wed Nov  4 04:45:26 UTC 2026
+Wed Nov  4 05:20:06 UTC 2026
 === qemu-img ===
 image: chr.qcow2
 file format: qcow2
@@ -163,44 +162,36 @@ PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/s
 WBOXSESS,INFO: newer version available for RouterOS:7.25.1
 WBOXSESS,INFO: first clock synced
 === процессы ===
-runner      3582 38.7  2.2 3207092 361540 ?      Sl   04:18  10:37 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      4032  0.1  0.5 227356 86936 ?        S    04:34   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      7353  0.7  0.6 948664 107148 ?       Sl   04:44   0:00 ./WinBox
+runner      3665  144  2.1 3317288 344208 ?      Sl   04:54  37:16 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4078  0.1  0.5 230016 89612 ?        S    05:10   0:01 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      5993  1.1  0.6 948660 107516 ?       Sl   05:19   0:00 ./WinBox
 === файлы ===
-total 1992
--rw-r--r-- 1 runner runner  64525 Nov  4 04:34 01-login.png
--rw-r--r-- 1 runner runner  65100 Nov  4 04:45 02-typed.png
--rw-r--r-- 1 runner runner  61951 Nov  4 04:45 03-desktop.png
--rw-r--r-- 1 runner runner   2135 Nov  4 04:20 08-chr-120.png
--rw-r--r-- 1 runner runner   2147 Nov  4 04:22 08-chr-210.png
--rw-r--r-- 1 runner runner   2147 Nov  4 04:18 08-chr-30.png
--rw-r--r-- 1 runner runner   1066 Nov  4 04:24 08-chr-300.png
--rw-r--r-- 1 runner runner   1075 Nov  4 04:25 08-chr-390.png
--rw-r--r-- 1 runner runner   1066 Nov  4 04:27 08-chr-480.png
--rw-r--r-- 1 runner runner   1075 Nov  4 04:29 08-chr-570.png
--rw-r--r-- 1 runner runner   1066 Nov  4 04:31 08-chr-660.png
--rw-r--r-- 1 runner runner   1075 Nov  4 04:32 08-chr-750.png
--rw-r--r-- 1 runner runner   3655 Nov  4 04:17 README.md
--rw-r--r-- 1 runner runner     76 Nov  4 04:45 ps.txt
--rw-r--r-- 1 runner runner   9307 Nov  4 04:45 report.txt
--rw-r--r-- 1 runner runner  85639 Nov  4 04:41 tree-ip.png
--rw-r--r-- 1 runner runner  70017 Nov  4 04:42 tree-system.png
--rw-r--r-- 1 runner runner 175071 Nov  4 04:44 tree-tools-445.png
--rw-r--r-- 1 runner runner  85344 Nov  4 04:44 tree-tools-468.png
--rw-r--r-- 1 runner runner  81459 Nov  4 04:44 tree-tools-491.png
--rw-r--r-- 1 runner runner  80367 Nov  4 04:45 tree-tools-514.png
--rw-r--r-- 1 runner runner 109832 Nov  4 04:39 win-bridge-new.png
--rw-r--r-- 1 runner runner  80457 Nov  4 04:36 win-bridge.png
--rw-r--r-- 1 runner runner  73485 Nov  4 04:38 win-files.png
--rw-r--r-- 1 runner runner  87002 Nov  4 04:35 win-interfaces.png
--rw-r--r-- 1 runner runner  72668 Nov  4 04:36 win-ip-address.png
--rw-r--r-- 1 runner runner  80313 Nov  4 04:40 win-ip-cloud.png
--rw-r--r-- 1 runner runner  76576 Nov  4 04:36 win-ip-routes.png
--rw-r--r-- 1 runner runner  99500 Nov  4 04:37 win-ip-services.png
--rw-r--r-- 1 runner runner  80448 Nov  4 04:38 win-log.png
--rw-r--r-- 1 runner runner  85102 Nov  4 04:39 win-ppp.png
--rw-r--r-- 1 runner runner  82363 Nov  4 04:37 win-queue.png
--rw-r--r-- 1 runner runner 108826 Nov  4 04:35 win-quickset.png
--rw-r--r-- 1 runner runner  66174 Nov  4 04:40 win-system-users.png
--rw-r--r-- 1 runner runner  66547 Nov  4 04:39 win-system.png
--rw-r--r-- 1 runner runner    410 Nov  4 04:45 xwininfo-2.txt
+total 1372
+-rw-r--r-- 1 runner runner  61208 Nov  4 05:10 01-login.png
+-rw-r--r-- 1 runner runner  65118 Nov  4 05:19 02-typed.png
+-rw-r--r-- 1 runner runner  62143 Nov  4 05:19 03-desktop.png
+-rw-r--r-- 1 runner runner   2135 Nov  4 04:56 08-chr-120.png
+-rw-r--r-- 1 runner runner   2147 Nov  4 04:58 08-chr-210.png
+-rw-r--r-- 1 runner runner   2147 Nov  4 04:54 08-chr-30.png
+-rw-r--r-- 1 runner runner   2135 Nov  4 05:00 08-chr-300.png
+-rw-r--r-- 1 runner runner   2147 Nov  4 05:01 08-chr-390.png
+-rw-r--r-- 1 runner runner   2135 Nov  4 05:03 08-chr-480.png
+-rw-r--r-- 1 runner runner   2147 Nov  4 05:05 08-chr-570.png
+-rw-r--r-- 1 runner runner   2135 Nov  4 05:07 08-chr-660.png
+-rw-r--r-- 1 runner runner   2147 Nov  4 05:09 08-chr-750.png
+-rw-r--r-- 1 runner runner   3655 Nov  4 04:53 README.md
+-rw-r--r-- 1 runner runner   8897 Nov  4 05:20 report.txt
+-rw-r--r-- 1 runner runner 109819 Nov  4 05:18 win-bridge-new.png
+-rw-r--r-- 1 runner runner  73536 Nov  4 05:17 win-dot1x.png
+-rw-r--r-- 1 runner runner  73215 Nov  4 05:15 win-files.png
+-rw-r--r-- 1 runner runner  72368 Nov  4 05:13 win-ip-address.png
+-rw-r--r-- 1 runner runner  80850 Nov  4 05:19 win-ip-cloud.png
+-rw-r--r-- 1 runner runner  76739 Nov  4 05:14 win-ip-routes.png
+-rw-r--r-- 1 runner runner  98756 Nov  4 05:14 win-ip-services.png
+-rw-r--r-- 1 runner runner  80277 Nov  4 05:16 win-log.png
+-rw-r--r-- 1 runner runner  85124 Nov  4 05:16 win-ppp.png
+-rw-r--r-- 1 runner runner  81947 Nov  4 05:15 win-queue.png
+-rw-r--r-- 1 runner runner  77412 Nov  4 05:17 win-radius.png
+-rw-r--r-- 1 runner runner  65816 Nov  4 05:19 win-system-users.png
+-rw-r--r-- 1 runner runner  82399 Nov  4 05:16 win-system.png
+-rw-r--r-- 1 runner runner  76432 Nov  4 05:18 win-tools.png
