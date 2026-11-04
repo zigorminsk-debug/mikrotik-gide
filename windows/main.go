@@ -222,14 +222,14 @@ func runningVersion(base string) (ver, build string) {
 }
 
 // sameBuild отвечает, можно ли переиспользовать окно работающего экземпляра.
+// Если работающий экземпляр сообщил номер сборки, решает он: одна и та же
+// версия может быть собрана разными сборками, и открывать чужую нельзя.
+// Версия сравнивается только когда сборки нет (старый билд без /api/version).
 func sameBuild(ver, build string) bool {
-	if build != "" && build != "0" && build == buildNo {
-		return true
+	if build != "" && build != "0" {
+		return build == buildNo
 	}
-	if ver != "" && ver != "dev" && ver == version {
-		return true
-	}
-	return false
+	return ver != "" && ver != "dev" && ver == version
 }
 
 func orDash(s string) string {
