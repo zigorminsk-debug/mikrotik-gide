@@ -2019,6 +2019,83 @@
     toast('Опрос: ' + (window.RosProbe.summary(info) || info.address));
   }
 
+  /* Памятка: почему верный пароль может не подойти по API.
+     Это самая частая причина «роутер отклонил логин или пароль» — у
+     пользователя или его группы не включена политика api / rest-api. */
+  function rosHelpHint() {
+    return '<details class="ros-help" style="margin-top:10px">' +
+      '<summary>Пароль верный, а вход не проходит? Что проверить на роутере</summary>' +
+      '<div class="hint" style="margin-top:6px">' +
+      '1. Политика <b>api</b> у группы пользователя: <code>/user group print detail</code> — ' +
+      'в policy должно быть <code>api</code>; для REST ещё <code>rest-api</code>.<br>' +
+      '2. Двухфакторный вход (TOTP) у пользователя отключает вход по API — заходите Winbox или через веб.<br>' +
+      '3. Сервис включён и не ограничен адресом: <code>/ip service print</code> — у <code>api</code> ' +
+      'флаг <code>X</code> (disabled) снят, в Address нет чужой подсети.<br>' +
+      '4. Включить: <code>/ip service enable api</code> (и <code>api-ssl</code>, <code>www-ssl</code> для REST).<br>' +
+      '5. Конфиг «защиты» из мастера отключает api/www-ssl — после его применения опрос не работает ' +
+      'до повторного включения сервисов.<br>' +
+      'Кнопка «Проверить доступность» показывает, открыты ли порты 8728/8729/443 — начните с неё.' +
+      '</div></details>';
+  }
+
+  /* Разбор неудачного опроса: текст, таблица попыток и подсказки.
+     Данные приходят от Go-сервера (см. windows/rosdiag.go). */
+  function rosFailHtml(e) {
+    let html = '<b>' + rosExplain(e) + '</b>';
+    const attempts = (e && e.attempts) || [];
+    if (attempts.length) {
+      html += '<div class="tbl" style="margin-top:6px"><table><tbody>' +
+        '<tr><th>Путь</th><th>Порт</th><th>Что вышло</th></tr>' +
+        attempts.map(function (a) {
+          const state = a.ok ? '✓ работает' : esc(a.detail || a.kind || '');
+          return '<tr><td>' + esc(a.transport) + '</td><td>' + esc(String(a.port)) +
+            '</td><td>' + state + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }
+    const hints = (e && e.hints) || [];
+    if (hints.length) {
+      html += '<ul style="margin:6px 0 0 18px">' + hints.map(function (h) {
+        return '<li>' + esc(h) + '</li>';
+      }).join('') + '</ul>';
+    }
+    return html;
+  }
+
+  /* «Проверить доступность»: только TCP, без логина и пароля.
+     Отвечает, включены ли сервисы и наш ли это вообще роутер. */
+  function rosCheckRun(btn) {
+    if (!window.RosProbe || !window.RosProbe.available()) return;
+    const addr = ((document.getElementById('rosAddr') || {}).value || '').trim() || '192.168.88.1';
+    const saved = btn ? btn.textContent : '';
+    if (btn) { btn.textContent = 'Проверяю…'; btn.disabled = true; }
+    rosOut('Стучусь в порты 8291, 8728, 8729, 443, 80, 22 на ' + esc(addr) + '…');
+    window.RosProbe.check(addr).then(function (res) {
+      if (btn) { btn.textContent = saved; btn.disabled = false; }
+      const rows = res.ports.map(function (p) {
+        return '<tr><td>' + esc(String(p.port)) + ' · ' + esc(p.label) + '</td><td>' +
+          (p.open ? '<b>открыт</b>' : 'закрыт') + '</td><td>' + esc(p.detail) + '</td></tr>';
+      }).join('');
+      let tail;
+      if (!res.open.length) {
+        tail = '<b>Ни один порт не отвечает.</b> Проверьте адрес: скорее всего, это не роутер ' +
+          'или компьютер в другой сети. Нажмите «Найти в сети» — программа покажет, кто ответил.';
+      } else if (res.open.indexOf(8728) < 0 && res.open.indexOf(8729) < 0 && res.open.indexOf(443) < 0) {
+        tail = 'Winbox (8291) открыт, а API и REST закрыты — поэтому опрос не проходит. ' +
+          'На роутере: <code>/ip service enable api</code> (или <code>api-ssl</code> / <code>www-ssl</code> для REST).';
+      } else {
+        tail = 'Сервисы открыты — можно нажимать «Опросить». Если пароль при этом отклонён, ' +
+          'проверьте политику <b>api</b> у пользователя (см. памятку ниже).';
+      }
+      rosOut('<b>' + esc(res.address || addr) + '</b>' +
+        '<div class="tbl" style="margin-top:6px"><table><tbody>' +
+        '<tr><th>Порт</th><th>Состояние</th><th>Пояснение</th></tr>' + rows +
+        '</tbody></table></div><div style="margin-top:6px">' + tail + '</div>');
+    }).catch(function (e) {
+      if (btn) { btn.textContent = saved; btn.disabled = false; }
+      rosOut('<b>Проверка не удалась:</b> ' + rosExplain(e));
+    });
+  }
+
   function rosProbeRun(btn) {
     if (!window.RosProbe || !window.RosProbe.available()) return;
     const addr = (document.getElementById('rosAddr') || {}).value || '192.168.88.1';
@@ -2049,7 +2126,8 @@
       rosApply(info);   // перерисовка мастера заодно покажет отчёт опроса
     }).catch(function (e) {
       if (btn) { btn.textContent = saved; btn.disabled = false; }
-      rosOut('<b>Не получилось:</b> ' + rosExplain(e));
+      // Подробный разбор: какой путь закрыт, что ответил роутер, что делать.
+      rosOut('<b>Не получилось:</b> ' + rosFailHtml(e));
     });
   }
 
@@ -2057,22 +2135,41 @@
     if (!window.RosProbe || !window.RosProbe.available()) return;
     const saved = btn ? btn.textContent : '';
     if (btn) { btn.textContent = 'Ищу…'; btn.disabled = true; }
-    rosOut('Слушаю MNDP (UDP 5678) и порты 8728/8291 в своей подсети…');
-    window.RosProbe.discover().then(function (found) {
+    const prefer = ((document.getElementById('rosAddr') || {}).value || '').trim();
+    rosOut('Слушаю MNDP (UDP 5678) и порты 8728/8291 в своих подсетях…');
+    window.RosProbe.discover(prefer).then(function (found) {
       if (btn) { btn.textContent = saved; btn.disabled = false; }
       if (!found.length) {
         rosOut('Никого не нашёл. Впишите адрес роутера руками (обычно 192.168.88.1) — ' +
           'Windows-версия может быть не в той же сети, что роутер.');
         return;
       }
-      const html = found.map(function (d, i) {
-        const t = [d.identity, d.version ? 'RouterOS ' + d.version : '', d.board, d.source === 'mndp' ? 'MNDP' : 'порт ' + d.port]
-          .filter(Boolean).join(' · ');
+      /* Свои и «чужие» адреса разделяем: раньше в общий список попадали
+         подсети виртуальных адаптеров (Hyper-V, VirtualBox, WSL, Docker),
+         и человек видел «непонятные IP не из этой сети». */
+      const mine = found.filter(function (d) { return d.sameNet !== false; });
+      const other = found.filter(function (d) { return d.sameNet === false; });
+      const rowHtml = function (d) {
+        const t = [d.identity, d.version ? 'RouterOS ' + d.version : '', d.board,
+          d.source === 'mndp' ? 'MNDP' : 'порт ' + d.port,
+          d.mac ? 'MAC ' + d.mac : ''].filter(Boolean).join(' · ');
         return '<div><button class="chip" data-rosaddr="' + esc(d.address) + '" type="button">' +
           esc(d.address) + '</button> ' + esc(t) + '</div>';
-      }).join('');
-      rosOut('<b>Найдено: ' + found.length + '</b><br>' + html +
-        '<div class="hint" style="margin-top:6px">Нажмите адрес — он подставится в поле, затем «Опросить роутер».</div>');
+      };
+      let html = '';
+      if (mine.length) {
+        html += '<b>В вашей сети: ' + mine.length + '</b><br>' + mine.map(rowHtml).join('');
+      } else {
+        html += '<b>В подсетях этого компьютера роутеров не видно.</b><br>' +
+          'Проверьте, что компьютер подключён к той же сети, что роутер (Wi-Fi или кабель).<br>';
+      }
+      if (other.length) {
+        html += '<details style="margin-top:6px"><summary>Ещё в сети: ' + other.length +
+          ' — вероятно, другие сети и виртуальные адаптеры</summary>' +
+          other.map(rowHtml).join('') + '</details>';
+      }
+      rosOut(html + '<div class="hint" style="margin-top:6px">Нажмите адрес — он подставится в поле, ' +
+        'затем «Проверить доступность» и «Опросить».</div>');
       document.querySelectorAll('#rosOut [data-rosaddr]').forEach(function (b) {
         b.addEventListener('click', function () {
           const a = document.getElementById('rosAddr');
@@ -2213,7 +2310,7 @@
       return '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Роутер</h3>' +
         '<div class="hint">Живое подключение к роутеру есть в Windows-версии программы: ' +
         'из браузера нельзя открыть порт 8728. Версию и плату в Android-версии укажите вручную ' +
-        'в мастере — конфиг соберётся так же.</div></section>';
+        'в мастере — конфиг соберётся так же.</div>' + rosHelpHint() + '</section>';
     }
     return '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Подключение к роутеру</h3>' +
       '<div class="hint" style="margin:-4px 0 8px">Адрес, логин и пароль нужны только на время запроса — пароль не сохраняется.</div>' +
@@ -2223,9 +2320,11 @@
       '<input class="inp" id="rosPass" type="password" placeholder="пароль" autocomplete="new-password" maxlength="64">' +
       '</div>' +
       '<div class="chips"><button class="chip" id="rosProbeBtn" type="button">Опросить</button>' +
+      '<button class="chip" id="rosCheckBtn" type="button">Проверить доступность</button>' +
       '<button class="chip" id="rosFindBtn" type="button">Найти в сети</button>' +
       '<button class="chip" id="rosSnapBtn" type="button">Прочитать состояние</button></div>' +
-      '<div id="rosOut" class="hint" style="margin-top:8px"></div></section>';
+      '<div id="rosOut" class="hint" style="margin-top:8px"></div>' +
+      rosHelpHint() + '</section>';
   }
 
   function routerView() {
@@ -2449,6 +2548,8 @@
     if (probe) probe.addEventListener('click', function () { rosProbeRun(probe); });
     const find = document.getElementById('rosFindBtn');
     if (find) find.addEventListener('click', function () { rosFind(find); });
+    const checkBtn = document.getElementById('rosCheckBtn');
+    if (checkBtn) checkBtn.addEventListener('click', function () { rosCheckRun(checkBtn); });
     const pass = document.getElementById('rosPass');
     if (pass) {
       if (rosPassMemo) pass.value = rosPassMemo;

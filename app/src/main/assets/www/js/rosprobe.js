@@ -80,16 +80,41 @@
       });
   }
 
+  /* Ошибка с диагностикой: кроме текста сервер присылает разбор попыток
+     (какой транспорт, какой порт, что ответил роутер) и подсказки.
+     Интерфейс показывает это таблицей — человек видит, что именно не так:
+     порт закрыт, пароль отклонён или у пользователя нет политики api. */
+  function probeError(j) {
+    const err = new Error((j && j.error) || 'не удалось опросить роутер');
+    err.kind = (j && j.kind) || 'connect';
+    err.attempts = (j && j.attempts) || [];
+    err.hints = (j && j.hints) || [];
+    err.address = (j && j.address) || '';
+    return err;
+  }
+
   function probe(address, user, password, save) {
     return request('/probe', { address: address, user: user, password: password, save: save !== false })
       .then(function (j) {
-        if (!j || !j.ok) throw new Error((j && j.error) || 'не удалось опросить роутер');
+        if (!j || !j.ok) throw probeError(j);
         return j.info;
       });
   }
 
-  function discover() {
-    return request('/discover', null).then(function (j) {
+  /* Проверка доступности без пароля: какие порты открыты на адресе.
+     Отвечает на вопрос «роутер ли это и включены ли сервисы». */
+  function check(address) {
+    return request('/check?address=' + encodeURIComponent(String(address || '')), null)
+      .then(function (j) {
+        if (!j || !j.ok) throw new Error((j && j.error) || 'не удалось проверить адрес');
+        return { ports: j.ports || [], open: j.open || [], address: j.address || address };
+      });
+  }
+
+  /* prefer — адрес из поля ввода: его подсеть сервер сканирует первой. */
+  function discover(prefer) {
+    const q = prefer ? '?address=' + encodeURIComponent(String(prefer)) : '';
+    return request('/discover' + q, null).then(function (j) {
       if (!j || !j.ok) throw new Error((j && j.error) || 'поиск не удался');
       return j.found || [];
     });
@@ -220,6 +245,7 @@
     available: available,
     profile: profile,
     probe: probe,
+    check: check,
     plan: plan,
     apply: apply,
     snapshot: snapshot,
