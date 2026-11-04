@@ -264,6 +264,11 @@ jobs:
             return 0
           }
 
+          # Координаты сверены по снимку дерева Winbox 4 (шаг строки ≈23 px):
+          # QuickSet 55, WiFi 81, Interfaces 105, WireGuard 128, Bridge 151, PPP 175,
+          # Switch 198, Mesh 221, IP 245, IPv6 268, MPLS 292, Routing 315, System 338,
+          # Queues 362, Dot1X 385, Files 409, Log 431, New Terminal 454, RADIUS 477,
+          # Tools 500, Make Supout.rif 523.
           # Одно окно на перезапуск Winbox: так на кадре нет наложенных окон.
           # Порядок пар «пункт меню / подпункт» — как в дереве Winbox 4.
           one() {  # имя, y пункта, y подпункта (или -), кнопка New (0/1)
@@ -279,7 +284,10 @@ jobs:
           one files        398  -   0
           one log          421  -   0
           one ppp          170  -   0
-          one system       530  -   0
+          one system       338  -   0
+          one dot1x        385  -   0
+          one radius       477  -   0
+          one tools        500  -   0
           one bridge-new   146  -   1
           one ip-cloud     238  99  0
           one system-users 530  76  0

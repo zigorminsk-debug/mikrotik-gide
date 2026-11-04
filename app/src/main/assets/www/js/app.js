@@ -369,6 +369,17 @@
       (title ? '<h3 class="card-h">' + svg(iconName || 'book', 15) + title + '</h3>' : '') +
       inner + '</section>';
   }
+  function hardenCount() {
+    const g = window.HARDEN_GROUPS || [];
+    let n = 0;
+    g.forEach(function (x) { n += (x.items || []).length; });
+    return n || 58;
+  }
+
+  function quizCount() {
+    return (window.QUIZ || []).length || 215;
+  }
+
   function warnIcon() {
     return '<svg viewBox="0 0 24 24" width="17" height="17"><path d="M12 4l8.5 15h-17z" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linejoin="round"/><path d="M12 10v4M12 16.6v.6" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/></svg>';
   }
@@ -407,7 +418,7 @@
 
     html += '<div class="home-tools">' +
       toolCard('#/course', 'Курс за 7 дней', 'по дню за подход: статьи + практика', 'book') +
-      toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню Winbox — проверить роутер', 'svc') +
+      toolCard('#/harden', 'Защита от взлома', hardenCount() + ' пунктов по меню Winbox — проверить роутер', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'вставьте /export — 24 проверки с оценкой', 'task') +
       toolCard('#/diag', 'Диагностика', 'если что-то не работает — пошагово', 'start') +
       toolCard('#/starred', 'Избранное и заметки', 'всё отмеченное и записанное', 'svc') +
@@ -1453,7 +1464,7 @@
         '<div class="sq-links">' +
         '<a class="list-row" href="#/diag"><span class="n">?</span><b>Диагностика по симптому</b><span>что не работает</span></a>' +
         '<a class="list-row" href="#/glossary"><span class="n">A</span><b>Глоссарий и порты</b><span>50 терминов</span></a>' +
-        '<a class="list-row" href="#/harden"><span class="n">✓</span><b>Защита от взлома</b><span>56 пунктов</span></a>' +
+        '<a class="list-row" href="#/harden"><span class="n">✓</span><b>Защита от взлома</b><span>' + hardenCount() + ' пунктов</span></a>' +
         '</div>';
       return;
     }
@@ -1566,13 +1577,13 @@
       toolCard('#/router', 'Мой роутер', 'опрос версии и прошивки, применение конфига, обновления', 'system') +
       toolCard('#/win4', 'Окна Winbox 4', 'настоящие снимки окон с живого RouterOS', 'iface') +
       toolCard('#/course', 'Курс за 7 дней', 'План обучения с практикой и прогрессом', 'book') +
-      toolCard('#/harden', 'Защита от взлома', '56 пунктов по меню: доступ, firewall, сервисы, Wi-Fi', 'svc') +
+      toolCard('#/harden', 'Защита от взлома', hardenCount() + ' пунктов по меню: доступ, firewall, сервисы, Wi-Fi', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'Вставьте /export — проверю firewall, NAT, DHCP, Wi-Fi', 'svc') +
       toolCard('#/diag', 'Диагностика по симптому', 'Нет интернета, VPN, проброс — порядок проверки', 'start') +
       toolCard('#/subnet', 'Калькулятор подсетей', 'Маска, диапазон, broadcast, деление на подсети', 'ip') +
       toolCard('#/vlsm', 'VLSM-планировщик', 'План адресации по числу хостов + CSV', 'iface') +
       toolCard('#/diff', 'Сравнить конфиги', 'Два экспорта — что изменилось', 'task') +
-      toolCard('#/quiz', 'Самопроверка', '111 вопросов по RouterOS с разбором ошибок', 'book') +
+      toolCard('#/quiz', 'Самопроверка', quizCount() + ' вопросов по RouterOS с разбором ошибок', 'book') +
       toolCard('#/models', 'Модели и совместимость', 'Матрица 15 моделей: пакет Wi-Fi (wifi или wireless), порты, PoE, SFP', 'iface') +
       toolCard('#/starred', 'Избранное и заметки', 'Всё отмеченное, записанное и прочитанное', 'svc') +
       toolCard('#/examples', 'Примеры конфигов', '11 готовых схем: интернет, VLAN, VPN, Wi-Fi, IPTV', 'task') +
