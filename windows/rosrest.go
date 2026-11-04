@@ -23,7 +23,19 @@ type restSource struct {
 	notes []string
 }
 
+// newRESTSource — REST по HTTPS (www-ssl, порт 443).
 func newRESTSource(address, user, pass string) *restSource {
+	return newRESTSourceAt("https://"+address, user, pass)
+}
+
+// newRESTSourceAt собирает источник REST по готовому адресу:
+// https://192.168.88.1 (www-ssl) или http://192.168.88.1 (www).
+//
+// Зачем две схемы: RouterOS отдаёт /rest и по 443, и по 80. Если на роутере
+// выключен www-ssl, но включён www — второй путь позволяет проверить учётные
+// данные независимо от политики api. Это важно, когда вход по API отклонён:
+// с двумя ответами видно, дело в пароле или в правах.
+func newRESTSourceAt(base, user, pass string) *restSource {
 	if user == "" {
 		user = "admin"
 	}
@@ -33,7 +45,7 @@ func newRESTSource(address, user, pass string) *restSource {
 		DisableKeepAlives: false,
 	}
 	return &restSource{
-		base: "https://" + address,
+		base: strings.TrimSuffix(base, "/"),
 		user: user,
 		pass: pass,
 		http: &http.Client{Transport: tr, Timeout: 8 * time.Second},
@@ -127,8 +139,14 @@ func flattenRows(v interface{}) []map[string]string {
 }
 
 func probeREST(address, user, pass string) (*rosProbeInfo, error) {
-	src := newRESTSource(address, user, pass)
-	info, err := collectRouter(src, &rosProbeInfo{Transport: "rest"})
+	return probeRESTAt(address, "https", "rest", user, pass)
+}
+
+// probeRESTAt — REST конкретной схемы. transport попадает в отчёт
+// («rest» для 443, «rest-http» для 80), чтобы человек видел, какой путь сработал.
+func probeRESTAt(address, scheme, transport, user, pass string) (*rosProbeInfo, error) {
+	src := newRESTSourceAt(scheme+"://"+address, user, pass)
+	info, err := collectRouter(src, &rosProbeInfo{Transport: transport})
 	if err != nil {
 		return nil, err
 	}

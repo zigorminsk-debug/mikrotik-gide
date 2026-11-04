@@ -535,23 +535,34 @@ func probeRouter(address, user, pass string) (*rosProbeInfo, error) {
 	}
 	var attempts []rosAttempt
 
-	// 1. REST поверх HTTPS. Требует включённого www-ssl и политики rest-api.
-	restAttempt := rosAttempt{Transport: "rest", Port: 443, Stage: "connect"}
-	if info, err := probeREST(address, user, pass); err == nil {
-		restAttempt.OK = true
-		attempts = append(attempts, restAttempt)
-		return info, nil
-	} else {
-		kind, detail := classifyProbeErr(err)
-		restAttempt.Kind = kind
-		restAttempt.Detail = detail
-		if kind == kindAuth {
-			// REST ответил 401 — это уже осмысленный отказ роутера.
-			// Остальные транспорты проверим тоже (они могут быть выключены),
-			// но пароль, скорее всего, и правда не тот.
-			restAttempt.Detail = "роутер отклонил логин или пароль (REST)"
+	// 1. REST — сначала HTTPS (www-ssl, 443), затем HTTP (www, 80).
+	// Две схемы нужны, чтобы проверить учётные данные независимо от политики
+	// api: если www-ssl выключен, а www включён, ответ по 80 покажет, дело
+	// в пароле или в правах. Политика для REST — rest-api.
+	for _, ep := range []struct {
+		scheme    string
+		transport string
+		port      int
+	}{
+		{"https", "rest", 443},
+		{"http", "rest-http", 80},
+	} {
+		info, err := probeRESTAt(address, ep.scheme, ep.transport, user, pass)
+		if err == nil {
+			attempts = append(attempts, rosAttempt{
+				Transport: ep.transport, Port: ep.port, Stage: "read", OK: true,
+				Detail: "вход принят",
+			})
+			return info, nil
 		}
-		attempts = append(attempts, restAttempt)
+		kind, detail := classifyProbeErr(err)
+		if kind == kindAuth {
+			detail = "роутер отклонил вход (HTTP 401): пароль или нет политики rest-api"
+		}
+		attempts = append(attempts, rosAttempt{
+			Transport: ep.transport, Port: ep.port, Stage: "connect",
+			Kind: kind, Detail: detail,
+		})
 	}
 
 	// 2. Порт 8728 и 3. защищённый 8729 — обычный протокол MikroTik API.
@@ -580,7 +591,7 @@ func probeRouter(address, user, pass string) (*rosProbeInfo, error) {
 			// Настоящий отказ по паролю — дальше пробовать бессмысленно:
 			// остальные транспорты используют те же учётные данные.
 			if kind == kindAuth || kind == kindPermission {
-				return nil, newProbeError(address, attempts)
+				return nil, newProbeError(address, user, attempts)
 			}
 			continue
 		}
@@ -598,7 +609,7 @@ func probeRouter(address, user, pass string) (*rosProbeInfo, error) {
 		return info, nil
 	}
 
-	return nil, newProbeError(address, attempts)
+	return nil, newProbeError(address, user, attempts)
 }
 
 // normalizeAddress приводит «https://192.168.88.1/x» к «192.168.88.1».

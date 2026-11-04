@@ -170,8 +170,10 @@ func checkRouterPorts(address string) []rosPortStatus {
 		{8291, "Winbox", "открыт — Winbox подключится", "закрыт — Winbox тоже не пустит"},
 		{8728, "API", "открыт — опрос версии возможен", "закрыт — включите /ip service enable api"},
 		{8729, "API-SSL", "открыт — подойдёт защищённый API", "закрыт — включите /ip service enable api-ssl"},
-		{443, "REST (www-ssl)", "открыт — можно опрашивать по HTTPS", "закрыт — включите www-ssl с сертификатом"},
-		{80, "Web (www)", "открыт", "закрыт"},
+		{443, "REST (www-ssl)", "открыт — REST по https:// доступен (политика rest-api)",
+			"закрыт — включите www-ssl с сертификатом"},
+		{80, "REST (www)", "открыт — REST по http:// тоже работает: пароль проверяется независимо от политики api",
+			"закрыт — включите www, если нужен второй путь проверки входа"},
 		{22, "SSH", "открыт", "закрыт"},
 	}
 	out := make([]rosPortStatus, 0, len(services))
@@ -204,7 +206,9 @@ func serviceHint(transport string) string {
 	case "api-ssl":
 		return "включите защищённый API: /ip service enable api-ssl"
 	case "rest":
-		return "REST работает только через www-ssl: /ip service enable www-ssl (нужен сертификат)"
+		return "REST по https:// работает через www-ssl: /ip service enable www-ssl (нужен сертификат)"
+	case "rest-http":
+		return "REST по http:// работает через www: /ip service enable www (только для своей сети!)"
 	}
 	return "проверьте /ip service print"
 }
@@ -216,8 +220,41 @@ func permissionHint() string {
 		"/ip service print — в колонке Address не должно стоять чужой подсети."
 }
 
+// loginRefusedHints — что проверить, когда роутер ответил
+// «invalid user name or password», хотя пароль верный.
+//
+// RouterOS отдаёт этот ОДИН текст в четырёх разных случаях, и три из них
+// к паролю отношения не имеют. Поэтому подсказки идут в порядке проверки:
+// от самого частого и безопасного к самому редкому.
+func loginRefusedHints(user string) []string {
+	u := strings.TrimSpace(user)
+	if u == "" {
+		u = "admin"
+	}
+	return []string{
+		// Самая частая причина: политика api у группы. В Winbox вход идёт
+		// по политике winbox и проходит, а API — нет.
+		"Политика api у группы: /user group print detail — в строке policy должна быть api " +
+			"(для REST ещё rest-api). Без неё RouterOS отвечает именно «invalid user name or password».",
+		// После смены подсети это очень частый случай: у пользователя остался
+		// старый адрес в поле address, и вход с нового адреса отклоняется.
+		fmt.Sprintf("Ограничение адреса у пользователя: /user print detail where name=%s — поле address "+
+			"должно включать адрес этого компьютера. После смены подсети там часто остаётся старая "+
+			"192.168.88.0/24.", u),
+		"Двухфакторный вход (TOTP): с ним вход по API невозможен вообще — только Winbox или веб.",
+		// Проверка пароля без риска: поставить временный и вернуть прежний.
+		fmt.Sprintf("Проверить сам пароль без риска: /user set %s password=Test123456 — если вход пойдёт, "+
+			"дело в пароле (лишний символ, раскладка), потом верните прежний.", u),
+		// Контрольный пользователь: сразу отделяет «права» от «пароля».
+		"Контрольный вход: /user group add name=api-test policy=api,read,write,test; " +
+			"/user add name=apiuser group=api-test password=Test123456; /ip service enable api — " +
+			"опросите apiuser. Вошёл — проблема в учётке " + u + ", не вошёл — в сервисе или 2FA.",
+		"Журнал роутера после попытки показывает настоящую причину: /log print where message~\"login\".",
+	}
+}
+
 // newProbeError собирает итоговую ошибку из списка попыток.
-func newProbeError(address string, attempts []rosAttempt) *probeError {
+func newProbeError(address, user string, attempts []rosAttempt) *probeError {
 	e := &probeError{Address: address, Kind: kindConnect, Attempts: attempts}
 	// Приоритет вывода: настоящий отказ по паролю важнее «порт закрыт»,
 	// иначе человек идёт включать сервис, который уже включён.
@@ -246,13 +283,18 @@ func newProbeError(address string, attempts []rosAttempt) *probeError {
 			e.Message = "Вход по REST отклонён (HTTP 401): неверный пароль или у пользователя нет политики rest-api"
 			e.addHint("Сначала проверьте политику: /user group print detail — нужна rest-api (для REST) " +
 				"и api (для API 8728).")
-			e.addHint("Если политика на месте — сверьте пароль в Winbox: он мог измениться или в нём лишний символ.")
-			e.addHint("2FA (TOTP) у пользователя тоже даёт 401 — тогда входите Winbox или через веб.")
+			for _, h := range loginRefusedHints(user)[1:3] {
+				e.addHint(h)
+			}
+			e.addHint("Если политика и адрес в порядке — сверьте пароль: он мог измениться или в нём лишний символ.")
 		} else {
-			e.Message = "Роутер отклонил логин или пароль (ответил сам роутер, не программа)"
-			e.addHint("Проверьте раскладку и лишние пробелы в пароле; попробуйте войти этим же паролем в Winbox.")
-			e.addHint(permissionHint())
-			e.addHint("Если для пользователя включена 2FA (TOTP), вход по API невозможен — используйте Winbox или веб.")
+			// Роутер сам ответил отказом. Пароль при этом может быть верным:
+			// см. комментарий у loginRefusedHints.
+			e.Message = "Роутер отклонил вход по API (invalid user name or password). " +
+				"Это не всегда пароль — проверьте по списку ниже"
+			for _, h := range loginRefusedHints(user) {
+				e.addHint(h)
+			}
 		}
 	case kindPermission:
 		e.Message = "Логин верный, но у пользователя нет прав на API"
