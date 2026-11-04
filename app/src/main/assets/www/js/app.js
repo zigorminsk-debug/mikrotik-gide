@@ -2029,8 +2029,9 @@
       '1. Политика <b>api</b> у группы пользователя: <code>/user group print detail</code> — ' +
       'в policy должно быть <code>api</code>; для REST ещё <code>rest-api</code>.<br>' +
       '2. Двухфакторный вход (TOTP) у пользователя отключает вход по API — заходите Winbox или через веб.<br>' +
-      '3. Сервис включён и не ограничен адресом: <code>/ip service print</code> — у <code>api</code> ' +
-      'флаг <code>X</code> (disabled) снят, в Address нет чужой подсети.<br>' +
+      '3. Сервис включён и не ограничен адресом: <code>/ip service print</code> — у строки ' +
+      '<code>api</code> не должно быть флага <code>X</code> (<code>X</code> = сервис выключен), ' +
+      'а в колонке Address не должно быть чужой подсети.<br>' +
       '4. Включить: <code>/ip service enable api</code> (и <code>api-ssl</code>, <code>www-ssl</code> для REST).<br>' +
       '5. Конфиг «защиты» из мастера отключает api/www-ssl — после его применения опрос не работает ' +
       'до повторного включения сервисов.<br>' +
@@ -2044,8 +2045,8 @@
     let html = '<b>' + rosExplain(e) + '</b>';
     const attempts = (e && e.attempts) || [];
     if (attempts.length) {
-      html += '<div class="tbl" style="margin-top:6px"><table><tbody>' +
-        '<tr><th>Путь</th><th>Порт</th><th>Что вышло</th></tr>' +
+      html += '<div class="tbl-wrap" style="margin-top:6px"><table class="tbl"><thead>' +
+        '<tr><th>Путь</th><th>Порт</th><th>Что вышло</th></tr></thead><tbody>' +
         attempts.map(function (a) {
           const state = a.ok ? '✓ работает' : esc(a.detail || a.kind || '');
           return '<tr><td>' + esc(a.transport) + '</td><td>' + esc(String(a.port)) +
@@ -2087,8 +2088,8 @@
           'проверьте политику <b>api</b> у пользователя (см. памятку ниже).';
       }
       rosOut('<b>' + esc(res.address || addr) + '</b>' +
-        '<div class="tbl" style="margin-top:6px"><table><tbody>' +
-        '<tr><th>Порт</th><th>Состояние</th><th>Пояснение</th></tr>' + rows +
+        '<div class="tbl-wrap" style="margin-top:6px"><table class="tbl"><thead>' +
+        '<tr><th>Порт</th><th>Состояние</th><th>Пояснение</th></tr></thead><tbody>' + rows +
         '</tbody></table></div><div style="margin-top:6px">' + tail + '</div>');
     }).catch(function (e) {
       if (btn) { btn.textContent = saved; btn.disabled = false; }

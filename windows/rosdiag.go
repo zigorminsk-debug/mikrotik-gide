@@ -230,12 +230,30 @@ func newProbeError(address string, attempts []rosAttempt) *probeError {
 			e.Kind = kindProtocol
 		}
 	}
+	// Отказ по паролю мог прийти только по REST (401): там 401 означает и
+	// «неверный пароль», и «у группы нет политики rest-api». Если ни один
+	// транспорт не дошёл до входа по API, говорим об этом прямо — иначе
+	// человек снова пойдёт искать ошибку в пароле, которого там нет.
+	restOnly := true
+	for _, a := range attempts {
+		if a.Stage == "login" {
+			restOnly = false
+		}
+	}
 	switch e.Kind {
 	case kindAuth:
-		e.Message = "Роутер отклонил логин или пароль (ответил сам роутер, не программа)"
-		e.addHint("Проверьте раскладку и лишние пробелы в пароле; попробуйте войти этим же паролем в Winbox.")
-		e.addHint(permissionHint())
-		e.addHint("Если для пользователя включена 2FA (TOTP), вход по API невозможен — используйте Winbox или веб.")
+		if restOnly {
+			e.Message = "Вход по REST отклонён (HTTP 401): неверный пароль или у пользователя нет политики rest-api"
+			e.addHint("Сначала проверьте политику: /user group print detail — нужна rest-api (для REST) " +
+				"и api (для API 8728).")
+			e.addHint("Если политика на месте — сверьте пароль в Winbox: он мог измениться или в нём лишний символ.")
+			e.addHint("2FA (TOTP) у пользователя тоже даёт 401 — тогда входите Winbox или через веб.")
+		} else {
+			e.Message = "Роутер отклонил логин или пароль (ответил сам роутер, не программа)"
+			e.addHint("Проверьте раскладку и лишние пробелы в пароле; попробуйте войти этим же паролем в Winbox.")
+			e.addHint(permissionHint())
+			e.addHint("Если для пользователя включена 2FA (TOTP), вход по API невозможен — используйте Winbox или веб.")
+		}
 	case kindPermission:
 		e.Message = "Логин верный, но у пользователя нет прав на API"
 		e.addHint(permissionHint())
