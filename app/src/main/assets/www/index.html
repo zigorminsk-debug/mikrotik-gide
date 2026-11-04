@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark light">
+<title>MikroTik · Учебник Winbox 4</title>
+<link rel="icon" href="img/favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="img/icon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="img/icon-180.png">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+
+  <header class="topbar">
+    <button class="icon-btn" id="menuBtn" aria-label="Меню">
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M4 6h16M4 12h16M4 18h16" stroke="currentColor" stroke-width="2" stroke-linecap="round" fill="none"/></svg>
+    </button>
+    <button class="icon-btn" id="backBtn" aria-label="Назад" title="Назад" hidden>
+      <svg viewBox="0 0 24 24" width="22" height="22"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="brand">
+      <span class="logo">
+        <svg viewBox="0 0 24 24" width="20" height="20"><path d="M3 15h18v4a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" fill="currentColor"/><circle cx="6" cy="17.5" r="1" fill="#0d1117"/><circle cx="9" cy="17.5" r="1" fill="#0d1117"/><circle cx="12" cy="17.5" r="1" fill="#2fe08a"/><path d="M11 15V9.5h2V15z" fill="currentColor"/><path d="M7 9a7 7 0 0 1 10 0" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+      </span>
+      <div class="brand-txt"><b>MikroTik</b><small>учебник Winbox&nbsp;4</small></div>
+    </div>
+    <div class="top-actions">
+      <div class="fs-group" role="group" aria-label="Размер шрифта">
+        <button class="fs-btn" id="fontDown" aria-label="Уменьшить шрифт">A−</button>
+        <button class="fs-btn" id="fontUp" aria-label="Увеличить шрифт">A+</button>
+      </div>
+      <button class="icon-btn" id="searchBtn" aria-label="Поиск">
+        <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="11" cy="11" r="6.5" stroke="currentColor" stroke-width="2" fill="none"/><path d="M16 16l4.5 4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <button class="icon-btn" id="settingsBtn" aria-label="Настройки и обновления">
+        <svg viewBox="0 0 24 24" width="20" height="20"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8" fill="none"/><path d="M12 3v2.2M12 18.8V21M3 12h2.2M18.8 12H21M5.6 5.6l1.6 1.6M16.8 16.8l1.6 1.6M18.4 5.6l-1.6 1.6M7.2 16.8l-1.6 1.6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-scroll" id="sidebarScroll"></div>
+      <div class="sidebar-foot" id="sidebarFoot"></div>
+    </aside>
+    <main class="content" id="content"></main>
+  </div>
+
+  <div class="scrim" id="scrim"></div>
+
+  <div class="search-layer" id="searchLayer" hidden>
+    <div class="search-head">
+      <input type="search" id="searchInput" placeholder="Поиск: nat, vlan, wireguard, dhcp…" autocomplete="off" spellcheck="false">
+      <button class="icon-btn" id="searchClose" aria-label="Закрыть">✕</button>
+    </div>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+
+</div>
+
+<script src="js/data/start.js"></script>
+<script src="js/data/interfaces.js"></script>
+<script src="js/data/ip.js"></script>
+<script src="js/data/net-extra.js"></script>
+<script src="js/data/services.js"></script>
+<script src="js/data/system.js"></script>
+<script src="js/data/tasks.js"></script>
+<script src="js/data/more.js"></script>
+<script src="js/data/vpn.js"></script>
+<script src="js/data/ppp.js"></script>
+<script src="js/data/extra.js"></script>
+<script src="js/data/extra2.js"></script>
+<script src="js/data/mpls.js"></script>
+<script src="js/data/gaps.js"></script>
+<script src="js/data/gaps2.js"></script>
+<script src="js/data/gaps3.js"></script>
+<script src="js/data/wifi-power.js"></script>
+<script src="js/data/prod.js"></script>
+<script src="js/data/shots.js"></script>
+<script src="js/data/quiz.js"></script>
+<script src="js/data/quiz2.js"></script>
+<script src="js/data/diag.js"></script>
+<script src="js/data/harden.js"></script>
+<script src="js/data/course.js"></script>
+<script src="js/data/models.js"></script>
+<script src="js/data/cheats.js"></script>
+<script src="js/data/examples.js"></script>
+<script src="js/data/glossary.js"></script>
+<script src="js/data/win4.js"></script>
+<script src="js/data/changelog.js"></script>
+<script src="js/version.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/poe.js"></script>
+<script src="js/rosprobe.js"></script>
+<script src="js/wizard.js"></script>
+<script src="js/diff.js"></script>
+<script src="js/audit.js"></script>
+<script src="js/hl.js"></script>
+<script src="js/pack.js"></script>
+<script src="js/scene.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

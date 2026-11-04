@@ -1,0 +1,69 @@
+plugins {
+    id 'com.android.application'
+}
+
+// ---- постоянный ключ подписи ----
+// keystore/keystore.properties создаётся один раз (в CI или локально) и хранится
+// в репозитории, чтобы каждая следующая сборка ставилась поверх предыдущей.
+def ksPropsFile = rootProject.file('keystore/keystore.properties')
+def hasKeystore = ksPropsFile.exists()
+def ksProps = new Properties()
+if (hasKeystore) {
+    ksPropsFile.withInputStream { stream -> ksProps.load(stream) }
+}
+
+def vCode = (project.findProperty('appVersionCode') ?: '1').toString().toInteger()
+def vName = (project.findProperty('appVersionName') ?: '1.0.0').toString()
+
+android {
+    namespace = 'by.mikrotik.gide'
+    compileSdk = 34
+
+    defaultConfig {
+        applicationId = 'by.mikrotik.gide'
+        minSdk = 24
+        targetSdk = 34
+        versionCode = vCode
+        versionName = vName
+    }
+
+    signingConfigs {
+        release {
+            if (hasKeystore) {
+                storeFile = rootProject.file(ksProps.getProperty('storeFile'))
+                storePassword = ksProps.getProperty('storePassword')
+                keyAlias = ksProps.getProperty('keyAlias')
+                keyPassword = ksProps.getProperty('keyPassword')
+                storeType = ksProps.getProperty('storeType', 'JKS')
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled = false
+            shrinkResources = false
+            if (hasKeystore) {
+                signingConfig = signingConfigs.release
+            }
+        }
+        debug {
+            applicationIdSuffix = '.debug'
+            versionNameSuffix = '-debug'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    lint {
+        abortOnError = false
+        checkReleaseBuilds = false
+    }
+}
+
+// Приложение без сторонних зависимостей: Java + локальные assets (WebView).
+dependencies {
+}

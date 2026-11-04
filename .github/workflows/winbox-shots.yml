@@ -1,0 +1,333 @@
+name: Winbox 4 — настоящие скриншоты окон
+
+# Поднимает настоящий RouterOS CHR в QEMU, запускает настоящий Winbox 4 (Linux)
+# под Xvfb, подключается к роутеру и снимает окна.
+# Результат (PNG + отчёт) коммитится в ветку в docs/shots/ — видно без логов Actions.
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'ci/winbox-shots.trigger'
+      - '.github/workflows/winbox-shots.yml'
+      - '.github/scripts/guest-shot.py'
+
+permissions:
+  contents: write
+
+jobs:
+  shots:
+    name: CHR + Winbox 4 + снимки
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+    env:
+      DISPLAY: ':99'
+      CHR_VER: '7.24.6'
+      WINBOX_URL: 'https://download.mikrotik.com/routeros/winbox/4.4/WinBox_Linux.zip'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Зависимости (QEMU, Xvfb, Qt, xdotool, ImageMagick)
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            qemu-system-x86 qemu-utils xvfb x11-utils xdotool imagemagick unzip \
+            netcat-openbsd libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 \
+            libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core
+
+      - name: Скачать CHR и Winbox 4
+        run: |
+          set -euxo pipefail
+          mkdir -p /tmp/wb docs/shots
+          rm -f docs/shots/*.png docs/shots/report.txt docs/shots/*.txt || true
+          curl -fL --retry 3 -o /tmp/wb/chr.zip "https://download.mikrotik.com/routeros/${CHR_VER}/chr-${CHR_VER}.img.zip"
+          curl -fL --retry 3 -o /tmp/wb/winbox.zip "$WINBOX_URL"
+          cd /tmp/wb
+          unzip -o chr.zip
+          unzip -o winbox.zip -d winbox
+          ls -l
+          qemu-img convert -f raw -O qcow2 "chr-${CHR_VER}.img" chr.qcow2
+          qemu-img info chr.qcow2 | tee qemu-img-info.txt
+
+      - name: Запустить CHR в QEMU
+        run: |
+          set -euxo pipefail
+          cd /tmp/wb
+          qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max \
+            -accel tcg,thread=multi \
+            -drive file=chr.qcow2,format=qcow2,if=ide,index=0 \
+            -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
+            -device e1000,netdev=n0 \
+            -display none -monitor unix:/tmp/wb/mon.sock,server,nowait \
+            -daemonize -pidfile /tmp/wb/qemu.pid
+          sleep 5
+          ps -p "$(cat /tmp/wb/qemu.pid)" -o pid,etime,cmd || true
+
+      - name: Дождаться, когда RouterOS загрузится
+        run: |
+          set -x
+          cd "$GITHUB_WORKSPACE"
+          ready=0
+          for i in $(seq 1 26); do
+            sleep 30
+            t=$((i*30))
+            # признак готовности: служба Winbox отвечает первым пакетом
+            head_bytes=$(timeout 5 bash -c 'exec 3<>/dev/tcp/127.0.0.1/8291; dd bs=1 count=4 <&3 2>/dev/null | od -An -tx1' 2>/dev/null || true)
+            echo "t=${t}c  winbox-head=[${head_bytes}]" >> docs/shots/report.txt
+            if [ -n "$head_bytes" ]; then ready=1; echo "RouterOS готов на ${t}c" >> docs/shots/report.txt; fi
+            # экран гостя — на память, каждый третий шаг
+            if [ $((i % 3)) -eq 1 ]; then
+              python3 .github/scripts/guest-shot.py /tmp/wb/mon.sock /tmp/wb/guest.ppm >/dev/null 2>&1 || true
+              [ -f /tmp/wb/guest.ppm ] && convert /tmp/wb/guest.ppm "docs/shots/08-chr-$t.png" 2>/dev/null || true
+            fi
+            [ "$ready" = 1 ] && [ "$t" -ge 480 ] && break
+          done
+          # если признак не сработал — ждём гарантированные 11 минут
+          if [ "$ready" != 1 ]; then echo "ждать по таймеру до 11 мин" >> docs/shots/report.txt; sleep 60; fi
+
+      - name: Запустить Xvfb и Winbox 4
+        run: |
+          set -euxo pipefail
+          cd "$GITHUB_WORKSPACE"
+          Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp > /tmp/wb/xvfb.log 2>&1 &
+          sleep 2
+          cd /tmp/wb/winbox
+          BIN=$(find . -maxdepth 2 -type f -executable -exec file {} \; | grep -i ELF | head -1 | cut -d: -f1)
+          echo "BIN=$BIN" >> "$GITHUB_WORKSPACE/docs/shots/report.txt"
+          chmod +x "$BIN"
+          export QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1
+          nohup "$(pwd)/$BIN" > /tmp/wb/winbox.log 2>&1 &
+          sleep 12
+          import -window root "$GITHUB_WORKSPACE/docs/shots/01-login.png" || true
+
+      - name: Подключиться и снять окна Winbox 4
+        run: |
+          set -x
+          cd "$GITHUB_WORKSPACE"
+
+          biggest() {
+            best=""; bestarea=0
+            for w in $(xdotool search --name '.' 2>/dev/null); do
+              eval "$(xdotool getwindowgeometry --shell "$w" 2>/dev/null)" || continue
+              area=$((WIDTH * HEIGHT))
+              if [ "$area" -gt "$bestarea" ]; then bestarea=$area; best=$w; fi
+            done
+            echo "$best"
+          }
+          # главное окно Winbox: в заголовке есть «WinBox», у диалогов — нет.
+          # Координаты меню считаем только от него, иначе клики уезжают в чужое окно.
+          appwin() {
+            best=""; bestarea=0
+            for w in $(xdotool search --name 'WinBox' 2>/dev/null); do
+              eval "$(xdotool getwindowgeometry --shell "$w" 2>/dev/null)" || continue
+              area=$((WIDTH * HEIGHT))
+              if [ "$area" -gt "$bestarea" ]; then bestarea=$area; best=$w; fi
+            done
+            if [ -z "$best" ]; then biggest; else echo "$best"; fi
+          }
+          shot() { import -window root "docs/shots/$1.png" || true; sleep 0.4; }
+          state() {
+            WID=$(appwin)
+            eval "$(xdotool getwindowgeometry --shell "$WID" 2>/dev/null)"
+            TITLE=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+            echo "  [$1] window=[$TITLE] geo=${WIDTH}x${HEIGHT}+${X}+${Y}" >> docs/shots/report.txt
+          }
+
+          # --- подключение в три попытки, каждая с проверкой заголовка окна ---
+          connect_chr() {
+            state "старт"
+            xdotool windowfocus --sync "$WID" 2>/dev/null || xdotool windowactivate --sync "$WID" || true
+            sleep 1
+            # попытка 1: клик по полю «Connect to», ввод адреса, Enter
+            xdotool mousemove $((X + 300)) $((Y + 291)) click 1
+            sleep 1
+            xdotool windowfocus --sync "$WID" 2>/dev/null || true
+            xdotool key --clearmodifiers ctrl+a
+            xdotool type --delay 60 '127.0.0.1'
+            sleep 1
+            shot "02-typed"
+            xdotool key Return
+            for i in $(seq 1 5); do
+              sleep 2
+              TITLE=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+              case "$TITLE" in admin@*) break;; esac
+            done
+            state "после Enter"
+            # попытка 2: кнопка Connect
+            case "$TITLE" in
+              admin@*) ;;
+              *)
+                xdotool mousemove $((X + 192)) $((Y + 443)) click 1
+                for i in $(seq 1 5); do
+                  sleep 2
+                  TITLE=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+                  case "$TITLE" in admin@*) break;; esac
+                done
+                state "после кнопки Connect"
+                ;;
+            esac
+            # попытка 3: двойной щелчок по строке соседа (IP-адрес роутера)
+            case "$TITLE" in
+              admin@*) ;;
+              *)
+                xdotool mousemove $((X + 497)) $((Y + 124)) click --repeat 2 --delay 150 1
+                for i in $(seq 1 6); do
+                  sleep 2
+                  TITLE=$(xdotool getwindowname "$WID" 2>/dev/null || true)
+                  case "$TITLE" in admin@*) break;; esac
+                done
+                state "после двойного щелчка по соседу"
+                ;;
+            esac
+            # диалог «Change Password Now» закрываем Esc (безопаснее клика по координатам)
+            xdotool windowfocus --sync "$WID" 2>/dev/null || true
+            xdotool key Escape
+            sleep 2
+            shot "03-desktop"
+            case "$TITLE" in admin@*) return 0;; *) return 1;; esac
+          }
+
+          # --- снимок одного окна: клик по дереву (+ подменю), кадр, обрезка ---
+          capture() {
+            name=$1; tdy=$2; sdy=$3; newbtn=${4:-0}
+            WID=$(appwin); eval "$(xdotool getwindowgeometry --shell "$WID" 2>/dev/null)"
+            xdotool mousemove $((X + 80)) $((Y + tdy)) click 1
+            sleep 2
+            if [ -n "$sdy" ] && [ "$sdy" != "-" ]; then
+              xdotool mousemove $((X + 180)) $((Y + sdy)) click 1
+              sleep 2
+            fi
+            if [ "$newbtn" = 1 ]; then
+              xdotool mousemove $((X + 182)) $((Y + 164)) click 1
+              sleep 3
+            fi
+            shot "raw-$name"
+            convert "docs/shots/raw-$name.png" -crop 1200x700+200+200 +repage "docs/shots/win-$name.png" 2>/dev/null || true
+            rm -f "docs/shots/raw-$name.png"
+            echo "  снято: $name (пункт y=+$tdy$( [ "$sdy" != '-' ] && echo ", подпункт y=+$sdy" )$( [ "$newbtn" = 1 ] && echo ', кнопка New' ))" >> docs/shots/report.txt
+          }
+
+          # все заголовки окон — чтобы понять, какое окно открылось от клика
+          titles() {
+            for w in $(xdotool search --name '.' 2>/dev/null); do
+              xdotool getwindowname "$w" 2>/dev/null || true
+            done | sed '/^$/d' | sort -u
+          }
+
+          # разведка: кликаем пункт дерева, затем подпункты с шагом 23 px и пишем
+          # в отчёт, какое окно открылось. Так координаты не приходится угадывать:
+          # по отчёту видно «y=145 → [Cloud]» и т. п.
+          probe_menu() {   # пункт меню: открыть и снять полный экран вместе с подменю
+            name=$1; ty=$2
+            WID=$(appwin); eval "$(xdotool getwindowgeometry --shell "$WID" 2>/dev/null)"
+            xdotool mousemove $((X + 80)) $((Y + ty)) click 1
+            sleep 2
+            import -window root "docs/shots/tree-$name.png" || true
+            echo "  подменю $name открыто → tree-$name.png" >> docs/shots/report.txt
+          }
+
+          # Winbox перезапускаем каждые несколько окон: так на снимке видно только
+          # нужное окно, а не десяток наложенных друг на друга.
+          restart_winbox() {
+            pkill -f '/WinBox' 2>/dev/null || true
+            sleep 3
+            ( cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software \
+                QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 \
+                nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 & )
+            sleep 11
+          }
+
+          group() {
+            restart_winbox
+            if ! connect_chr; then
+              echo "  подключение не удалось, окна этой группы пропущены" >> docs/shots/report.txt
+              return 1
+            fi
+            return 0
+          }
+
+          # Координаты сверены по снимку дерева Winbox 4 (шаг строки ≈23 px):
+          # QuickSet 55, WiFi 81, Interfaces 105, WireGuard 128, Bridge 151, PPP 175,
+          # Switch 198, Mesh 221, IP 245, IPv6 268, MPLS 292, Routing 315, System 338,
+          # Queues 362, Dot1X 385, Files 409, Log 431, New Terminal 454, RADIUS 477,
+          # Tools 500, Make Supout.rif 523.
+          # Одно окно на перезапуск Winbox: так на кадре нет наложенных окон.
+          # Порядок пар «пункт меню / подпункт» — как в дереве Winbox 4.
+          one() {  # имя, y пункта, y подпункта (или -), кнопка New (0/1)
+            if group; then capture "$1" "$2" "$3" "${4:-0}"; fi
+          }
+          one quickset      50  -   0
+          one interfaces    95  -   0
+          one bridge       146  -   0
+          one ip-address   238 53   0
+          one ip-routes    238 399  0
+          one ip-services  238 492  0
+          one queue        353  -   0
+          one files        398  -   0
+          one log          421  -   0
+          one ppp          170  -   0
+          one system       338  -   0
+          one dot1x        385  -   0
+          one radius       477  -   0
+          one tools        500  -   0
+          one bridge-new   146  -   1
+          one ip-cloud     238  99  0
+          one system-users 530  76  0
+
+          # --- калибровка: учимся открывать окна по названию, а не по координатам ---
+          if group; then search_open "Cloud" ip-cloud; fi
+          if group; then search_open "Firewall" firewall; fi
+          if group; then search_open "Users" users; fi
+          if group; then search_open "RoMON" romon; fi
+          if group; then search_open "Bandwidth Test" bandwidth; fi
+
+          # --- разведка дерева: узнаём точные координаты подпунктов ---
+          if group; then probe_menu ip 238; fi
+          if group; then probe_menu system 338; fi
+          if group; then probe_menu tools 500; fi
+          xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
+          ps aux | grep -i winbox | grep -v grep > docs/shots/ps.txt || true
+
+      - name: Снимки в артефакт
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: winbox-shots
+          path: |
+            docs/shots/*.png
+            docs/shots/*.txt
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Отчёт и скриншоты в ветку
+        if: always()
+        run: |
+          set -x
+          cd "$GITHUB_WORKSPACE"
+          mkdir -p docs/shots
+          {
+            echo "=== время ==="; date -u
+            echo "=== qemu-img ==="; cat /tmp/wb/qemu-img-info.txt 2>/dev/null || true
+            echo "=== winbox.log ==="; tail -60 /tmp/wb/winbox.log 2>/dev/null || true
+            echo "=== процессы ==="; ps aux | grep -Ei 'qemu|winbox|xvfb' | grep -v grep || true
+            echo "=== файлы ==="; ls -l docs/shots
+          } >> docs/shots/report.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A docs/shots
+          git commit --allow-empty -m "CI: настоящие скриншоты Winbox 4 [skip ci]" || echo "нечего коммитить"
+          # пока идёт прогон (20 минут), в ветку успевают попасть чужие коммиты:
+          # поэтому подтягиваем их через rebase и пробуем отправить несколько раз.
+          ok=0
+          for i in 1 2 3 4; do
+            if git pull --rebase --autostash origin "${{ github.ref_name }}" && \
+               git push origin "HEAD:${{ github.ref_name }}"; then ok=1; break; fi
+            echo "попытка $i не удалась, ждём"
+            sleep 10
+          done
+          [ "$ok" = 1 ] && echo "снимки в ветке" || echo "push не удался после 4 попыток"

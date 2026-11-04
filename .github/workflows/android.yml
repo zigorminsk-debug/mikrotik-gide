@@ -1,0 +1,307 @@
+name: Сборка приложения (Android + Windows)
+
+# Сборка подписанного APK при каждом пуше в рабочую ветку и main,
+# а также вручную из вкладки Actions.
+on:
+  push:
+    branches:
+      - main
+      - 'arena/**'
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: apk-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  android:
+    name: Подписанный APK
+    outputs:
+      build_no: ${{ steps.ver.outputs.build_no }}
+      name: ${{ steps.ver.outputs.name }}
+      apk: ${{ steps.apk.outputs.file }}
+      sha: ${{ steps.apk.outputs.sha }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Номер сборки
+        id: ver
+        run: |
+          BUILD_NO=${{ github.run_number }}
+          CODE=$((1000 + BUILD_NO))
+          echo "build_no=$BUILD_NO"     >> "$GITHUB_OUTPUT"
+          echo "code=$CODE"             >> "$GITHUB_OUTPUT"
+          echo "name=1.0.$BUILD_NO"     >> "$GITHUB_OUTPUT"
+          echo "### Сборка 1.0.$BUILD_NO (versionCode $CODE)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Проверка контента (JS)
+        run: |
+          for f in app/src/main/assets/www/js/*.js app/src/main/assets/www/js/data/*.js; do
+            node --check "$f"
+          done
+          echo "OK: все файлы учебника синтаксически корректны"
+          node scripts/check-content.js
+
+      - name: Контент-пак (обновление статей без APK)
+        run: node scripts/build-pack.js
+
+      - name: JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Android SDK (cmdline-tools вручную)
+        run: |
+          set -euo pipefail
+          SDK_ROOT="$HOME/android-sdk"
+          mkdir -p "$SDK_ROOT/cmdline-tools"
+          curl -sSL -o /tmp/cmdline-tools.zip https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip
+          unzip -q /tmp/cmdline-tools.zip -d "$SDK_ROOT/cmdline-tools"
+          mv "$SDK_ROOT/cmdline-tools/cmdline-tools" "$SDK_ROOT/cmdline-tools/latest"
+          {
+            echo "ANDROID_HOME=$SDK_ROOT"
+            echo "ANDROID_SDK_ROOT=$SDK_ROOT"
+          } >> "$GITHUB_ENV"
+          echo "$SDK_ROOT/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          echo "$SDK_ROOT/platform-tools" >> "$GITHUB_PATH"
+
+      - name: Установка компонентов SDK
+        run: |
+          set -euo pipefail
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0" > /dev/null
+          echo "Собран Android SDK:"; ls "$ANDROID_HOME"
+
+      - name: Постоянный ключ подписи
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: bash scripts/ensure-keystore.sh
+
+      - name: Номер сборки в приложение
+        run: |
+          cat > app/src/main/assets/www/js/version.js <<EOF
+          /* Версия сборки — генерируется GitHub Actions */
+          window.APP_VERSION = '${{ steps.ver.outputs.name }}';
+          window.APP_BUILD_DATE = '$(date -u +%Y-%m-%dT%H:%M:%SZ)';
+          window.APP_VERSION_CODE = ${{ steps.ver.outputs.code }};
+          EOF
+          cat app/src/main/assets/www/js/version.js
+
+      - name: Кэш Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-${{ hashFiles('**/*.gradle', 'gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: gradle-
+
+      - name: Сборка release APK
+        run: |
+          chmod +x ./gradlew
+          set -o pipefail
+          ./gradlew --no-daemon --stacktrace assembleRelease \
+            -PappVersionCode=${{ steps.ver.outputs.code }} \
+            -PappVersionName=${{ steps.ver.outputs.name }} 2>&1 | tee build.log
+
+      - name: Лог сборки (при ошибке)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # Диагностика: складываем хвост лога в issue, чтобы его можно было прочитать
+          [ -f build.log ] || echo "build.log отсутствует" > build.log
+          TITLE="build-failure-$(date -u +%Y%m%d-%H%M%S)"
+          {
+            echo "Сборка: ${GITHUB_RUN_NUMBER}"
+            echo
+            echo '```'
+            tail -c 55000 build.log | sed 's/```/` ` `/g'
+            echo '```'
+          } > /tmp/issue-body.md
+          gh issue create --title "$TITLE" --body-file /tmp/issue-body.md || true
+
+      - name: Проверка подписи
+        run: |
+          APK=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          echo "APK: $APK"
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/34.0.0)
+          "$BT/apksigner" verify --print-certs "$APK" | tee /tmp/sign.txt
+          grep -q "CN=MikroTik Gide" /tmp/sign.txt || echo "::warning::Сертификат подписи не совпадает с ожидаемым"
+          echo "### Подпись" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat /tmp/sign.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Подготовка артефакта (чистый APK, без zip)
+        id: apk
+        run: |
+          SRC=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          OUT="mikrotik-gide-v${{ steps.ver.outputs.name }}.apk"
+          cp "$SRC" "$OUT"
+          ls -lh "$OUT"
+          SHA=$(sha256sum "$OUT" | cut -d' ' -f1)
+          echo "file=$OUT"  >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA"   >> "$GITHUB_OUTPUT"
+          echo "| Файл | Размер | SHA-256 |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| \`$OUT\` | $(du -h "$OUT" | cut -f1) | \`$SHA\` |" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Загрузить APK как артефакт
+        uses: actions/upload-artifact@v4
+        with:
+          name: mikrotik-gide-${{ steps.ver.outputs.name }}
+          path: ${{ steps.apk.outputs.file }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
+      - name: Контент-пак как артефакт релиза
+        uses: actions/upload-artifact@v4
+        with:
+          name: content-pack
+          path: content-pack.json
+          if-no-files-found: error
+
+      - name: Итог
+        run: |
+          {
+            echo ""
+            echo "**Скачать:** релиз \`build-${{ steps.ver.outputs.build_no }}\` → \`${{ steps.apk.outputs.file }}\` и Windows-сборка"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  windows:
+    name: Windows EXE (Go)
+    runs-on: windows-latest
+    outputs:
+      file: ${{ steps.build.outputs.file }}
+      sha: ${{ steps.build.outputs.sha }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Проверки Go
+        run: |
+          go vet ./...
+          go test ./...
+
+      - name: Иконка приложения (rsrc → .syso)
+        shell: bash
+        run: |
+          set -euo pipefail
+          # rsrc собирает ресурсы RT_GROUP_ICON/RT_ICON для exe;
+          # если модуль недоступен, сборка продолжится без значка
+          if go run github.com/akavel/rsrc@latest -arch amd64 -ico windows/icon.ico -o windows/rsrc_windows_amd64.syso; then
+            ls -l windows/rsrc_windows_amd64.syso
+          else
+            echo "::warning::не удалось собрать ресурс иконки, exe будет без значка"
+          fi
+
+      - name: Сборка EXE
+        id: build
+        shell: bash
+        run: |
+          set -euo pipefail
+          VER="1.0.${{ github.run_number }}"
+          OUT="mikrotik-gide-windows-v$VER.exe"
+          echo "Версия: $VER"
+          go env GOOS GOARCH GOVERSION
+          if ! go build -trimpath -ldflags "-H windowsgui -s -w -X main.version=$VER -X main.buildNo=${{ github.run_number }}" -o "$OUT" ./windows; then
+            echo "::error::go build завершился с ошибкой"
+            exit 1
+          fi
+          ls -lh "$OUT"
+          SHA=$(sha256sum "$OUT" | cut -d' ' -f1)
+          SIZE=$(stat -c %s "$OUT")
+          echo "file=$OUT" >> "$GITHUB_OUTPUT"
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+          {
+            echo "| Файл | Размер | SHA-256 |"
+            echo "|---|---|---|"
+            echo "| \`$OUT\` | $SIZE Б | \`$SHA\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Артефакт EXE
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: ${{ steps.build.outputs.file }}
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+
+  release:
+    name: Публикация релиза (APK + EXE)
+    needs: [android, windows]
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Скачать APK
+        uses: actions/download-artifact@v4
+        with:
+          name: mikrotik-gide-${{ needs.android.outputs.name }}
+          path: dist
+
+      - name: Скачать контент-пак
+        uses: actions/download-artifact@v4
+        with:
+          name: content-pack
+          path: dist
+
+      - name: Скачать Windows-сборку
+        uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: dist
+
+      - name: Содержимое релиза
+        run: ls -lh dist
+
+      - name: Публикация релиза
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ needs.android.outputs.build_no }}
+          name: Сборка ${{ needs.android.outputs.build_no }} · v${{ needs.android.outputs.name }}
+          body: |
+            Автоматическая сборка учебника **MikroTik · Winbox 4** для Android и Windows.
+
+            * версия: `1.0.${{ needs.android.outputs.build_no }}`
+            * коммит: `${{ github.sha }}`
+            * SHA-256 APK: `${{ needs.android.outputs.sha }}`
+            * SHA-256 EXE: `${{ needs.windows.outputs.sha }}`
+
+            **Android:** APK подписан постоянным ключом проекта — устанавливается поверх предыдущих версий.
+
+            **Windows:** `mikrotik-gide-windows-*.exe` — портативная программа (один файл, без установки).
+            Внутри то же содержимое учебника; обновление ставится из самого приложения
+            («О программе» → «Проверить обновление») или вручную заменой файла.
+
+            `content-pack.json` — дополнительный контент: приложение скачивает его
+            из последнего релиза и добавляет статьи без переустановки.
+          files: |
+            dist/${{ needs.android.outputs.apk }}
+            dist/content-pack.json
+            dist/${{ needs.windows.outputs.file }}
+          fail_on_unmatched_files: true
+          draft: false
+          prerelease: false
