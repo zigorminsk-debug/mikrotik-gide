@@ -3357,6 +3357,8 @@
     html += '<h1 class="art-title">Модели и совместимость</h1>';
     html += '<div class="hint" style="margin:-6px 0 10px">Матрица ходовых моделей и раскладка портов: какой порт для WAN, где PoE, где SFP ' +
       'и — главное — какой пакет Wi-Fi на устройстве.</div>';
+    html += '<div class="chips"><a class="chip" href="#/poe">Рассчитать PoE-бюджет и блок питания →</a>' +
+      '<a class="chip" href="#/wizard">Собрать конфиг под модель →</a></div>';
     html += '<div class="chips">' + maps.map(function (x) {
       return '<button class="chip' + (x.id === m.id ? ' on' : '') + '" data-model="' + x.id + '">' + esc(x.name.split(' (')[0]) + '</button>';
     }).join('') + '</div>';
