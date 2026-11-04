@@ -55,6 +55,14 @@ jobs:
       - name: Контент-пак (обновление статей без APK)
         run: node scripts/build-pack.js
 
+      # Проверка интерфейса в jsdom: кнопки, экраны, разбор ошибок подключения.
+      # Сборка APK/EXE показывает только то, что код компилируется; поведение
+      # страницы проверяется здесь. Скрипт — scripts/ui-check.js.
+      - name: Проверка интерфейса (jsdom)
+        run: |
+          npm i --no-save jsdom >/dev/null 2>&1
+          node scripts/ui-check.js
+
       - name: JDK 17
         uses: actions/setup-java@v4
         with:

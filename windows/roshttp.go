@@ -2,7 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -29,9 +31,24 @@ func (s *server) handleRouterProbe(w http.ResponseWriter, r *http.Request) {
 	}
 	info, err := probeRouter(req.Address, req.User, req.Password)
 	if err != nil {
-		writeJSON(w, map[string]interface{}{"ok": false, "error": err.Error()})
+		// Отдаём не только текст, но и разбор попыток: интерфейс покажет
+		// таблицу «путь / порт / что случилось» и подсказки по политикам.
+		// Без этого человек видел «неверный пароль» при верном пароле.
+		out := map[string]interface{}{"ok": false, "error": err.Error()}
+		var pe *probeError
+		if errors.As(err, &pe) {
+			out["kind"] = pe.Kind
+			out["attempts"] = pe.Attempts
+			out["hints"] = pe.Hints
+			out["address"] = pe.Address
+			log.Printf("опрос %s не удался (вид=%s): %s", req.Address, pe.Kind, attemptsText(pe.Attempts))
+		} else {
+			log.Printf("опрос %s не удался: %v", req.Address, err)
+		}
+		writeJSON(w, out)
 		return
 	}
+	log.Printf("опрос %s удался: %s %s через %s", info.Address, info.Board, info.Version, info.Transport)
 	user := strings.TrimSpace(req.User)
 	if user == "" {
 		user = "admin"
@@ -52,9 +69,46 @@ func (s *server) handleRouterProbe(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, map[string]interface{}{"ok": true, "info": info})
 }
 
+// handleRouterDiscover — поиск роутеров в сети.
+//
+// ?address=192.168.88.1 — подсеть этого адреса сканируется первой
+// (пользователь уже знает, где искать). Виртуальные адаптеры в поиск
+// не попадают: см. комментарий в discover.go.
 func (s *server) handleRouterDiscover(w http.ResponseWriter, r *http.Request) {
-	found := discoverRouters(3 * time.Second)
+	prefer := r.URL.Query().Get("address")
+	found := discoverRouters(3*time.Second, prefer)
+	log.Printf("поиск роутеров: prefer=%q найдено=%d", prefer, len(found))
+	for _, f := range found {
+		log.Printf("  найден %s (%s) источник=%s порт=%d", f.Address, f.Identity, f.Source, f.Port)
+	}
 	writeJSON(w, map[string]interface{}{"ok": true, "found": found})
+}
+
+// handleRouterCheck — «Проверить доступность»: какие порты вообще открыты.
+// Логин не нужен, поэтому кнопку можно нажимать до ввода пароля:
+// она отвечает на вопрос «роутер ли это и включены ли сервисы».
+func (s *server) handleRouterCheck(w http.ResponseWriter, r *http.Request) {
+	addr := normalizeAddress(r.URL.Query().Get("address"))
+	if addr == "" {
+		var req struct {
+			Address string `json:"address"`
+		}
+		_ = json.NewDecoder(io.LimitReader(r.Body, 1<<14)).Decode(&req)
+		addr = normalizeAddress(req.Address)
+	}
+	if addr == "" {
+		writeJSON(w, map[string]interface{}{"ok": false, "error": "не указан адрес"})
+		return
+	}
+	ports := checkRouterPorts(addr)
+	open := make([]int, 0, 4)
+	for _, p := range ports {
+		if p.Open {
+			open = append(open, p.Port)
+		}
+		log.Printf("проверка %s: порт %d (%s) открыт=%v", addr, p.Port, p.Label, p.Open)
+	}
+	writeJSON(w, map[string]interface{}{"ok": true, "address": addr, "ports": ports, "open": open})
 }
 
 func (s *server) handleRouterSaved(w http.ResponseWriter, r *http.Request) {

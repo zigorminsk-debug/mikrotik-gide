@@ -5,6 +5,8 @@ import (
 	"encoding/binary"
 	"encoding/json"
 	"errors"
+	"net"
+	"strings"
 	"testing"
 )
 
@@ -143,12 +145,128 @@ func mndpPacket(fields map[uint16]string) []byte {
 
 func TestParseMNDP(t *testing.T) {
 	pkt := mndpPacket(map[uint16]string{2: "office-gw", 3: "7.16.2", 4: "MikroTik", 7: "RB4011iGS+"})
-	got := parseMNDP(pkt)
+	got, ok := parseMNDP(pkt)
+	if !ok {
+		t.Fatalf("корректный пакет не разобран: %v", got)
+	}
 	if got["identity"] != "office-gw" || got["version"] != "7.16.2" || got["board"] != "RB4011iGS+" {
 		t.Fatalf("MNDP разобран неверно: %v", got)
 	}
-	if len(parseMNDP([]byte{1, 2, 3})) != 0 {
-		t.Fatal("на мусоре парсер должен вернуть пусто")
+	if _, ok := parseMNDP([]byte{1, 2, 3}); ok {
+		t.Fatal("на мусоре парсер должен вернуть false")
+	}
+}
+
+// Ошибка «находит адреса не из этой сети» возникала из-за «подбора» смещений:
+// случайные байты выдавались за IP. Строгий разбор обязан отбраковывать
+// пакеты с неверной длиной TLV, а не показывать их как роутер.
+func TestParseMNDPStrict(t *testing.T) {
+	// длина больше, чем осталось в пакете
+	broken := []byte{0, 0, 0, 1, 0, 2, 0, 40, 'a', 'b'}
+	if _, ok := parseMNDP(broken); ok {
+		t.Fatal("пакет с длиной за границей буфера принят")
+	}
+	// MAC должен быть ровно 6 байт
+	badMAC := []byte{0, 0, 0, 1, 0, 1, 0, 4, 1, 2, 3, 4}
+	if _, ok := parseMNDP(badMAC); ok {
+		t.Fatal("MAC длиной 4 байта принят")
+	}
+	// неизвестный тип (0) — не наш пакет
+	if _, ok := parseMNDP([]byte{0, 0, 0, 1, 0, 0, 0, 1, 9}); ok {
+		t.Fatal("пакет с типом TLV 0 принят")
+	}
+	// нулевой IP не должен выдаваться за адрес роутера
+	zeroIP := []byte{0, 0, 0, 1, 0, 11, 0, 4, 0, 0, 0, 0}
+	if _, ok := parseMNDP(zeroIP); ok {
+		t.Fatal("адрес 0.0.0.0 принят за IP роутера")
+	}
+	// нормальный IP и MAC — читаются
+	good := append([]byte{0, 0, 0, 1}, []byte{0, 1, 0, 6, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}...)
+	good = append(good, []byte{0, 11, 0, 4, 192, 168, 88, 1}...)
+	m, ok := parseMNDP(good)
+	if !ok || m["ip"] != "192.168.88.1" || m["mac"] != "aa:bb:cc:dd:ee:ff" {
+		t.Fatalf("верный пакет разобран как %v (ok=%v)", m, ok)
+	}
+}
+
+// Виртуальные адаптеры и их подсети не должны попадать в поиск:
+// иначе в списке появляются 172.17.0.1 (Docker), 192.168.56.1 (VirtualBox)
+// и прочие адреса «не из этой сети».
+func TestUsableLocalAddr(t *testing.T) {
+	cases := []struct {
+		iface string
+		ip    string
+		want  bool
+	}{
+		{"Ethernet", "192.168.88.10", true},
+		{"Беспроводная сеть", "192.168.1.5", true},
+		{"vEthernet (Default Switch)", "172.17.0.1", false},
+		{"vEthernet (WSL)", "172.20.0.1", false},
+		{"VirtualBox Host-Only Network", "192.168.56.1", false},
+		{"Ethernet 2", "192.168.56.1", false}, // диапазон VirtualBox важнее имени
+		{"Ethernet 3", "169.254.10.5", false}, // APIPA
+		{"Ethernet 4", "8.8.8.8", false},      // не приватный
+		{"Docker Desktop", "10.0.0.5", false},
+		{"Wi-Fi", "172.25.3.4", false}, // 172.16/12 — виртуальные сети
+	}
+	for _, c := range cases {
+		ip := net.ParseIP(c.ip)
+		if got := usableLocalAddr(c.iface, ip); got != c.want {
+			t.Errorf("%s (%s): получено %v, ожидали %v", c.iface, c.ip, got, c.want)
+		}
+	}
+}
+
+// Запрос MNDP надо слать на широковещательный адрес каждой подсети,
+// иначе пакет уходит только через интерфейс по умолчанию.
+func TestBroadcastOf(t *testing.T) {
+	_, n, err := net.ParseCIDR("192.168.88.0/24")
+	if err != nil {
+		t.Fatalf("cidr: %v", err)
+	}
+	if got := broadcastOf(n).String(); got != "192.168.88.255" {
+		t.Fatalf("широковещательный адрес %s, ожидали 192.168.88.255", got)
+	}
+}
+
+// Разбор отказа роутера: «неверный пароль» и «нет прав» — разные ситуации,
+// и человеку нужны разные подсказки.
+func TestClassifyTrap(t *testing.T) {
+	cases := []struct {
+		msg  string
+		kind string
+	}{
+		{"invalid user name or password (6)", kindAuth},
+		{"user admin has no api policy", kindPermission},
+		{"not allowed (9)", kindPermission},
+		{"too many failed logins", kindAuth},
+	}
+	for _, c := range cases {
+		kind, detail := classifyTrap(c.msg)
+		if kind != c.kind {
+			t.Errorf("%q: вид %q, ожидали %q", c.msg, kind, c.kind)
+		}
+		if !strings.Contains(detail, strings.Split(c.msg, " ")[0]) {
+			t.Errorf("%q: в подробностях потерян текст роутера: %q", c.msg, detail)
+		}
+	}
+}
+
+// Итоговая ошибка должна выбирать самый осмысленный вид: если один путь
+// закрыт, а другой сказал «пароль не тот» — показываем «пароль».
+func TestNewProbeErrorPrefersAuth(t *testing.T) {
+	e := newProbeError("192.168.88.1", []rosAttempt{
+		{Transport: "rest", Port: 443, Kind: kindConnect, Detail: "порт закрыт"},
+		{Transport: "api", Port: 8728, Stage: "login", Kind: kindAuth, Detail: "роутер: invalid user name or password (6)"},
+	})
+	if e.Kind != kindAuth {
+		t.Fatalf("вид %q, ожидали %q", e.Kind, kindAuth)
+	}
+	if len(e.Hints) == 0 {
+		t.Fatal("без подсказок человек не поймёт, что делать")
+	}
+	if !strings.Contains(attemptsText(e.Attempts), "api(8728)") {
+		t.Fatalf("в журнале нет разбора попыток: %q", attemptsText(e.Attempts))
 	}
 }
 

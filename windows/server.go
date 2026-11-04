@@ -50,6 +50,7 @@ func newServer(version, build, dir string) *server {
 	mux.HandleFunc("/api/update/apply", s.handleUpdateApply)
 	mux.HandleFunc("/api/router/probe", s.handleRouterProbe)
 	mux.HandleFunc("/api/router/discover", s.handleRouterDiscover)
+	mux.HandleFunc("/api/router/check", s.handleRouterCheck)
 	mux.HandleFunc("/api/router/saved", s.handleRouterSaved)
 	mux.HandleFunc("/api/router/apply", s.handleRouterApply)
 	mux.HandleFunc("/api/router/snapshot", s.handleRouterSnapshot)

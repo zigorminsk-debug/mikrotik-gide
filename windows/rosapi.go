@@ -6,7 +6,6 @@ import (
 	"crypto/tls"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"io"
 	"net"
 	"strconv"
@@ -517,19 +516,45 @@ func collectRouter(src interface {
 }
 
 // probeRouter опрашивает роутер по очереди: REST (443) → api (8728) → api-ssl (8729).
-// Возвращает паспорт и список того, что не получилось, — пригодится в подсказке.
+//
+// Возвращает паспорт роутера или *probeError с разбором каждой попытки:
+// в интерфейсе видно, где именно споткнулись — порт закрыт, пароль отклонён
+// или у пользователя нет прав. Раньше любая неудача по паролю превращалась
+// в «роутер отклонил логин или пароль», даже если проблема была в другом.
 func probeRouter(address, user, pass string) (*rosProbeInfo, error) {
 	address = normalizeAddress(address)
 	if address == "" {
-		return nil, errors.New("не указан адрес роутера")
+		return nil, &probeError{
+			Kind:    kindConfig,
+			Message: "Не указан адрес роутера",
+			Hints:   []string{"Обычно это 192.168.88.1 или 192.168.1.1 — посмотрите на наклейке роутера."},
+		}
 	}
-	var problems []string
+	if user == "" {
+		user = "admin"
+	}
+	var attempts []rosAttempt
 
+	// 1. REST поверх HTTPS. Требует включённого www-ssl и политики rest-api.
+	restAttempt := rosAttempt{Transport: "rest", Port: 443, Stage: "connect"}
 	if info, err := probeREST(address, user, pass); err == nil {
+		restAttempt.OK = true
+		attempts = append(attempts, restAttempt)
 		return info, nil
 	} else {
-		problems = append(problems, "rest: "+err.Error())
+		kind, detail := classifyProbeErr(err)
+		restAttempt.Kind = kind
+		restAttempt.Detail = detail
+		if kind == kindAuth {
+			// REST ответил 401 — это уже осмысленный отказ роутера.
+			// Остальные транспорты проверим тоже (они могут быть выключены),
+			// но пароль, скорее всего, и правда не тот.
+			restAttempt.Detail = "роутер отклонил логин или пароль (REST)"
+		}
+		attempts = append(attempts, restAttempt)
 	}
+
+	// 2. Порт 8728 и 3. защищённый 8729 — обычный протокол MikroTik API.
 	for _, p := range []struct {
 		port int
 		tls  bool
@@ -537,32 +562,43 @@ func probeRouter(address, user, pass string) (*rosProbeInfo, error) {
 	}{{8728, false, "api"}, {8729, true, "api-ssl"}} {
 		c, err := rosDial(address, p.port, p.tls, 6*time.Second)
 		if err != nil {
-			problems = append(problems, fmt.Sprintf("%s (%d): нет соединения", p.name, p.port))
+			kind, detail := classifyNetErr(err)
+			attempts = append(attempts, rosAttempt{
+				Transport: p.name, Port: p.port, Stage: "connect",
+				Kind: kind, Detail: detail,
+			})
 			continue
 		}
 		err = c.login(user, pass)
 		if err != nil {
 			_ = c.Close()
-			if strings.Contains(strings.ToLower(err.Error()), "password") ||
-				strings.Contains(strings.ToLower(err.Error()), "пароль") {
-				return nil, errors.New("роутер отклонил логин или пароль")
+			kind, detail := classifyTrap(err.Error())
+			attempts = append(attempts, rosAttempt{
+				Transport: p.name, Port: p.port, Stage: "login",
+				Kind: kind, Detail: detail,
+			})
+			// Настоящий отказ по паролю — дальше пробовать бессмысленно:
+			// остальные транспорты используют те же учётные данные.
+			if kind == kindAuth || kind == kindPermission {
+				return nil, newProbeError(address, attempts)
 			}
-			problems = append(problems, p.name+": "+err.Error())
 			continue
 		}
 		info, cerr := collectRouter(apiSource{c: c}, &rosProbeInfo{Transport: p.name})
 		_ = c.Close()
 		if cerr != nil {
-			problems = append(problems, p.name+": "+cerr.Error())
+			attempts = append(attempts, rosAttempt{
+				Transport: p.name, Port: p.port, Stage: "read",
+				Kind: kindProtocol, Detail: cerr.Error(),
+			})
 			continue
 		}
+		attempts = append(attempts, rosAttempt{Transport: p.name, Port: p.port, Stage: "read", OK: true})
 		info.Address = address
 		return info, nil
 	}
-	msg := "не удалось подключиться к " + address + ". "
-	msg += "Включите на роутере www-ssl (443), api (8728) или api-ssl (8729): /ip service enable api. Подробности: "
-	msg += strings.Join(problems, "; ")
-	return nil, errors.New(msg)
+
+	return nil, newProbeError(address, attempts)
 }
 
 // normalizeAddress приводит «https://192.168.88.1/x» к «192.168.88.1».
