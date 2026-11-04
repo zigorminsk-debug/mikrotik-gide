@@ -245,9 +245,31 @@ curl.exe -k -u admin:ПАРОЛЬ https://192.168.88.1/rest/system/resource
 
 | Workflow | Что делает | Триггер |
 | --- | --- | --- |
-| `android.yml` | vet + тесты Go, сборка Windows `.exe`, сборка APK, подпись, релиз `build-N` с контент-паком | push, PR, ручной запуск |
+| `android.yml` | vet + тесты Go, сборка Windows `.exe`, установщик Inno Setup, сборка APK, подпись, релиз `build-N` (APK + портативный EXE + setup + контент-пак) | push, PR, ручной запуск |
 | `go-check.yml` | быстрый `go vet`/`go test` | push, PR |
 | `winbox-shots.yml` | поднимает CHR в QEMU и снимает окна Winbox 4 | только по файлу `ci/winbox-shots.trigger` |
+
+### Установщик Windows и версии
+
+* Скрипт: `windows/installer/mtg.iss` (Inno Setup 6). Ставит в
+  `%LOCALAPPDATA%\Programs\MikroTik Gide` без прав администратора, `AppId`
+  постоянный — новая версия обновляет прежнюю, а не встаёт рядом.
+  `CloseApplications=yes` (перед заменой файлов закрывает запущенную копию),
+  `RestartApplications=no` (перезапуском занимается программа).
+* Сборка в CI: шаг «Установщик (Inno Setup)» в job `windows`,
+  `ISCC /DAppVersion=<ver> /DAppBuild=<N> /DSourceExe=<абсолютный путь>`.
+  **Путь к exe только абсолютный**: `Source` в `.iss` считается от папки
+  скрипта, а не от рабочего каталога. `ISCC` при отсутствии ставится через
+  `choco install innosetup`.
+* Обновление: `pickWindowsAsset` предпочитает установщик (`isSetupAsset` — по
+  слову `setup` в имени), `applyUpdate` выбирает `installSetup` (тихий запуск
+  `/VERYSILENT /CLOSEAPPLICATIONS`) или `installUpdate` (подмена exe рядом).
+  Ответ `/api/update/apply` содержит `setup`, и `desktop.js` в этом случае не
+  перезагружает страницу, а пишет «Установщик запущен…».
+* `findRunning` + `runningVersion` + `sameBuild` в `main.go`: занятый порт —
+  не повод открывать чужое окно. Сборка другая → поднимаем свою копию и
+  пишем в лог, какую версию нашли. Иначе повторяется «запустил новый файл,
+  а открылась старая версия».
 
 **Грабли CI (проверено на практике):**
 

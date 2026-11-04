@@ -47,6 +47,7 @@ type updateInfo struct {
 	Notes     string `json:"notes"`
 	Size      int64  `json:"size"`
 	Asset     string `json:"asset"`
+	Setup     bool   `json:"setup"`
 	URL       string `json:"url"`
 	Digest    string `json:"-"`
 }
@@ -102,6 +103,7 @@ func (u *updater) latest(ctx context.Context) (*updateInfo, error) {
 		Notes:     trimNotes(rel.Body),
 		Size:      asset.Size,
 		Asset:     asset.Name,
+		Setup:     isSetupAsset(asset.Name),
 		URL:       asset.URL,
 		Digest:    asset.Digest,
 	}, nil
@@ -143,32 +145,91 @@ func (u *updater) download(ctx context.Context, info *updateInfo) ([]byte, error
 	return data, nil
 }
 
+// isSetupAsset отличает установщик от портативного exe по имени файла.
+func isSetupAsset(name string) bool {
+	n := strings.ToLower(name)
+	return strings.HasSuffix(n, ".exe") && strings.Contains(n, "setup")
+}
+
+// pickWindowsAsset выбирает файл для обновления. Установщик в приоритете:
+// он кладёт программу в одно место и закрывает работающую копию, поэтому
+// рядом не появляется второй exe, который потом путают с новым.
 func pickWindowsAsset(assets []updateAsset) (updateAsset, bool) {
-	var fallback updateAsset
-	var haveFallback bool
+	var portable, fallback updateAsset
+	var havePortable, haveFallback bool
 	for _, a := range assets {
 		name := strings.ToLower(a.Name)
 		if !strings.HasSuffix(name, ".exe") {
 			continue
 		}
-		if strings.Contains(name, "windows") {
+		if isSetupAsset(name) {
 			return a, true
+		}
+		if strings.Contains(name, "windows") && !havePortable {
+			portable, havePortable = a, true
+			continue
 		}
 		if !haveFallback {
 			fallback, haveFallback = a, true
 		}
 	}
+	if havePortable {
+		return portable, true
+	}
 	return fallback, haveFallback
 }
 
-// installUpdate кладёт новый exe рядом со старым, подменяет файл и запускает его.
-// Работающий процесс Windows позволяет переименовать, но не удалить.
-func installUpdate(exe string, data []byte) error {
+// checkExePayload проверяет, что скачался именно исполняемый файл Windows.
+func checkExePayload(data []byte) error {
 	if len(data) < 1<<20 {
 		return errors.New("файл обновления слишком мал")
 	}
 	if len(data) < 2 || data[0] != 'M' || data[1] != 'Z' {
 		return errors.New("скачанный файл не является программой Windows")
+	}
+	return nil
+}
+
+// installSetup запускает установщик в тихом режиме. Он сам закрывает
+// работающую копию (/CLOSEAPPLICATIONS) и ставит программу в
+// %LOCALAPPDATA%\Programs\MikroTik Gide — путь один, поэтому «открылась
+// старая версия» больше не случается.
+func installSetup(data []byte) error {
+	dir := filepath.Join(os.TempDir(), "mikrotik-gide-setup")
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	file := filepath.Join(dir, "setup-"+strconv.FormatInt(time.Now().UnixNano(), 36)+".exe")
+	if err := os.WriteFile(file, data, 0o755); err != nil {
+		return err
+	}
+	cmd := exec.Command(file,
+		"/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART", "/NOCANCEL",
+		"/CLOSEAPPLICATIONS", "/NORESTARTAPPLICATIONS")
+	cmd.Dir = dir
+	if err := cmd.Start(); err != nil {
+		return err
+	}
+	go func() { _ = cmd.Wait() }()
+	return nil
+}
+
+// applyUpdate ставит обновление: через установщик или подменой exe рядом.
+func applyUpdate(exe string, info *updateInfo, data []byte) error {
+	if err := checkExePayload(data); err != nil {
+		return err
+	}
+	if info.Setup {
+		return installSetup(data)
+	}
+	return installUpdate(exe, data)
+}
+
+// installUpdate кладёт новый exe рядом со старым, подменяет файл и запускает его.
+// Работающий процесс Windows позволяет переименовать, но не удалить.
+func installUpdate(exe string, data []byte) error {
+	if err := checkExePayload(data); err != nil {
+		return err
 	}
 	dir := filepath.Dir(exe)
 	tmp := filepath.Join(dir, "update-"+strconv.FormatInt(time.Now().UnixNano(), 36)+".exe")

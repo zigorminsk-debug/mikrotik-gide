@@ -38,6 +38,42 @@ func TestPickWindowsAsset(t *testing.T) {
 	if got, ok := pickWindowsAsset([]updateAsset{{Name: "other.exe"}}); !ok || got.Name != "other.exe" {
 		t.Fatal("запасной вариант .exe должен подходить")
 	}
+
+	// Установщик важнее портативного exe: он ставит программу в одно место
+	// и закрывает работающую копию, поэтому «открылась старая версия» —
+	// ровно та ошибка, которую он лечит.
+	withSetup := []updateAsset{
+		{Name: "mikrotik-gide-windows-v1.0.60.exe", Size: 12000000},
+		{Name: "mikrotik-gide-setup-v1.0.60.exe", Size: 13000000},
+		{Name: "mikrotik-gide-v1.0.60.apk", Size: 400000},
+	}
+	got, ok = pickWindowsAsset(withSetup)
+	if !ok || got.Name != "mikrotik-gide-setup-v1.0.60.exe" {
+		t.Fatalf("должен выбираться установщик, выбран %+v", got)
+	}
+	if !isSetupAsset(got.Name) {
+		t.Fatal("установщик не распознан по имени")
+	}
+	if isSetupAsset("mikrotik-gide-windows-v1.0.60.exe") {
+		t.Fatal("портативный exe принят за установщик")
+	}
+}
+
+// Слишком маленький или не-MZ файл не запускаем ни как exe, ни как установщик.
+func TestApplyUpdateRejectsBrokenPayload(t *testing.T) {
+	dir := t.TempDir()
+	exe := filepath.Join(dir, "mikrotik-gide.exe")
+	for _, info := range []*updateInfo{
+		{Asset: "mikrotik-gide-setup-v1.0.60.exe", Setup: true},
+		{Asset: "mikrotik-gide-windows-v1.0.60.exe"},
+	} {
+		if err := applyUpdate(exe, info, []byte("nope")); err == nil {
+			t.Fatalf("для %s принят мусор вместо программы", info.Asset)
+		}
+		if err := applyUpdate(exe, info, append([]byte("MZ"), make([]byte, 100)...)); err == nil {
+			t.Fatalf("для %s принят обрезанный файл", info.Asset)
+		}
+	}
 }
 
 func TestInstallUpdateReplacesFile(t *testing.T) {

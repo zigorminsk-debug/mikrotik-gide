@@ -6,6 +6,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -15,6 +16,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 )
 
@@ -52,9 +54,16 @@ func main() {
 
 	if !*noWindow {
 		if url, ok := findRunning(*port); ok {
-			log.Printf("приложение уже запущено: %s", url)
-			openUI(url, *browserOnly, profile)
-			return
+			ver, build := runningVersion(url)
+			if sameBuild(ver, build) {
+				log.Printf("приложение уже запущено: %s", url)
+				openUI(url, *browserOnly, profile)
+				return
+			}
+			// Порт занимает другая сборка: открывать её нельзя, иначе
+			// пользователь запускает новый файл, а видит старую версию.
+			log.Printf("на %s работает версия %s (сборка %s), эта — %s (сборка %s): "+
+				"запускаю отдельную копию", url, orDash(ver), orDash(build), version, buildNo)
 		}
 	}
 
@@ -70,9 +79,13 @@ func main() {
 		deadline := time.Now().Add(5 * time.Second)
 		for time.Now().Before(deadline) {
 			if u, ok := findRunning(*port); ok {
-				log.Printf("приложение уже запущено: %s", u)
-				openUI(u, *browserOnly, profile)
-				return
+				if ver, build := runningVersion(u); sameBuild(ver, build) {
+					log.Printf("приложение уже запущено: %s", u)
+					openUI(u, *browserOnly, profile)
+					return
+				}
+				log.Printf("порт занят другой сборкой (%s) — поднимаю свою", u)
+				break
 			}
 			time.Sleep(150 * time.Millisecond)
 		}
@@ -183,6 +196,47 @@ func findRunning(port int) (string, bool) {
 		return fmt.Sprintf("http://127.0.0.1:%d/", p), true
 	}
 	return "", false
+}
+
+// runningVersion узнаёт, какая сборка отвечает по адресу работающего
+// экземпляра: по одному лишь «порт занят» нельзя понять, наша это копия
+// или старая, оставшаяся с прошлой установки.
+func runningVersion(base string) (ver, build string) {
+	client := &http.Client{Timeout: 800 * time.Millisecond}
+	resp, err := client.Get(strings.TrimSuffix(base, "/") + "/api/version")
+	if err != nil {
+		return "", ""
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return "", ""
+	}
+	var v struct {
+		Version string `json:"version"`
+		Build   string `json:"build"`
+	}
+	if json.NewDecoder(io.LimitReader(resp.Body, 1<<16)).Decode(&v) != nil {
+		return "", ""
+	}
+	return v.Version, v.Build
+}
+
+// sameBuild отвечает, можно ли переиспользовать окно работающего экземпляра.
+func sameBuild(ver, build string) bool {
+	if build != "" && build != "0" && build == buildNo {
+		return true
+	}
+	if ver != "" && ver != "dev" && ver == version {
+		return true
+	}
+	return false
+}
+
+func orDash(s string) string {
+	if s == "" {
+		return "?"
+	}
+	return s
 }
 
 func dataDir() string {
