@@ -1287,3 +1287,16 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 .w4-fig figcaption b{display:block;margin-bottom:4px;font-size:15px}
 .w4-fig figcaption span{display:block;opacity:.78}
 @media (max-width:520px){.w4-grid{grid-template-columns:1fr;gap:12px}}
+
+/* PoE-калькулятор */
+.poe-row{display:grid;grid-template-columns:1fr 88px 64px 34px;gap:6px;align-items:center;margin-bottom:8px}
+.poe-row .inp{min-width:0}
+.poe-row .p-del{background:none;border:0;color:var(--txt-dim);font-size:15px;cursor:pointer;padding:8px 0;line-height:1}
+.poe-row .p-del:hover{color:var(--red)}
+.poe-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:4px 0 10px}
+.poe-sum>div{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;padding:9px 11px;display:grid;gap:2px}
+.poe-sum b{font-size:calc(17px * var(--fsm, 1))}
+.poe-sum .ps-k{font-size:calc(11.5px * var(--fsm, 1));color:var(--txt-dim);text-transform:uppercase;letter-spacing:.04em}
+.poe-sum .ps-s{font-size:calc(11.5px * var(--fsm, 1));color:var(--txt-mute)}
+.poe-sum .ok b{color:var(--green)}
+.poe-sum .bad b{color:var(--red)}

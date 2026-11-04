@@ -848,6 +848,27 @@
     } catch (e) { return null; }
   }
 
+  /* ---------------- тема: тёмная, светлая, как в системе ---------------- */
+  const themeMQ = (window.matchMedia ? window.matchMedia('(prefers-color-scheme: light)') : null);
+
+  function themePref() {
+    const v = store.get('theme');
+    return v === 'light' || v === 'auto' ? v : 'dark';
+  }
+
+  function applyTheme() {
+    const pref = themePref();
+    const resolved = pref === 'auto' ? (themeMQ && themeMQ.matches ? 'light' : 'dark') : pref;
+    document.documentElement.setAttribute('data-theme', resolved);
+    return resolved;
+  }
+
+  if (themeMQ) {
+    const onChange = function () { if (themePref() === 'auto') applyTheme(); };
+    if (themeMQ.addEventListener) themeMQ.addEventListener('change', onChange);
+    else if (themeMQ.addListener) themeMQ.addListener(onChange);
+  }
+
   /* ---------------- настройки ---------------- */
   function settingsView() {
     let html = '<div class="wrap">';
@@ -863,8 +884,16 @@
       '<button id="fsUp2" aria-label="Больше">A+</button></div>' +
       '</div>' +
       '<div class="set-row">' +
-      '<div class="grow"><div class="lbl">Тёмная тема</div><div class="hint">Оформление приложения; схемы Winbox всегда светлые</div></div>' +
-      '<div class="switch' + (document.documentElement.getAttribute('data-theme') === 'dark' ? ' on' : '') + '" id="themeSwitch" role="switch" aria-label="Тёмная тема"></div>' +
+      '<div class="grow"><div class="lbl">Оформление</div><div class="hint">«Как в системе» — тема меняется вместе с Windows или Android; схемы Winbox всегда светлые</div></div>' +
+      '<div class="seg" id="themeSeg">' +
+      '<button data-th="dark"' + (themePref() === 'dark' ? ' class="on"' : '') + '>Тёмная</button>' +
+      '<button data-th="light"' + (themePref() === 'light' ? ' class="on"' : '') + '>Светлая</button>' +
+      '<button data-th="auto"' + (themePref() === 'auto' ? ' class="on"' : '') + '>Как в системе</button>' +
+      '</div>' +
+      '</div>' +
+      '<div class="set-row">' +
+      '<div class="grow"><div class="lbl">Открывать последнюю статью при запуске</div><div class="hint">Приложение сразу вернётся туда, где вы остановились; иначе начинается с главной</div></div>' +
+      '<div class="switch' + (store.get('autoResume') === '1' ? ' on' : '') + '" id="resumeSwitch" role="switch" aria-label="Открывать последнюю статью"></div>' +
       '</div>' +
       '<div class="set-row">' +
       '<div class="grow"><div class="lbl">Схема у каждого шага</div><div class="hint">Показывать окно Winbox 4 под каждым действием инструкции</div></div>' +
@@ -1294,13 +1323,27 @@
     if (dn) dn.addEventListener('click', function () { applyFs(fsIdx - 1); });
     if (up) up.addEventListener('click', function () { applyFs(fsIdx + 1); });
 
-    const sw = $('#themeSwitch');
-    if (sw) sw.addEventListener('click', function () {
-      const cur = document.documentElement.getAttribute('data-theme');
-      const nx = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', nx);
-      store.set('theme', nx);
-      sw.classList.toggle('on', nx === 'dark');
+    const sw = $('#themeSeg');
+    if (sw) {
+      sw.addEventListener('click', function (e) {
+        const b = e.target.closest ? e.target.closest('[data-th]') : null;
+        if (!b) return;
+        const pref = b.getAttribute('data-th');
+        store.set('theme', pref);
+        sw.querySelectorAll('[data-th]').forEach(function (x) {
+          x.classList.toggle('on', x === b);
+        });
+        applyTheme();
+        toast(pref === 'auto' ? 'Тема: как в системе' : pref === 'light' ? 'Тема: светлая' : 'Тема: тёмная');
+      });
+    }
+
+    const rs = $('#resumeSwitch');
+    if (rs) rs.addEventListener('click', function () {
+      const on = !rs.classList.contains('on');
+      rs.classList.toggle('on', on);
+      store.set('autoResume', on ? '1' : '0');
+      toast(on ? 'При запуске будем открывать последнюю статью' : 'При запуске — главная страница');
     });
 
     const shs = $('#shotsSwitch');
@@ -1338,12 +1381,15 @@
 
     const rst = $('#resetBtn');
     if (rst) rst.addEventListener('click', function () {
-      store.del('fs'); store.del('theme');
+      store.del('fs'); store.del('theme'); store.del('autoResume');
       fsIdx = 1;
       document.documentElement.setAttribute('data-fs', '1');
-      document.documentElement.setAttribute('data-theme', 'dark');
+      applyTheme();
       syncFsUi();
-      if (sw) sw.classList.add('on');
+      if (sw) sw.querySelectorAll('[data-th]').forEach(function (x) {
+        x.classList.toggle('on', x.getAttribute('data-th') === 'dark');
+      });
+      if (rs) rs.classList.remove('on');
       rst.textContent = 'Сброшено';
       setTimeout(function () { rst.textContent = 'Сбросить'; }, 1500);
     });
@@ -1533,6 +1579,7 @@
       toolCard('#/cheats', 'Шпаргалки', '7 наборов команд: база, firewall, NAT, VLAN, WireGuard', 'book') +
       toolCard('#/wifi', 'Каналы Wi-Fi', 'Ширина канала, пересечения, команда для RouterOS', 'iface') +
       toolCard('#/coverage', 'Мощность и покрытие', 'EIRP, радиус сигнала, сколько точек на площадь', 'iface') +
+      toolCard('#/poe', 'PoE и питание', 'бюджет PoE, подбор блока питания, предел на порт', 'svc') +
       toolCard('#/keys', 'Пароли и ключи', 'Wi-Fi и admin пароли, ключи WireGuard', 'svc') +
       toolCard('#/glossary', 'Глоссарий и порты', 'Термины RouterOS и таблица портов с поиском', 'bridge') +
       toolCard('#/backup', 'Данные и резервная копия', 'Заметки, прогресс, чек-листы — экспорт и импорт', 'down') +
@@ -3033,7 +3080,7 @@
   }
 
   /* ================= резервная копия данных ================= */
-  const BACKUP_KEYS = ['fav', 'read', 'notes', 'last', 'days', 'sqh', 'snq', 'wiz', 'vlsm', 'diffA', 'diffB', 'diffIgnore', 'shots', 'theme', 'fs', 'audit', 'harden'];
+  const BACKUP_KEYS = ['fav', 'read', 'notes', 'last', 'days', 'sqh', 'snq', 'wiz', 'vlsm', 'diffA', 'diffB', 'diffIgnore', 'shots', 'theme', 'autoResume', 'fs', 'audit', 'harden', 'poe'];
 
   function backupCollect() {
     const data = {};
@@ -3597,6 +3644,216 @@
     return 'Четыре отдельные сети: ' + nets.map(function (n, i) {
       return names[i] + ' ' + n.gw + '/' + n.prefix;
     }).join(' · ') + '. Все видят друг друга и общие ресурсы, гостевая сеть остаётся изолированной.';
+  }
+
+  /* ================= PoE: бюджет и блок питания ================= */
+  let poeState = null;
+
+  function poeLoad() {
+    if (poeState) return poeState;
+    try { poeState = JSON.parse(store.get('poe') || 'null'); } catch (e) { poeState = null; }
+    if (!poeState || typeof poeState !== 'object' || !Array.isArray(poeState.consumers)) {
+      poeState = {
+        model: '', volt: 24, amp: 2.5, reserve: 6, loss: 10,
+        consumers: [
+          { name: 'Камеры IP (802.3af)', w: 12.95, count: 2 },
+          { name: 'Точка доступа (802.3af)', w: 12.95, count: 1 }
+        ]
+      };
+    }
+    return poeState;
+  }
+
+  function poeSave() {
+    if (poeState) store.set('poe', JSON.stringify(poeState));
+  }
+
+  function poeModelInfo() {
+    const st = poeLoad();
+    const list = (window.PoeCalc && window.PoeCalc.models) ? window.PoeCalc.models() : [];
+    for (let i = 0; i < list.length; i++) if (list[i].id === st.model) return list[i];
+    return null;
+  }
+
+  function poeView() {
+    const st = poeLoad();
+    const list = (window.PoeCalc && window.PoeCalc.models) ? window.PoeCalc.models() : [];
+    let html = '<div class="wrap">';
+    html += '<div class="crumbs"><a href="#/">Учебник</a><span class="sep">/</span><a href="#/tools">Инструменты</a><span class="sep">/</span><span>PoE и питание</span></div>';
+    html += '<h1 class="art-title">PoE-бюджет и блок питания</h1>';
+    html += '<div class="hint" style="margin:-6px 0 12px">Бюджет PoE — это не «цифра модели», а следствие блока питания и потерь в кабеле: ' +
+      'P = U·I, минус собственное потребление роутера, минус потери. Заполните параметры БП (они есть на наклейке) и устройства.</div>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'Роутер и блок питания</h3>' +
+      '<label class="wz-row"><span class="wz-l">Модель с PoE-out</span><select class="inp" id="poeModel">' +
+      '<option value="">— без PoE-out / свой вариант —</option>' +
+      list.map(function (m) {
+        return '<option value="' + esc(m.id) + '"' + (m.id === st.model ? ' selected' : '') + '>' +
+          esc(m.name) + ' · ' + esc(m.ports) + '</option>';
+      }).join('') + '</select><span class="wz-h">порты и тип PoE подставятся из спецификации</span></label>' +
+      '<div id="poeModelInfo" class="hint" style="margin:-2px 0 8px"></div>' +
+      wizField('poeVolt', 'Напряжение БП, В', st.volt, 'на наклейке: 24 В или 48–57 В') +
+      wizField('poeAmp', 'Ток БП, А', st.amp, 'например 2,5 А — это 60 Вт при 24 В') +
+      wizField('poeReserve', 'На сам роутер, Вт', st.reserve, 'обычно 5–8 Вт') +
+      wizField('poeLoss', 'Потери в кабеле, %', st.loss, '10 % на 30–50 м — нормально') +
+      '</section>';
+
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Что питаем</h3>' +
+      '<div class="chips" id="poePresets">' +
+      ((window.PoeCalc && window.PoeCalc.CONSUMERS) || []).map(function (c, i) {
+        return '<button class="chip" data-poeadd="' + i + '" type="button">+ ' + esc(c.name) + '</button>';
+      }).join('') + '</div>' +
+      '<div id="poeList" style="margin-top:12px"></div>' +
+      '</section>';
+
+    html += '<div class="wz-actions"><button class="btn" id="poeReport">Отчёт</button>' +
+      '<button class="btn" id="poeReset">Сбросить</button></div>';
+    html += '<div id="poeOut"></div>';
+    html += '</div>';
+    return html;
+  }
+
+  function poeRender() {
+    const st = poeLoad();
+    const box = document.getElementById('poeList');
+    const out = document.getElementById('poeOut');
+    const info = document.getElementById('poeModelInfo');
+    if (!box || !out) return;
+
+    box.innerHTML = st.consumers.length ? st.consumers.map(function (c, i) {
+      return '<div class="poe-row" data-pi="' + i + '">' +
+        '<input class="inp p-name" value="' + esc(c.name) + '" placeholder="Название устройства">' +
+        '<input class="inp p-w" value="' + esc(String(c.w)) + '" inputmode="decimal" aria-label="Вт">' +
+        '<input class="inp p-n" value="' + esc(String(c.count)) + '" inputmode="numeric" aria-label="Штук">' +
+        '<button class="p-del" type="button" aria-label="Удалить">✕</button></div>';
+    }).join('') + '<div class="hint">Вт · штук. Пределы стандарта: 802.3af — 15,4 Вт на порт, 802.3at — 30 Вт.</div>'
+      : '<div class="hint">Пока ничего не добавлено — нажмите кнопку устройства выше.</div>';
+
+    const mi = poeModelInfo();
+    if (info) {
+      info.innerHTML = mi
+        ? 'Тип PoE: <b>' + esc(mi.typeText) + '</b> · порты: <b>' + esc(mi.ports) + '</b> · предел на порт ≈ ' +
+          esc(String(mi.portW)) + ' Вт · PoE-in: ' + esc(mi.poeIn || '—')
+        : '';
+    }
+
+    const res = window.PoeCalc ? window.PoeCalc.calc({
+      volt: st.volt, amp: st.amp, reserve: st.reserve, loss: st.loss,
+      portW: mi ? mi.portW : 15.4,
+      consumers: st.consumers
+    }) : null;
+    if (!res) return;
+
+    const cls = res.ok ? 'ok' : (res.total ? 'bad' : '');
+    out.innerHTML = '<section class="card" style="margin-top:14px"><h3 class="card-h">' + svg('task', 15) + 'Расчёт</h3>' +
+      '<div class="poe-sum"><div><span class="ps-k">Блок питания</span><b>' + poeFmt(res.psu) + ' Вт</b>' +
+      '<span class="ps-s">' + poeFmt(res.volt, 0) + ' В × ' + poeFmt(res.amp, 2) + ' А</span></div>' +
+      '<div><span class="ps-k">Доступно для PoE</span><b>' + poeFmt(res.usable) + ' Вт</b>' +
+      '<span class="ps-s">минус ' + poeFmt(res.reserve) + ' Вт на роутер, минус ' + poeFmt(res.loss, 0) + ' % в кабеле</span></div>' +
+      '<div><span class="ps-k">Устройства</span><b>' + poeFmt(res.total) + ' Вт</b>' +
+      '<span class="ps-s">портов: ' + res.ports + '</span></div>' +
+      '<div class="' + cls + '"><span class="ps-k">Запас</span><b>' + poeFmt(res.left) + ' Вт</b>' +
+      '<span class="ps-s">' + (res.left >= 0 ? 'хватает' : 'не хватает') + '</span></div></div>' +
+      '<div class="warn" style="margin-top:10px"><span class="wi">' + (res.ok ? '' : warnIcon()) + '</span><div>' +
+      esc(res.verdict) + '</div></div>' +
+      '<div class="hint" style="margin-top:8px">Для этого набора нужен БП на <b>' + poeFmt(res.recAmp, 2) + ' А</b> при ' +
+      poeFmt(res.volt, 0) + ' В (запас 20 %). Без запаса: ' + poeFmt(res.needAmp, 2) + ' А.</div>' +
+      '<div class="hint">Проверить на роутере: <code class="inl">/interface ethernet poe print</code>, ' +
+      '<code class="inl">/interface ethernet poe monitor [find]</code> — видно ток и мощность по портам. ' +
+      'Включить PoE-out: <code class="inl">/interface ethernet poe set ether5 poe-out=auto-on</code>.</div>' +
+      '</section>';
+  }
+
+  function poeFmt(v, d) {
+    const k = Math.pow(10, d == null ? 1 : d);
+    return String(Math.round((v || 0) * k) / k).replace('.', ',');
+  }
+
+  function poeRecalc() {
+    poeRender();
+    poeSave();
+  }
+
+  function bindPoe() {
+    const st = poeLoad();
+    ['poeVolt', 'poeAmp', 'poeReserve', 'poeLoss'].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('input', function () {
+        const key = id.replace('poe', '').toLowerCase();
+        st[key] = el.value;
+        poeRecalc();
+      });
+    });
+    const sel = document.getElementById('poeModel');
+    if (sel) sel.addEventListener('change', function () { st.model = sel.value; poeRecalc(); });
+
+    const box = document.getElementById('poeList');
+    if (box) {
+      box.addEventListener('input', function (e) {
+        const row = e.target.closest ? e.target.closest('.poe-row') : null;
+        if (!row) return;
+        const i = +row.getAttribute('data-pi');
+        if (!st.consumers[i]) return;
+        if (e.target.classList.contains('p-name')) st.consumers[i].name = e.target.value;
+        if (e.target.classList.contains('p-w')) st.consumers[i].w = e.target.value;
+        if (e.target.classList.contains('p-n')) st.consumers[i].count = e.target.value;
+        poeSave();
+        const res = window.PoeCalc ? window.PoeCalc.calc({ volt: st.volt, amp: st.amp, reserve: st.reserve, loss: st.loss, consumers: st.consumers }) : null;
+        const out = document.getElementById('poeOut');
+        if (out && res) {
+          const keep = out.querySelector('.poe-sum b');
+          if (keep) {
+            const btns = out.querySelectorAll('.poe-sum b');
+            if (btns.length >= 4) {
+              btns[2].textContent = poeFmt(res.total) + ' Вт';
+              btns[3].textContent = poeFmt(res.left) + ' Вт';
+            }
+          }
+        }
+        return;
+      });
+      box.addEventListener('click', function (e) {
+        const del = e.target.closest ? e.target.closest('.p-del') : null;
+        if (!del) return;
+        const row = del.closest('.poe-row');
+        const i = +row.getAttribute('data-pi');
+        st.consumers.splice(i, 1);
+        poeRecalc();
+      });
+      box.addEventListener('change', function () { poeRender(); });
+    }
+
+    document.querySelectorAll('[data-poeadd]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        const list = (window.PoeCalc && window.PoeCalc.CONSUMERS) || [];
+        const c = list[+b.getAttribute('data-poeadd')];
+        if (!c) return;
+        st.consumers.push({ name: c.name, w: c.w, count: 1 });
+        poeRecalc();
+      });
+    });
+
+    const rep = document.getElementById('poeReport');
+    if (rep) rep.addEventListener('click', function () {
+      const mi = poeModelInfo();
+      const res = window.PoeCalc.calc({ volt: st.volt, amp: st.amp, reserve: st.reserve, loss: st.loss,
+        portW: mi ? mi.portW : 15.4, consumers: st.consumers });
+      const text = window.PoeCalc.report(res, { model: mi ? mi.name : '' });
+      const saved = saveTextFile('poe-byudzhet.txt', text);
+      if (saved === 'blob') toast('Отчёт сохранён: poe-byudzhet.txt');
+      else if (!saved) shareText(text, 'PoE-бюджет');
+      else toast('Отчёт сохранён');
+    });
+
+    const rst = document.getElementById('poeReset');
+    if (rst) rst.addEventListener('click', function () {
+      poeState = null;
+      store.del('poe');
+      route();
+    });
+
+    poeRender();
   }
 
   function coverageView() {
@@ -5181,7 +5438,7 @@
       harden: 'Защита от взлома', course: 'Курс за 7 дней', models: 'Порты моделей',
       starred: 'Избранное и заметки', wifi: 'Каналы Wi-Fi', coverage: 'Мощность и покрытие',
       keys: 'Пароли и ключи', cheats: 'Шпаргалки', examples: 'Примеры конфигов',
-      backup: 'Данные и резервная копия'
+      backup: 'Данные и резервная копия', poe: 'PoE и питание'
     };
     if (TOOL_TITLES[id]) {
       const VIEWS = {
@@ -5189,7 +5446,7 @@
         subnet: subnetView, vlsm: vlsmView, diff: diffView,
         quiz: quizView, audit: auditView, diag: diagView, glossary: glossaryView, harden: hardenView,
         course: courseView, models: modelsView, starred: starredView, wifi: wifiView,
-        keys: keysView, coverage: coverageView, cheats: cheatsView, examples: examplesView, backup: backupView
+        keys: keysView, coverage: coverageView, poe: poeView, cheats: cheatsView, examples: examplesView, backup: backupView
       };
       content.innerHTML = VIEWS[id]();
       content.scrollTop = 0;
@@ -5198,7 +5455,7 @@
         wizard: bindWizard, router: bindRouter, win4: bindWin4, subnet: bindSubnet, vlsm: bindVlsm, diff: bindDiff, quiz: bindQuiz,
         audit: bindAudit, glossary: bindGlossary, harden: bindHarden, course: bindCourse,
         models: bindModels, starred: bindStarred, wifi: bindWifi, keys: bindKeys,
-        coverage: bindCoverage, examples: bindExamples, backup: bindBackup
+        coverage: bindCoverage, poe: bindPoe, examples: bindExamples, backup: bindBackup
       };
       if (BINDS[id]) BINDS[id]();
       document.title = TOOL_TITLES[id] + ' · MikroTik';
@@ -5417,8 +5674,18 @@
       } catch (e) { }
     });
 
-    document.documentElement.setAttribute('data-theme', store.get('theme') || 'dark');
+    applyTheme();
     syncFsUi();
+
+    /* «Открывать последнюю статью при запуске»: только если пользователь включил
+       и приложение открыто на главной (а не по прямой ссылке). */
+    if (store.get('autoResume') === '1') {
+      const h = String(location.hash || '');
+      if (h === '' || h === '#' || h === '#/') {
+        const lastOne = lastRead();
+        if (lastOne && BY_ID[lastOne.id]) location.hash = '#/' + lastOne.id;
+      }
+    }
 
     /* отладочный доступ для автопроверок (не влияет на работу приложения) */
   window.AppDebug = { stepSceneFor: stepSceneFor, stems: stems, autoFocus: autoFocus };
