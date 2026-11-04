@@ -222,6 +222,54 @@ async function checkAndroidHint() {
   ok('кнопки опроса не показаны', !q(win, '#rosProbeBtn'));
 }
 
+/* Мастер должен не «добавлять адрес рядом», а заменять заводскую адресацию:
+   иначе роутер остаётся на 192.168.88.1, а клиенты — в старой подсети, и
+   выглядит это как «IP не поменялся». */
+async function checkWizardLan() {
+  console.log('\nМастер: смена LAN и Wi-Fi');
+  const win = boot('windows');
+
+  // Модель rb951 — это RB951G-2HnD с пакетом wireless (wlan1). wifiKind не
+  // задаём: тип Wi-Fi должен подставиться из модели, иначе мастер соберёт
+  // команды пакета wifi, которых на этом роутере нет.
+  const conf = win.eval(`(function(){
+    const w = window.ConfigWizard;
+    const o = Object.assign({}, w.defaults, {
+      model: 'rb951', wan: 'dhcp', lanIp: '192.168.90.1', lanPrefix: 24,
+      wifi: true, wifiSsid: 'Дом-90', wifiPass: 'Passw0rd!90',
+      dhcp: true, dns: '1.1.1.1'
+    });
+    delete o.wifiKind;
+    return w.generate(o).text || '';
+  })()`);
+
+  ok('адрес новой подсети добавлен', /\/ip address add address=192\.168\.90\.1\/24/.test(conf));
+  ok('заводской адрес снимается только после проверки нового',
+    /\/ip address remove \[\/ip address find where address="192\.168\.88\.1\/24"\]/.test(conf) &&
+    /:if \(\[:len \[\/ip address find where address="192\.168\.90\.1\/24"\]\] > 0\)/.test(conf));
+  ok('DHCP переводится на новый пул, а не создаётся вторым сервером',
+    /\/ip dhcp-server set \[find interface=/.test(conf) && /address-pool=lan-pool/.test(conf));
+  ok('сеть старой подсети убирается', /192\.168\.88\.0\/24/.test(conf));
+  ok('Wi-Fi: имя сети из ответов мастера', /ssid="?Дом-90"?/.test(conf));
+  // Для RB951G-2HnD — пакет wireless: настройка идёт на wlan1, а не на wifi1.
+  ok('Wi-Fi legacy: настраивается wlan1', /\/interface wireless set wlan1 /.test(conf));
+  ok('Wi-Fi legacy: пароль в профиле sec-lan', /security-profiles set \[find where name="sec-lan"\].*wpa2-pre-shared-key/.test(conf));
+  ok('Wi-Fi legacy: команд пакета wifi нет', !/\/interface wifi /.test(conf));
+
+  // Та же генерация на заводской подсети не должна ничего удалять.
+  const defConf = win.eval(`(function(){
+    const w = window.ConfigWizard;
+    const o = Object.assign({}, w.defaults, { model: 'rb951', wan: 'dhcp', lanIp: '192.168.88.1', lanPrefix: 24, dhcp: true });
+    return w.generate(o).text || '';
+  })()`);
+  ok('на заводской подсети адрес не удаляется',
+    !/remove \[\/ip address find where address="192\.168\.88\.1\/24"\]/.test(defConf));
+
+  // Строки с [find …] обязаны остаться как есть: их выполняет роутер.
+  const hasExpr = /\[find default-name=wlan1\]|\[\/ip .*find where/.test(conf);
+  ok('в конфиге есть выражения [ … ] (их выполняет роутер)', hasExpr);
+}
+
 /* Все экраны инструментов должны рисоваться без исключений.
    Раньше это ловил отдельный скрипт; теперь проверка живёт здесь, чтобы
    после правки одного экрана не падал другой (общие функции легко сломать). */
@@ -273,6 +321,7 @@ async function checkAllRoutes() {
     await checkPortCheck();
     await checkDiscovery();
     await checkAndroidHint();
+    await checkWizardLan();
     await checkAllRoutes();
   } catch (e) {
     fails.push('исключение: ' + (e && e.stack ? e.stack.split('\n')[0] : e));

@@ -2284,14 +2284,56 @@
     window.RosProbe.apply(c.address, c.user, c.password, res.text, false).then(function (j) {
       if (btn) { btn.textContent = was; btn.disabled = false; }
       const k = j.counts || {};
-      const rows = (j.results || []).filter(function (r) { return r.status !== 'ok'; });
-      rosOutEl('wizApplyOut', '<b>Готово:</b> выполнено ' + (k.ok || 0) + ' · уже было ' + (k.exists || 0) +
-        ' · ошибок ' + (k.error || 0) + ' · скрипт ' + (k.script || 0) + ' · пропущено ' + (k.skipped || 0) +
-        (rows.length ? '<div style="margin-top:6px">' + rows.map(function (r) {
+      /* Статусы отчёта (см. windows/rosapply.go):
+           ok       — команда выполнена
+           exists   — уже было, менять нечего
+           skipped  — не применилось: ошибка внутри :do … on-error, только чтение
+                      или остановка. Раньше такие строки показывались как
+                      «уже есть», и было непонятно, почему ничего не изменилось
+           script   — выполнено скриптом на роутере (выражения [ … ])
+           state    — фактическое состояние после применения
+           note     — итоговая сводка */
+      const LABELS = {
+        ok: 'выполнено', exists: 'уже было', error: 'ошибка', skipped: 'не применилось',
+        script: 'скрипт', state: 'на роутере', note: 'итог'
+      };
+      const all = j.results || [];
+      const states = all.filter(function (r) { return r.status === 'state'; });
+      const notes = all.filter(function (r) { return r.status === 'note'; });
+      const rows = all.filter(function (r) {
+        return r.status !== 'ok' && r.status !== 'state' && r.status !== 'note';
+      });
+      let html = '<b>Готово:</b> выполнено ' + (k.ok || 0) + ' · уже было ' + (k.exists || 0) +
+        ' · не применилось ' + (k.skipped || 0) + ' · ошибок ' + (k.error || 0) +
+        ' · скриптом ' + (k.script || 0);
+      if (rows.length) {
+        html += '<div style="margin-top:6px">' + rows.map(function (r) {
           return '<div>строка ' + r.line + ': ' + esc(r.raw || r.command || '') +
-            ' — <b>' + esc(r.status) + '</b> ' + esc(r.message || '') + '</div>';
-        }).join('') + '</div>' : '') +
-        '<div style="margin-top:8px">Проверьте: /ip address print, /ip service print, /interface bridge print.</div>');
+            ' — <b>' + esc(LABELS[r.status] || r.status) + '</b> ' + esc(r.message || '') + '</div>';
+        }).join('') + '</div>';
+      }
+      if ((k.skipped || 0) > 0) {
+        html += '<div class="hint" style="margin-top:6px">Строки «не применилось» — это не «уже есть»: ' +
+          'роутер их отклонил (чаще всего нет нужного объекта, нет пакета или не хватает прав). ' +
+          'Текст ответа указан рядом с каждой строкой.</div>';
+      }
+      if (states.length) {
+        let last = '';
+        const lines = states.map(function (r) {
+          const head = r.raw !== last ? '<div style="margin-top:4px"><b>' + esc(r.raw) + '</b></div>' : '';
+          last = r.raw;
+          return head + '<div>' + esc(r.message) + '</div>';
+        }).join('');
+        html += '<details style="margin-top:8px"' + (states.length <= 8 ? ' open' : '') +
+          '><summary>Сейчас на роутере: адреса и Wi-Fi</summary>' + lines + '</details>';
+      }
+      if (notes.length) {
+        html += '<div style="margin-top:6px"><b>' + esc(notes.map(function (r) { return r.message; }).join(' ')) +
+          '</b></div>';
+      }
+      rosOutEl('wizApplyOut', html +
+        '<div class="hint" style="margin-top:8px">Если адрес роутера менялся — подключайтесь по новому. ' +
+        'Вернуть прежнее состояние можно через Files → Restore (бэкап сделан перед применением).</div>');
       toast('Конфиг применён на ' + c.address);
       if (window.RosProbe && c.address) {
         window.RosProbe.probe(c.address, c.user, c.password).catch(function () { });

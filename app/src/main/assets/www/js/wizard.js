@@ -722,9 +722,21 @@
       push('# Адреса и DHCP для разделённых подсетей — в следующем разделе.',
         '# Управляющий адрес роутера будет на vlan-' + dsVl.pc + ' (проводные ПК).');
     } else {
-      push('/ip address add address=' + hostCidr(lanIp, lanPrefix) + ' interface=' + l3Iface);
+      const lanHost = hostCidr(lanIp, lanPrefix);
+      // Заводская адресация MikroTik — 192.168.88.1/24 (и пул default-dhcp).
+      // Если пользователь выбрал другую подсеть, её надо не «добавить рядом»,
+      // а заменить: иначе роутер остаётся доступен по 192.168.88.1, а клиенты
+      // продолжают получать старые адреса — снаружи это выглядит как
+      // «IP не поменялся».
+      const factoryLan = netCidr(lanIp, lanPrefix) === '192.168.88.0/24';
+      push('/ip address add address=' + lanHost + ' interface=' + l3Iface);
       push('# Если этот адрес уже висел на другом интерфейсе (заводской ether2 или bridge) — переносим на ' + l3Iface,
-        ':do {/ip address set [/ip address find where address="' + hostCidr(lanIp, lanPrefix) + '"] interface=' + l3Iface + '} on-error={}');
+        ':do {/ip address set [/ip address find where address="' + lanHost + '"] interface=' + l3Iface + '} on-error={}');
+      if (!factoryLan) {
+        push('# Заводской 192.168.88.1/24 снимаем ТОЛЬКО когда новый адрес уже стоит на месте —',
+          '# иначе можно остаться без доступа к роутеру.',
+          ':if ([:len [/ip address find where address="' + lanHost + '"]] > 0) do={:do {/ip address remove [/ip address find where address="192.168.88.1/24"]} on-error={}}');
+      }
     }
     if (!dsOn && C && C.info) {
       const inf = C.info(C.ipToInt(lanIp), lanPrefix);
@@ -733,9 +745,18 @@
         const base = parts[0] + '.' + parts[1] + '.' + parts[2] + '.';
         const from = base + (lanPrefix >= 25 ? 2 : 10);
         const to = base + (inf.hosts > 200 ? 250 : Math.min(254, inf.hosts + 1));
+        const factoryLan = netCidr(lanIp, lanPrefix) === '192.168.88.0/24';
         push('/ip pool add name=lan-pool ranges=' + from + '-' + to,
-          '/ip dhcp-server add name=dhcp-lan interface=' + bridge + ' address-pool=lan-pool lease-time=' + leaseTime,
+          '# DHCP: если на ' + bridge + ' уже есть сервер (заводской defconf) — переводим ЕГО на новый пул,',
+          '# иначе создаём отдельный. Просто «add» на занятом интерфейсе роутер отклонит.',
+          ':do {/ip dhcp-server set [find interface=' + bridge + '] address-pool=lan-pool} on-error={}',
+          ':do {/ip dhcp-server add name=dhcp-lan interface=' + bridge + ' address-pool=lan-pool lease-time=' + leaseTime + ' disabled=no} on-error={}',
           '/ip dhcp-server network add address=' + inf.cidr + ' gateway=' + lanIp + ' dns-server=' + lanIp);
+        if (!factoryLan) {
+          push('# Сеть и пул заводской подсети больше не нужны:',
+            ':do {/ip dhcp-server network remove [/ip dhcp-server network find where address="192.168.88.0/24"]} on-error={}',
+            ':do {/ip pool remove [/ip pool find where name="default-dhcp"]} on-error={}');
+        }
       }
     }
     push('/ip dns set servers=' + clean(opt(o, 'dns')) + ' allow-remote-requests=yes');

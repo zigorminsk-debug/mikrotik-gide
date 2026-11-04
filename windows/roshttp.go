@@ -199,6 +199,15 @@ func (s *server) handleRouterApply(w http.ResponseWriter, r *http.Request) {
 	for _, res := range results {
 		counts[res.Status]++
 	}
+	// В журнал пишем итог и все строки, которые не применились: по app.log
+	// видно, почему «ничего не изменилось», даже если окно уже закрыли.
+	log.Printf("применение конфига на %s: выполнено=%d уже=%d не применилось=%d ошибок=%d",
+		addr, counts["ok"], counts["exists"], counts["skipped"], counts["error"])
+	for _, res := range results {
+		if res.Status == "error" || res.Status == "skipped" {
+			log.Printf("  строка %d: %s — %s: %s", res.Line, res.Raw, res.Status, res.Message)
+		}
+	}
 	writeJSON(w, map[string]interface{}{
 		"ok":      true,
 		"results": results,
