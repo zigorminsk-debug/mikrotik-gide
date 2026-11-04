@@ -222,26 +222,13 @@ jobs:
           # разведка: кликаем пункт дерева, затем подпункты с шагом 23 px и пишем
           # в отчёт, какое окно открылось. Так координаты не приходится угадывать:
           # по отчёту видно «y=145 → [Cloud]» и т. п.
-          probe_menu() {
+          probe_menu() {   # пункт меню: открыть и снять полный экран вместе с подменю
             name=$1; ty=$2
             WID=$(appwin); eval "$(xdotool getwindowgeometry --shell "$WID" 2>/dev/null)"
-            echo "=== разведка меню $name (пункт y=+$ty) ===" >> docs/shots/report.txt
             xdotool mousemove $((X + 80)) $((Y + ty)) click 1
             sleep 2
             import -window root "docs/shots/tree-$name.png" || true
-            before=$(titles)
-            for y in $(seq 50 23 520); do
-              xdotool mousemove $((X + 80)) $((Y + ty)) click 1
-              sleep 0.7
-              xdotool mousemove $((X + 180)) $((Y + y)) click 1
-              sleep 1.4
-              after=$(titles)
-              new=$(comm -13 <(echo "$before") <(echo "$after") | head -2 | tr '\n' ';')
-              [ -n "$new" ] && echo "  $name y=+$y → $new" >> docs/shots/report.txt
-              xdotool key Escape
-              sleep 0.6
-              before=$(titles)
-            done
+            echo "  подменю $name открыто → tree-$name.png" >> docs/shots/report.txt
           }
 
           # Winbox перезапускаем каждые несколько окон: так на снимке видно только
@@ -292,20 +279,17 @@ jobs:
           one ip-cloud     238  99  0
           one system-users 530  76  0
 
+          # --- калибровка: учимся открывать окна по названию, а не по координатам ---
+          if group; then search_open "Cloud" ip-cloud; fi
+          if group; then search_open "Firewall" firewall; fi
+          if group; then search_open "Users" users; fi
+          if group; then search_open "RoMON" romon; fi
+          if group; then search_open "Bandwidth Test" bandwidth; fi
+
           # --- разведка дерева: узнаём точные координаты подпунктов ---
           if group; then probe_menu ip 238; fi
-          if group; then probe_menu system 530; fi
-          for guess in 445 468 491 514; do
-            if group; then
-              WID=$(appwin); eval "$(xdotool getwindowgeometry --shell "$WID" 2>/dev/null)"
-              xdotool mousemove $((X + 80)) $((Y + guess)) click 1
-              sleep 2
-              import -window root "docs/shots/tree-tools-$guess.png" || true
-              t=$(titles | tr '\n' '|')
-              echo "  пункт y=+$guess → окна: $t" >> docs/shots/report.txt
-            fi
-          done
-
+          if group; then probe_menu system 338; fi
+          if group; then probe_menu tools 500; fi
           xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
           ps aux | grep -i winbox | grep -v grep > docs/shots/ps.txt || true
 
