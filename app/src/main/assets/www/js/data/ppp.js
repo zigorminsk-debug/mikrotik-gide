@@ -231,62 +231,459 @@
   });
 
   ppp.items.push({
-    id: 'ppp-ovpn-server', t: 'PPP → OVPN Server — OpenVPN для своих', lvl: 3,
-    path: 'PPP → OVPN Server', tags: ['openvpn', 'tls', 'сертификат', 'сервер'],
-    purpose: 'OVPN-сервер в RouterOS — PPP внутри TLS с отдельными сертификатами на каждого клиента. Хороший выбор, когда нужны клиенты под Linux/Android/iOS и возможность отзывать доступ по одному.',
+    id: 'ppp-ovpn-server', t: 'OpenVPN на RouterOS: сертификаты, сервер и клиенты — пошагово', lvl: 3,
+    path: 'System → Certificates · PPP → OVPN Server · PPP → Profiles · IP → Firewall · Files',
+    tags: ['openvpn', 'ovpn', 'сертификат', 'ca', 'tls', 'vpn', 'сервер'],
+    purpose: 'OVPN-сервер в RouterOS — это PPP-туннель внутри TLS. Доступ выдаётся сертификатом ' +
+      'на каждое устройство: потеряли телефон — отозвали один сертификат, остальные работают. ' +
+      'Сертификаты выпускаются прямо на роутере: сначала центр сертификации (CA), потом серверный ' +
+      'и клиентские сертификаты, подписанные этим CA. Всё делается в System → Certificates.',
     usage: [
-      'Раздача VPN сотрудникам с разными устройствами.',
-      'Доступ по TCP 443 в сетях со строгой фильтрацией.',
-      'Отзыв доступа конкретного устройства без смены пароля у остальных.'
+      'VPN для сотрудников с разными устройствами (Windows, macOS, Android, iOS, Linux).',
+      'Доступ по TCP-порту 1194 или 443 в сетях, где режут «непонятные» протоколы.',
+      'Точный отзыв доступа: по одному устройству, без смены пароля у остальных.'
     ],
     pros: [
-      'Клиенты для всех платформ, простой экспорт профиля.',
-      'Отзыв по сертификату — гранулярный контроль доступа.',
-      'Можно выбрать TCP или UDP и любой порт.'
+      'Клиент OpenVPN Connect есть под все платформы — один профиль работает везде.',
+      'Доступ отзывается сертификатом: удалили строку — устройство больше не войдёт.',
+      'Можно поднять на порту 443 и пройти там, где закрыто почти всё.'
     ],
     cons: [
-      'Самый медленный вариант в RouterOS (PPP + TLS на CPU).',
-      'Нет части современных расширений OpenVPN (tls-crypt и др.).',
-      'Требуется аккуратная работа с сертификатами и сроками действия.'
+      'Нужен пакет ovpn в RouterOS 7 — на некоторых сборках его нет.',
+      'Самый медленный VPN в RouterOS: PPP внутри TLS считается процессором.',
+      'Сертификаты живут ограниченное время: истёк — туннель молча перестал работать.',
+      'Нет части современных расширений OpenVPN (tls-crypt и др.).'
     ],
+    warn: 'Сертификат клиента без подписи CA ничего не даёт, а сертификат с истёкшим сроком ломает ' +
+      'подключение без понятной ошибки на клиенте. Сразу после выпуска запишите дату окончания ' +
+      'и поставьте напоминание за месяц. И не выдавайте один клиентский сертификат на несколько ' +
+      'устройств: отозвать доступ одному, не сломав остальные, будет невозможно.',
     steps: [
-      { t: 'CA', d: 'System → Certificates → `+` → Certificate Authority: Name=`ovpn-ca`, Key Size=2048.' },
-      { t: 'Серверный сертификат', d: 'System → Certificates → `+`: Name=`ovpn-server`, Common Name=`vpn.example.com`, Days Valid=825; затем Sign → CA=`ovpn-ca`.' },
-      { t: 'Клиентские сертификаты', d: 'По одному на устройство: Name=`cli-phone`, Common Name=`cli-phone`, подписать тем же CA.' },
-      { t: 'Профиль', d: 'PPP → Profiles: Name=`ovpn-clients`, Local Address=`10.98.0.1`, Remote Address=`10.98.0.100`, DNS Server=`10.98.0.1`.' },
-      { t: 'Сервер', d: 'PPP → OVPN Server: Enabled=yes, Port=1194, Mode=ip, Certificate=`ovpn-server`, Require Client Certificate=yes, Default Profile=`ovpn-clients`.' },
-      { t: 'Клиент', d: 'Экспорт ca.crt + client.crt + client.key (или готовый .ovpn), импорт в OpenVPN Connect.' }
-    ],
-    scenes: [{
-      path: 'PPP → OVPN Server', win: 'OVPN Server', tabs: ['General', 'PPP'], tab: 'General', noTools: true,
-      form: {
-        title: 'OVPN Server', buttons: ['Apply', 'Cancel'],
-        fields: [
-          { l: 'Enabled', v: 'yes', type: 'select', m: 1 },
-          { l: 'Port', v: '1194', m: 2 },
-          { l: 'Mode', v: 'ip', type: 'select', m: 3 },
-          { l: 'Certificate', v: 'ovpn-server', type: 'select', m: 4 },
-          { l: 'Require Client Certificate', v: 'yes', type: 'select', m: 5 },
-          { l: 'Default Profile', v: 'ovpn-clients', type: 'select' }
-        ],
-        note: 'Require Client Certificate=yes — без сертификата клиента подключение невозможно'
+      {
+        t: 'Что понадобится',
+        d: 'Четыре части: **пакет ovpn** (без него нет меню OVPN Server), **три вида сертификатов** ' +
+          '(CA, серверный, клиентские), **профиль** с адресами и **логины** PPP для входа. ' +
+          'Сертификаты выпускает сам роутер — платных удостоверяющих центров не нужно, ' +
+          'свой CA и есть «удостоверяющий центр» для вашей сети.',
+        noScene: true
       },
-      notes: [
-        'Включение OVPN-сервера',
-        'Порт; 443 используют для обхода фильтров',
-        'Mode=ip для L3, tap — для L2-моста',
-        'Серверный сертификат',
-        'Требовать сертификат клиента'
-      ]
-    }],
-    check: [{ d: 'терминал', c: '/interface ovpn-server server print detail\n/ppp active print where service=ovpn\n/certificate print where name~"ovpn"' }],
-    warn: 'Сертификаты с истёкшим сроком ломают подключение без явной ошибки на клиенте. Ставьте напоминание до даты окончания.',
+      {
+        t: 'Проверьте пакет ovpn',
+        d: '1 — в дереве меню откройте **System**, 2 — пункт **Packages**. ' +
+          '3 — в списке найдите строку **ovpn**: у неё должно быть `enabled`. ' +
+          'Если строки нет — пакет не установлен: скачайте Extra packages для своей версии RouterOS ' +
+          'с сайта MikroTik, загрузите в Files и перезагрузите роутер. Без пакета меню PPP → OVPN Server ' +
+          'просто отсутствует.',
+        sc: {
+          marks: 1,
+          cap: 'System → Packages: есть ли пакет ovpn',
+          path: 'System → Packages', menu: { grp: 1, sub: 2 },
+          win: 'Packages', noTools: true,
+          cols: [{ t: 'Name', w: 190 }, { t: 'Version', w: 110 }, { t: 'Scheduled', w: 110 }, { t: 'Status', w: 130 }],
+          rows: [
+            [{ v: 'routeros' }, { v: '7.10.2' }, { v: '' }, { v: 'enabled', c: 'ok' }],
+            [{ v: 'ovpn', m: 3 }, { v: '7.10.2' }, { v: '' }, { v: 'enabled', c: 'ok' }],
+            [{ v: 'wireless' }, { v: '7.10.2' }, { v: '' }, { v: 'enabled', c: 'ok' }]
+          ],
+          sel: 1,
+          notes: [
+            '1 — группа System',
+            '2 — пункт Packages',
+            '3 — строка ovpn: пакет должен быть enabled'
+          ]
+        }
+      },
+      {
+        t: 'Шаг 1 из сертификатов: центр сертификации (CA)',
+        d: 'CA — это «печать» вашей сети: им подписывают серверный и клиентские сертификаты, ' +
+          'и клиенты доверяют ему. Создаётся один раз. ' +
+          '1 — откройте **System**, 2 — пункт **Certificates**, 3 — нажмите **+**. ' +
+          '4 — Name = `ovpn-ca`. ' +
+          '5 — Common Name = `ovpn-ca` (имя внутри сертификата). ' +
+          '6 — Key Usage: отметьте **key-cert-sign** и **crl-sign**. ' +
+          '7 — Days Valid = `3650` (десять лет — CA меняют редко). ' +
+          '8 — OK, затем подпишите CA сам собой: кнопка **Sign**, CA = `ovpn-ca`.',
+        sc: {
+          marks: 1,
+          cap: 'System → Certificates: создаём CA',
+          path: 'System → Certificates', menu: { grp: 1, sub: 2 },
+          win: 'Certificates', tabs: ['Certificates', 'CRL', 'SCEP'], tab: 'Certificates',
+          cols: [{ t: 'Name', w: 130 }, { t: 'Common Name', w: 140 }, { t: 'Issuer', w: 120 },
+            { t: 'Validity', w: 90 }, { t: 'Days', w: 70 }, { t: 'Trusted', w: 80 }],
+          rows: [[{ v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '3650' }, { v: 'yes', c: 'ok' }]],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 3 }],
+          form: {
+            title: 'New Certificate',
+            fields: [
+              { l: 'Name', v: 'ovpn-ca', m: 4 },
+              { l: 'Common Name', v: 'ovpn-ca', m: 5 },
+              { l: 'Key Usage', v: 'key-cert-sign, crl-sign', m: 6 },
+              { l: 'Days Valid', v: '3650', m: 7 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 8 }]
+          },
+          notes: [
+            '1 — группа System',
+            '2 — пункт Certificates',
+            '3 — «+»: новый сертификат',
+            '4 — Name: ovpn-ca',
+            '5 — Common Name: ovpn-ca',
+            '6 — Key Usage: key-cert-sign, crl-sign (это признаки CA)',
+            '7 — Days Valid: 3650 дней',
+            '8 — OK, затем Sign этим же CA'
+          ]
+        }
+      },
+      {
+        t: 'Шаг 2: серверный сертификат',
+        d: '1 — снова **+** в том же окне. ' +
+          '2 — Name = `ovpn-server`. ' +
+          '3 — Common Name = адрес, по которому к вам подключаются: публичный IP `203.0.113.20` ' +
+          'или DDNS-имя `vpn.example.com`. Клиент сверит это имя — не угадывайте. ' +
+          '4 — Key Usage = **tls-server**. ' +
+          '5 — Days Valid = `825` (стандарт для серверных сертификатов). ' +
+          '6 — OK. Пока сертификат не подписан, он бесполезен — подписываем в следующем шаге.',
+        sc: {
+          marks: 1,
+          cap: 'Certificates: серверный сертификат',
+          path: 'System → Certificates',
+          win: 'Certificates', tabs: ['Certificates', 'CRL', 'SCEP'], tab: 'Certificates',
+          cols: [{ t: 'Name', w: 130 }, { t: 'Common Name', w: 160 }, { t: 'Issuer', w: 120 },
+            { t: 'Validity', w: 90 }, { t: 'Days', w: 70 }, { t: 'Trusted', w: 80 }],
+          rows: [
+            [{ v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '3650' }, { v: 'yes', c: 'ok' }],
+            [{ v: 'ovpn-server', m: 2 }, { v: '203.0.113.20', m: 3 }, { v: '' }, { v: 'unsigned', c: 'no' }, { v: '825' }, { v: 'no' }]
+          ],
+          sel: 1,
+          tools: [{ t: '+', id: 'add', m: 1 }],
+          form: {
+            title: 'New Certificate',
+            fields: [
+              { l: 'Common Name', v: '203.0.113.20', m: 4 },
+              { l: 'Key Usage', v: 'tls-server', m: 5 },
+              { l: 'Days Valid', v: '825', m: 6 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK' }]
+          },
+          notes: [
+            '1 — «+»: новый сертификат',
+            '2 — имя строки: ovpn-server (его выберем в сервере)',
+            '3 — Common Name: адрес, по которому подключаются',
+            '4 — Common Name в диалоге: публичный IP или домен',
+            '5 — Key Usage: tls-server',
+            '6 — Days Valid: 825'
+          ]
+        }
+      },
+      {
+        t: 'Шаг 3: подпишите сертификаты своим CA',
+        d: 'Подпись — это и есть «выдача»: именно подписанный сертификат клиент принимает. ' +
+          '1 — выделите строку `ovpn-server` в списке. ' +
+          '2 — нажмите **Sign** в панели окна. ' +
+          '3 — CA = `ovpn-ca`. ' +
+          '4 — Sign. В колонке Issuer появится `ovpn-ca`, в Validity — `ok`. ' +
+          'С CA делают то же самое один раз: CA = `ovpn-ca` и подпись им же.',
+        sc: {
+          marks: 1,
+          cap: 'Certificates: подпись сертификата у CA',
+          path: 'System → Certificates',
+          win: 'Certificates', tabs: ['Certificates', 'CRL', 'SCEP'], tab: 'Certificates',
+          cols: [{ t: 'Name', w: 130 }, { t: 'Common Name', w: 150 }, { t: 'Issuer', w: 110 },
+            { t: 'Validity', w: 90 }, { t: 'Days', w: 70 }],
+          rows: [
+            [{ v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '3650' }],
+            [{ v: 'ovpn-server', m: 1 }, { v: '203.0.113.20' }, { v: '', m: 5 }, { v: 'unsigned', c: 'no' }, { v: '825' }]
+          ],
+          sel: 1,
+          tools: [{ t: 'Sign', id: 'sign', m: 2 }],
+          form: {
+            title: 'Sign',
+            fields: [
+              { l: 'CA', v: 'ovpn-ca', type: 'select', m: 3 },
+              { l: 'Name', v: 'ovpn-server', m: 4 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Sign', m: 6 }]
+          },
+          notes: [
+            '1 — выделите строку сертификата',
+            '2 — кнопка Sign в панели окна',
+            '3 — CA: ваш центр сертификации',
+            '4 — Name: имя, под которым сертификат останется в списке',
+            '5 — Issuer: после подписи здесь появится ovpn-ca',
+            '6 — Sign: подписать'
+          ]
+        }
+      },
+      {
+        t: 'Шаг 4: клиентские сертификаты (по одному на устройство)',
+        d: '1 — **+** в том же окне. ' +
+          '2 — Name = `cli-phone` (понятное имя: чей это телефон или ноутбук). ' +
+          '3 — Common Name = `cli-phone` (можно имя сотрудника). ' +
+          '4 — Key Usage = **tls-client**. ' +
+          '5 — Days Valid = `365`. ' +
+          '6 — OK, затем **Sign** и CA = `ovpn-ca`. Повторите для каждого устройства: ' +
+          '`cli-pc-ivanov`, `cli-phone-petrova` — так доступ отзывается по одному.',
+        sc: {
+          marks: 1,
+          cap: 'Certificates: клиентские сертификаты',
+          path: 'System → Certificates',
+          win: 'Certificates', tabs: ['Certificates', 'CRL', 'SCEP'], tab: 'Certificates',
+          cols: [{ t: 'Name', w: 150 }, { t: 'Common Name', w: 150 }, { t: 'Issuer', w: 110 },
+            { t: 'Validity', w: 90 }, { t: 'Days', w: 70 }],
+          rows: [
+            [{ v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '3650' }],
+            [{ v: 'ovpn-server' }, { v: '203.0.113.20' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '825' }],
+            [{ v: 'cli-phone', m: 2 }, { v: 'cli-phone', m: 3 }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '365' }],
+            [{ v: 'cli-pc-ivanov' }, { v: 'cli-pc-ivanov' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '365' }]
+          ],
+          sel: 2,
+          tools: [{ t: '+', id: 'add', m: 1 }],
+          form: {
+            title: 'New Certificate',
+            fields: [
+              { l: 'Common Name', v: 'cli-phone', m: 4 },
+              { l: 'Key Usage', v: 'tls-client', m: 5 },
+              { l: 'Days Valid', v: '365', m: 6 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK' }]
+          },
+          notes: [
+            '1 — «+»: сертификат для устройства',
+            '2 — имя строки: cli-phone',
+            '3 — Common Name: имя устройства или сотрудника',
+            '4 — Common Name в диалоге',
+            '5 — Key Usage: tls-client',
+            '6 — Days Valid: 365'
+          ]
+        }
+      },
+      {
+        t: 'Шаг 5: экспорт файлов для клиента',
+        d: 'Клиенту нужны три файла: **ca.crt** (кем подписан), **client.crt** (его сертификат) ' +
+          'и **client.key** (его приватный ключ). ' +
+          '1 — в окне Certificates выделите `ovpn-ca` и нажмите **Export** — появится `cert_export_ovpn-ca.crt`. ' +
+          '2 — выделите `cli-phone` и нажмите **Export** — появятся `cert_export_cli-phone.crt` и `.key`. ' +
+          '3 — откройте **Files** в дереве меню: файлы лежат там. ' +
+          '4 — скачайте их себе (кнопка Download или перетаскивание) и передайте сотруднику. ' +
+          'Приватный ключ устройства никому больше не отдавайте.',
+        sc: {
+          marks: 1,
+          cap: 'Files: что появилось после экспорта',
+          path: 'Files', menu: { grp: 1 },
+          win: 'Files', noTools: true,
+          cols: [{ t: 'Name', w: 250 }, { t: 'Type', w: 100 }, { t: 'Size', w: 100 }, { t: 'Creation Time', w: 150 }],
+          rows: [
+            [{ v: 'cert_export_ovpn-ca.crt', m: 2 }, { v: 'certificate', m: 2 }, { v: '1.9 KiB' }, { v: 'nov/07 19:02' }],
+            [{ v: 'cert_export_cli-phone.crt', m: 3 }, { v: 'certificate', m: 3 }, { v: '2.1 KiB' }, { v: 'nov/07 19:05' }],
+            [{ v: 'cert_export_cli-phone.key', m: 4 }, { v: 'private key', m: 4 }, { v: '1.7 KiB' }, { v: 'nov/07 19:05' }]
+          ],
+          sel: 1,
+          notes: [
+            '1 — Files в дереве меню',
+            '2 — ca.crt: сертификат вашего CA',
+            '3 — сертификат клиента',
+            '4 — приватный ключ клиента (никому больше)'
+          ]
+        }
+      },
+      {
+        t: 'Профиль: адрес и DNS для клиентов',
+        d: '1 — откройте **PPP**, 2 — **Profiles**, 3 — **+**. ' +
+          '4 — Name = `ovpn-clients`. ' +
+          '5 — Local Address = `10.98.0.1`. ' +
+          '6 — Remote Address = `10.98.0.100` (клиент получит этот адрес; для нескольких клиентов ' +
+          'укажите пул, например `10.98.0.100-10.98.0.150`). ' +
+          '7 — DNS Server = `10.98.0.1`. 8 — OK.',
+        sc: {
+          marks: 1,
+          cap: 'PPP → Profiles: адреса для OpenVPN-клиентов',
+          path: 'PPP → Profiles', menu: { grp: 1, sub: 2 },
+          win: 'PPP',
+          tabs: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'OVPN Server', 'Active Connections'],
+          tab: 'Profiles',
+          cols: [{ t: 'Name', w: 130 }, { t: 'Local Address', w: 116 }, { t: 'Remote Address', w: 130 }, { t: 'DNS Server', w: 120 }],
+          rows: [[{ v: 'ovpn-clients' }, { v: '10.98.0.1' }, { v: '10.98.0.100' }, { v: '10.98.0.1' }]],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 3 }],
+          form: {
+            title: 'New PPP Profile',
+            fields: [
+              { l: 'Name', v: 'ovpn-clients', m: 4 },
+              { l: 'Local Address', v: '10.98.0.1', m: 5 },
+              { l: 'Remote Address', v: '10.98.0.100', m: 6 },
+              { l: 'DNS Server', v: '10.98.0.1', m: 7 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 8 }]
+          },
+          notes: [
+            '1 — группа PPP',
+            '2 — пункт Profiles',
+            '3 — «+»: новый профиль',
+            '4 — Name: ovpn-clients',
+            '5 — Local Address: адрес роутера в VPN',
+            '6 — Remote Address: адрес (или пул) клиентов',
+            '7 — DNS Server: что пропишется клиенту',
+            '8 — OK'
+          ]
+        }
+      },
+      {
+        t: 'Включите OVPN-сервер',
+        d: '1 — в дереве откройте **PPP**, 2 — пункт **OVPN Server**. ' +
+          '3 — нажмите кнопку **OVPN Server** в панели окна. ' +
+          '4 — Enabled = **yes**. 5 — Port = `1194`. ' +
+          '6 — Mode = **ip** (L3-туннель; `tap` нужен только для L2-моста). ' +
+          '7 — Certificate = `ovpn-server` (тот, что подписали). ' +
+          '8 — Require Client Certificate = **yes** — без клиентского сертификата вход невозможен. ' +
+          '9 — Default Profile = `ovpn-clients`. → Apply.',
+        sc: {
+          marks: 1,
+          cap: 'PPP → OVPN Server: включаем сервер',
+          path: 'PPP → OVPN Server', menu: { grp: 1, sub: 2 },
+          win: 'PPP',
+          tabs: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'OVPN Server', 'Active Connections'],
+          tab: 'OVPN Server',
+          cols: [{ t: 'Name', w: 130 }, { t: 'Service', w: 110 }, { t: 'Local Address', w: 120 }],
+          rows: [['main', 'ovpn', '10.98.0.1']],
+          sel: 0,
+          tools: [{ t: 'OVPN Server', id: 'srv', m: 3 }],
+          form: {
+            title: 'OVPN Server', buttons: [{ t: 'Cancel' }, { t: 'Apply', m: 9 }],
+            fields: [
+              { l: 'Enabled', v: 'yes', m: 4 },
+              { l: 'Port', v: '1194', m: 5 },
+              { l: 'Mode', v: 'ip', type: 'select', m: 6 },
+              { l: 'Certificate', v: 'ovpn-server', type: 'select', m: 7 },
+              { l: 'Require Client Certificate', v: 'yes', m: 8 },
+              { l: 'Default Profile', v: 'ovpn-clients', type: 'select' }
+            ]
+          },
+          notes: [
+            '1 — группа PPP',
+            '2 — пункт OVPN Server',
+            '3 — кнопка OVPN Server: настройки',
+            '4 — Enabled: yes',
+            '5 — Port: 1194',
+            '6 — Mode: ip',
+            '7 — Certificate: серверный сертификат',
+            '8 — Require Client Certificate: yes',
+            '9 — Apply'
+          ]
+        }
+      },
+      {
+        t: 'Firewall: откройте TCP 1194',
+        d: 'OpenVPN в RouterOS работает по **TCP**. ' +
+          '1 — IP → Firewall → **Filter Rules** → **+**. ' +
+          '2 — Chain = **input**. 3 — Protocol = **tcp**. 4 — Dst. Port = `1194`. ' +
+          '5 — вкладка **Action**: Action = **accept**. 6 — OK. ' +
+          'Правило должно стоять выше общего запрета в цепочке input. ' +
+          'Если поднимаете VPN на порту 443 — проверьте, что его не занял WebFig (IP → Services).',
+        sc: {
+          marks: 1,
+          cap: 'Filter Rules: разрешаем TCP 1194',
+          path: 'IP → Firewall → Filter Rules',
+          win: 'IP Firewall',
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
+          tab: 'Filter Rules',
+          cols: [{ t: '#', w: 26 }, { t: 'Chain', w: 66 }, { t: 'Protocol', w: 80 }, { t: 'Dst. Port', w: 76 },
+            { t: 'Action', w: 86 }, { t: 'Comment', w: 180 }],
+          rows: [[{ v: '0' }, { v: 'input' }, { v: 'tcp', m: 3 }, { v: '1194', m: 4 }, { v: 'accept', c: 'ok', m: 5 }, 'openvpn']],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 1 }],
+          form: {
+            title: 'New Filter Rule', tab: 'General', tabMark: 'Action', tabMarkN: 5,
+            fields: [
+              { l: 'Chain', v: 'input', type: 'select', t: 'General', m: 2 },
+              { l: 'Protocol', v: 'tcp', type: 'select', t: 'General', m: 3 },
+              { l: 'Dst. Port', v: '1194', t: 'General', m: 4 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 6 }]
+          },
+          notes: [
+            '1 — «+»: новое правило',
+            '2 — Chain: input',
+            '3 — Protocol: tcp',
+            '4 — Dst. Port: 1194',
+            '5 — действие: вкладка Action → Action = accept',
+            '6 — OK и поднять правило выше drop'
+          ]
+        }
+      },
+      {
+        t: 'Клиент: OpenVPN Connect',
+        d: '**Телефон и ПК**: приложение **OpenVPN Connect** (Windows, macOS, Android, iOS). ' +
+          'Проще всего — импортировать профиль: в приложении «Import profile» → «File», ' +
+          'выберите `.ovpn`; если профиля нет, импортируйте три файла: `ca.crt`, `клиент.crt`, ' +
+          '`клиент.key`. Логин и пароль — из **PPP → Secrets** (создаётся так же, как для L2TP, ' +
+          'только Service можно оставить `any` или `ovpn`). ' +
+          'Сервер в профиле должен совпадать с Common Name серверного сертификата, иначе клиент ' +
+          'откажется подключаться с ошибкой проверки имени.',
+        noScene: true
+      },
+      {
+        t: 'Проверка и сроки сертификатов',
+        d: '1 — PPP → **Active Connections**: появилась строка с Service = `ovpn`, логином сотрудника ' +
+          'и адресом из профиля. ' +
+          '2 — в System → Certificates у всех строк Validity = `ok`, а в колонке Validity видны даты. ' +
+          '3 — запишите, когда истекает серверный сертификат: за месяц до этого выпустите новый, ' +
+          'подпишите CA и замените в OVPN Server. Просроченный сертификат выглядит как «TLS handshake ' +
+          'failed» без объяснений.',
+        sc: {
+          marks: 1,
+          cap: 'Certificates: сроки и подписи',
+          path: 'System → Certificates', menu: { grp: 1 },
+          win: 'Certificates', tabs: ['Certificates', 'CRL', 'SCEP'], tab: 'Certificates',
+          cols: [{ t: 'Name', w: 150 }, { t: 'Issuer', w: 110 }, { t: 'Validity', w: 90 },
+            { t: 'Days', w: 70 }, { t: 'Trusted', w: 80 }],
+          rows: [
+            [{ v: 'ovpn-ca' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '3612' }, { v: 'yes', c: 'ok' }],
+            [{ v: 'ovpn-server' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok', m: 2 }, { v: '801', m: 3 }, { v: 'no' }],
+            [{ v: 'cli-phone' }, { v: 'ovpn-ca' }, { v: 'ok', c: 'ok' }, { v: '341' }, { v: 'no' }]
+          ],
+          sel: 1,
+          notes: [
+            '1 — System → Certificates',
+            '2 — Validity = ok: сертификат действителен',
+            '3 — Days: сколько дней осталось — планируйте замену заранее'
+          ]
+        }
+      },
+      {
+        t: 'Если не подключается',
+        d: '**«TLS handshake failed» / «certificate verify failed»** — клиент не доверяет серверу: ' +
+          'выдан не тот `ca.crt` или Common Name серверного сертификата не совпадает с адресом в профиле. ' +
+          '**«Certificate expired»** — истёк срок: перевыпустите и подпишите заново. ' +
+          '**Подключается, но нет доступа в сеть** — нет маршрутов/NAT для `10.98.0.0/24` ' +
+          'и правил forward между VPN и LAN. ' +
+          '**Соединение рвётся сразу** — сервер не принимает клиентский сертификат: проверьте, ' +
+          'что он подписан вашим CA и Key Usage = tls-client. ' +
+          '**Порт «не отвечает»** — правило input для TCP 1194 отсутствует или стоит ниже drop.',
+        noScene: true
+      }
+    ],
+    scenes: [],
+    check: [
+      {
+        d: 'сервер, сертификаты и их сроки',
+        c: '/interface ovpn-server server print detail\n/certificate print detail\n/certificate print where expires-after<30d'
+      },
+      {
+        d: 'кто подключён и что в логе',
+        c: '/ppp active print where service=ovpn\n/log print where topics~"ovpn,ppp,ssl"'
+      }
+    ],
     mistakes: [
-      'Require Client Certificate=yes, но клиенту сертификат не выдан.',
-      'Не совпадает cipher/TLS-версия с клиентом.',
-      'Порт закрыт в firewall.',
-      'Один клиентский сертификат на всех — отзыв невозможен по одному устройству.'
-    ]
+      'Сертификат создан, но не подписан CA — сервер его не использует, клиент получает отказ.',
+      'Common Name серверного сертификата не совпадает с адресом в профиле клиента.',
+      'Require Client Certificate = yes, а клиенту сертификат не выдан.',
+      'Один клиентский сертификат на несколько устройств — отозвать одному невозможно.',
+      'Порт 1194 закрыт в firewall или занят другим сервисом (например, WebFig на 443).',
+      'Истёк срок сертификата — подключение молча перестало работать.',
+      'Пакет ovpn не установлен — меню OVPN Server отсутствует, а статья не поможет.'
+    ],
+    next: ['ppp-l2tp-server', 'wg-server', 'vpn-ipsec-ikev2', 'vpn-wireguard']
   });
 
   ppp.items.push({

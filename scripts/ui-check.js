@@ -529,6 +529,8 @@ async function checkNetVpn() {
       group: g ? g.items.map(function (a) { return a.id; }) : [],
       ids: ids,
       tasks: (D.filter(function (x) { return x.id === 'task'; })[0] || { items: [] }).items
+        .map(function (a) { return a.id; }),
+      ppp: (D.filter(function (x) { return x.id === 'ppp'; })[0] || { items: [] }).items
         .map(function (a) { return a.id; })
     };
   })()`);
@@ -537,6 +539,10 @@ async function checkNetVpn() {
   ok('раздел содержит статью о резервном интернете', info.group.indexOf('task-wan-failover') >= 0);
   ok('в разделе три статьи WireGuard',
     ['wg-server', 'wg-client-config', 'wg-site'].every(id => info.group.indexOf(id) >= 0));
+  ok('в разделе есть L2TP/IPsec и OpenVPN',
+    info.group.indexOf('ppp-l2tp-server') >= 0 && info.group.indexOf('ppp-ovpn-server') >= 0);
+  ok('L2TP и OpenVPN не дублируются в PPP',
+    info.ppp.indexOf('ppp-l2tp-server') < 0 && info.ppp.indexOf('ppp-ovpn-server') < 0);
   ok('статьи не дублируются в «Задачах»', info.tasks.indexOf('task-wan-failover') < 0);
   ok('идентификаторы статей уникальны',
     info.ids.length === new Set(info.ids).size,
@@ -549,7 +555,8 @@ async function checkNetVpn() {
       const its = D[i].items || [];
       for (let j = 0; j < its.length; j++) {
         const a = its[j];
-        if (a.id === 'wg-server' || a.id === 'wg-client-config' || a.id === 'wg-site') out[a.id] = a;
+        if (['wg-server', 'wg-client-config', 'wg-site', 'ppp-l2tp-server', 'ppp-ovpn-server']
+          .indexOf(a.id) >= 0) out[a.id] = a;
       }
     }
     return out;
@@ -558,7 +565,9 @@ async function checkNetVpn() {
   const want = {
     'wg-server': [/Listen Port/, /13231/, /Client Config|QR/, /Allowed Address/],
     'wg-client-config': [/QR/, /handshake/i],
-    'wg-site': [/Endpoint/, /Allowed Address/, /Keepalive/i]
+    'wg-site': [/Endpoint/, /Allowed Address/, /Keepalive/i],
+    'ppp-l2tp-server': [/Use IPsec/, /IPsec Secret/, /4500/, /Secrets/],
+    'ppp-ovpn-server': [/Certificate/, /Sign/, /tls-client/, /1194/]
   };
   Object.keys(want).forEach(function (id) {
     const a = arts[id];

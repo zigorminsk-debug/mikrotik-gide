@@ -35,7 +35,9 @@
     usage: [
       'Резервный интернет — два провайдера, роутер сам переключается по пингу (кабель + LTE).',
       'WireGuard-сервер на MikroTik — домой/в офис с телефона или ноутбука.',
-      'MikroTik как клиент WireGuard — филиал подключается к серверу в офисе (site-to-site).'
+      'MikroTik как клиент WireGuard — филиал подключается к серверу в офисе (site-to-site).',
+      'L2TP/IPsec — VPN без установки приложений: клиент уже встроен в Windows, Android и iOS.',
+      'OpenVPN — VPN по сертификатам: свой центр сертификации, отзыв доступа по устройству.'
     ],
     steps: [
       {
@@ -47,6 +49,9 @@
           'проброса портов к компьютерам: статья «WireGuard: MikroTik как сервер для ПК и телефона». ' +
           '**VPN-клиент** — когда ваш роутер, наоборот, должен подключиться к чужому серверу: ' +
           'статья «WireGuard: MikroTik как клиент». ' +
+          '**L2TP/IPsec** — когда на устройствах сотрудников не хочется ставить приложение: ' +
+          'такой VPN встроен в Windows, Android и iPhone. **OpenVPN** — когда нужен доступ по ' +
+          'сертификатам и отзыв по одному устройству. ' +
           'Не хочется вводить команды руками — откройте «Мастер конфигурации»: в нём есть блок ' +
           '«Резервный интернет» (два провайдера, пороги, типы подключения) и он собирает готовый .rsc.',
         noScene: true
@@ -849,6 +854,8 @@
   const wgInterface = findArticle('wg-interface');
   const wgPeers = findArticle('wg-peers');
   const wgTrouble = findArticle('wg-troubleshoot');
+  const l2tp = findArticle('ppp-l2tp-server');
+  const ovpn = findArticle('ppp-ovpn-server');
 
   /* наши три статьи заменяют старые версии с теми же id */
   const replaced = [SERVER, CLIENTS, MTCLIENT].map(function (a) { return a.id; });
@@ -857,6 +864,7 @@
     g.items = g.items.filter(function (x) {
       if (!x) return false;
       if (x === failover || x === wgInterface || x === wgPeers || x === wgTrouble) return false;
+      if (x === l2tp || x === ovpn) return false;
       return replaced.indexOf(x.id) < 0;
     });
   });
@@ -865,6 +873,7 @@
   group.items.push(START);
   if (failover) group.items.push(failover);
   group.items.push(SERVER, CLIENTS, MTCLIENT);
+  [l2tp, ovpn].forEach(function (a) { if (a) group.items.push(a); });
   [wgInterface, wgPeers, wgTrouble].forEach(function (a) { if (a) group.items.push(a); });
 
   /* пустая группа WireGuard больше не нужна: всё переехало в раздел.
