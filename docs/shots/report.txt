@@ -1,44 +1,64 @@
-прошло 7 минут после старта QEMU
+прошло 4 минуты после старта QEMU
 BIN=/tmp/wb/winbox/WinBox
 Winbox запущен (попытка 1)
-runner      3853  0.2  0.4 222276 78036 ?        S    22:13   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      3866  1.4  0.5 925160 90760 ?        Sl   22:13   0:00 /tmp/wb/winbox/WinBox
+runner      4121  0.5  0.4 222268 75932 ?        S    22:37   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4135  2.3  0.5 925128 91080 ?        Sl   22:37   0:00 /tmp/wb/winbox/WinBox
   окно 1200x700+200+200
+    попытка 1: в поле — 'nin admin'
     попытка 1: роутер ещё не пустил, ждём 30 с
+    попытка 2: в поле — 'nin admin'
     попытка 2: роутер ещё не пустил, ждём 30 с
+    попытка 3: в поле — 'nin admin'
     попытка 3: роутер ещё не пустил, ждём 30 с
+    попытка 4: в поле — ''
     попытка 4: роутер ещё не пустил, ждём 30 с
+    попытка 5: в поле — ''
     попытка 5: роутер ещё не пустил, ждём 30 с
+    попытка 6: в поле — ''
     попытка 6: роутер ещё не пустил, ждём 30 с
+    попытка 7: в поле — ''
     попытка 7: роутер ещё не пустил, ждём 30 с
+    попытка 8: в поле — ''
     попытка 8: роутер ещё не пустил, ждём 30 с
+    попытка 9: в поле — ''
     попытка 9: роутер ещё не пустил, ждём 30 с
+    попытка 10: в поле — ''
     попытка 10: роутер ещё не пустил, ждём 30 с
+    попытка 11: в поле — ''
     попытка 11: роутер ещё не пустил, ждём 30 с
+    попытка 12: в поле — ''
     попытка 12: роутер ещё не пустил, ждём 30 с
+    попытка 13: в поле — ''
     попытка 13: роутер ещё не пустил, ждём 30 с
+    попытка 14: в поле — ''
     попытка 14: роутер ещё не пустил, ждём 30 с
+    попытка 15: в поле — ''
     попытка 15: роутер ещё не пустил, ждём 30 с
+    попытка 16: в поле — ''
     попытка 16: роутер ещё не пустил, ждём 30 с
+    попытка 17: в поле — ''
     попытка 17: роутер ещё не пустил, ждём 30 с
+    попытка 18: в поле — ''
     попытка 18: роутер ещё не пустил, ждём 30 с
+    попытка 19: в поле — ''
     попытка 19: роутер ещё не пустил, ждём 30 с
+    попытка 20: в поле — ''
     попытка 20: роутер ещё не пустил, ждём 30 с
   !! войти в RouterOS не удалось — снимать нечего
 === время ===
-Sat Nov  7 22:31:25 UTC 2026
+Sat Nov  7 22:55:37 UTC 2026
 === процессы ===
-runner      3693 62.9  2.0 3158664 334740 ?      Sl   22:06  15:46 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      3853  0.0  0.4 224864 80328 ?        S    22:13   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      3866  0.1  0.6 882820 107876 ?       Sl   22:13   0:01 /tmp/wb/winbox/WinBox
+runner      4061 62.8  2.0 3152496 332196 ?      Sl   22:33  14:00 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4121  0.0  0.4 224436 77628 ?        S    22:37   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4135  0.1  0.6 882816 108388 ?       Sl   22:37   0:01 /tmp/wb/winbox/WinBox
 === файлы ===
 docs/shots:
 total 68
--rw-r--r-- 1 runner runner 57276 Nov  7 22:13 00-login.png
--rw-r--r-- 1 runner runner  3655 Nov  7 22:05 README.md
-drwxr-xr-x 2 runner runner  4096 Nov  7 22:13 jpg
--rw-r--r-- 1 runner runner  2657 Nov  7 22:31 report.txt
+-rw-r--r-- 1 runner runner 57276 Nov  7 22:37 00-login.png
+-rw-r--r-- 1 runner runner  3655 Nov  7 22:32 README.md
+drwxr-xr-x 2 runner runner  4096 Nov  7 22:37 jpg
+-rw-r--r-- 1 runner runner  3517 Nov  7 22:55 report.txt
 
 docs/shots/jpg:
 total 28
--rw-r--r-- 1 runner runner 27142 Nov  7 22:13 00-login.jpg
+-rw-r--r-- 1 runner runner 27142 Nov  7 22:37 00-login.jpg
