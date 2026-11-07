@@ -602,9 +602,12 @@ func wifiWantFrom(text string) wifiWant {
 		if !ok || cmd.Script {
 			continue
 		}
+		// Путь в разборе хранится словами («/interface wireless»), поэтому
+		// приводим к виду со слэшами: иначе сравнение молча не срабатывает.
+		path := strings.ReplaceAll(strings.TrimSpace(cmd.Path), " ", "/")
 		if cmd.Action == "set" {
 			names := strings.Fields(cmd.Args["numbers"])
-			switch cmd.Path {
+			switch path {
 			case "/interface/wireless":
 				want.Wireless = append(want.Wireless, names...)
 			case "/interface/wifi":
