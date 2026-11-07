@@ -59,7 +59,7 @@ jobs:
           sudo apt-get update -qq
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
             qemu-system-x86 qemu-utils xvfb x11-utils xdotool imagemagick unzip \
-            netcat-openbsd libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
+            netcat-openbsd tesseract-ocr libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
             libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 \
             libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core
@@ -145,6 +145,12 @@ jobs:
             xdotool getwindowname "$w" 2>/dev/null || true
           done | sed '/^$/d' | sort -u >> docs/shots/report.txt
           tail -40 /tmp/wb/winbox.log >> docs/shots/report.txt || true
+
+      - name: Снять окна по названиям пунктов меню
+        if: steps.mode.outputs.mode == 'nav'
+        run: |
+          cd "$GITHUB_WORKSPACE"
+          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/shot-list.txt || true
 
       - name: Снимки в артефакт
         if: always()

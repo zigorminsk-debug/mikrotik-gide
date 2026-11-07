@@ -162,64 +162,14 @@ sleep 2
 shot_win 03-desktop
 
 case "$MODE" in
-  calibrate)
-    # Проходим по дереву с шагом 23 px и записываем, какое окно открывается.
-    for y in 55 81 105 128 151 175 198 221 245 268 292 315 338 362 385 409 431 454 477 500 523; do
-      geom
-      xdotool mousemove $((X + 60)) $((Y + y)) click 1; sleep 2
-      shot "menu-y$y"
-      log "  menu-y$y → окна: $(titles)"
-      xdotool key Escape 2>/dev/null || true
-      sleep 1
-    done
+  nav|capture|"")
+    # Окна снимает winbox-nav.py: он находит пункты меню по названию через OCR
+    # и щёлкает по найденному месту. Здесь только вход и снимок рабочего стола.
+    log "  режим nav: вход выполнен, рабочий стол снят"
     ;;
-  probe)
-    # Разведка: как Winbox 4 открывает ПОДМЕНЮ и есть ли поиск по меню.
-    # Кадры сохраняем в JPEG — их немного, но они нужны, чтобы вычитать координаты.
-    shot_jpg() {
-      import -window root "/tmp/wb/p-$1.png" 2>/dev/null || true
-      convert "/tmp/wb/p-$1.png" -resize 1100x -quality 80 "$OUT/probe-$1.jpg" 2>/dev/null || true
-    }
-    for pair in interfaces:105 ip:243 system:335 tools:496 ; do
-      name=${pair%%:*}; y=${pair##*:}
-      geom
-      xdotool windowactivate --sync "$WID" 2>/dev/null || true
-      xdotool mousemove $((X + 60)) $((Y + y)) click 1; sleep 2
-      shot_jpg "$name-1-click"
-      xdotool mousemove $((X + 127)) $((Y + y)) click 1; sleep 2
-      shot_jpg "$name-2-arrow"
-      # наводим мышь на пункт — вдруг подменю появляется по наведению
-      xdotool mousemove $((X + 40)) $((Y + y)); sleep 2
-      shot_jpg "$name-3-hover"
-      xdotool mousemove $((X + 180)) $((Y + y + 23)) click 1; sleep 2
-      shot_jpg "$name-4-row"
-      log "  probe-$name: сняты click/arrow/hover/row"
-      xdotool key Escape 2>/dev/null || true; sleep 0.5
-      xdotool key Escape 2>/dev/null || true; sleep 1
-    done
-
-    # поиск по меню: лупа в шапке окна
-    geom
-    xdotool mousemove $((X + 287)) $((Y + 16)) click 1; sleep 1
-    xdotool type --delay 60 'filter'; sleep 2
-    shot_jpg "search-1-typed"
-    xdotool key Return; sleep 3
-    shot_jpg "search-2-enter"
-    log "  probe-search: сняты typed/enter"
-    ;;
-  capture)
-    n=0
-    while IFS='|' read -r name y suby new; do
-      case "$name" in ''|\#*) continue;; esac
-      if [ $((n % 6)) -eq 0 ] && [ "$n" -gt 0 ]; then
-        restart_winbox
-        if ! connect; then log "  переподключение не удалось на $name"; break; fi
-        sleep 2
-      fi
-      open_item "$name" "$y" "${suby:--}" "${new:-0}"
-      n=$((n + 1))
-    done < "$LIST"
+  *)
+    log "  неизвестный режим: $MODE"
     ;;
 esac
 
-log "=== готово, кадров: $(ls "$OUT"/jpg/*.jpg 2>/dev/null | wc -l) ==="
+log "=== готово, кадров в jpg: $(ls "$OUT"/jpg/*.jpg 2>/dev/null | wc -l) ==="

@@ -1,23 +1,84 @@
-# Что снимаем: имя|y пункта дерева|y подменю (или -)|кнопка New (0/1)
-# Координаты — относительно левого верхнего угла окна Winbox 4.
-quickset|55|-|0
-wifi|81|-|0
-interfaces|105|-|0
-wireguard|128|-|0
-bridge|151|-|0
-bridge-new|151|-|1
-ppp|175|-|0
-switch|198|-|0
-mesh|221|-|0
-ip|245|-|0
-ipv6|268|-|0
-mpls|292|-|0
-routing|315|-|0
-system|338|-|0
-queues|362|-|0
-dot1x|385|-|0
-files|409|-|0
-log|431|-|0
-terminal|454|-|0
-radius|477|-|0
-tools|500|-|0
+# Что снимаем: имя|путь в меню Winbox 4|New (необязательно)
+# Путь читается по экрану (OCR), поэтому координаты не нужны.
+# Первый элемент — раздел в дереве, дальше подменю или вкладки.
+
+wifi-security|WiFi → Security
+wifi|WiFi
+interfaces|Interfaces
+eth|Interfaces → Ethernet
+vlan|Interfaces → VLAN
+bonding|Interfaces → Bonding
+iflist|Interfaces → Interface List
+pppoe-client|Interfaces → PPPoE Client
+vrrp|Interfaces → VRRP
+lte|Interfaces → LTE
+wireguard|Interfaces → WireGuard
+wg-peers|Interfaces → WireGuard → Peers
+wg-new|Interfaces → WireGuard → New
+bridge|Bridge
+bridge-ports|Bridge → Ports
+bridge-vlans|Bridge → VLANs
+bridge-hosts|Bridge → Hosts
+bridge-filters|Bridge → Filters
+bridge-nat|Bridge → NAT
+bridge-new|Bridge → New
+ppp|PPP
+ppp-profiles|PPP → Profiles
+ppp-secrets|PPP → Secrets
+ppp-active|PPP → Active Connections
+pppoe-server|PPP → PPPoE Server
+l2tp-server|PPP → L2TP Server
+ovpn-server|PPP → OVPN Server
+switch|Switch
+switch-vlans|Switch → VLANs
+switch-rules|Switch → Rules
+mesh|Mesh
+ip-address|IP → Addresses
+ip-arp|IP → ARP
+ip-dhcp-client|IP → DHCP Client
+ip-dhcp-server|IP → DHCP Server
+ip-dns|IP → DNS
+ip-firewall|IP → Firewall
+ip-filter|IP → Firewall → Filter Rules
+ip-nat|IP → Firewall → NAT
+ip-mangle|IP → Firewall → Mangle
+ip-routes|IP → Routes
+ip-pool|IP → Pool
+ip-services|IP → Services
+ip-cloud|IP → Cloud
+ip-neighbors|IP → Neighbors
+ipv6|IPv6
+ipv6-address|IPv6 → Address
+mpls|MPLS
+routing|Routing
+routing-table|Routing → Table
+routing-rules|Routing → Rules
+routing-ospf|Routing → OSPF
+routing-bgp|Routing → BGP
+system|System
+identity|System → Identity
+clock|System → Clock
+users|System → Users
+certs|System → Certificates
+logging|System → Logging
+packages|System → Packages
+routerboot|System → RouterBOOT
+scheduler|System → Scheduler
+scripts|System → Scripts
+resources|System → Resources
+reset|System → Reset Configuration
+system-files|Files
+backup|Files → Backup
+queues|Queues
+simple-queues|Queues → Simple Queues
+queue-tree|Queues → Queue Tree
+queue-types|Queues → Queue Types
+dot1x|Dot1X
+log|Log
+terminal|New Terminal
+radius|RADIUS
+tools|Tools
+tool-ping|Tools → Ping
+tool-torch|Tools → Torch
+tool-netwatch|Tools → Netwatch
+tool-sniffer|Tools → Sniffer
