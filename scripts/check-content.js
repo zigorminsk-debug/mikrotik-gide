@@ -33,7 +33,42 @@ files.forEach(f => require(path.join(DATA_DIR, f)));
 const DATA = global.window.DATA || [];
 const errors = [];
 const ids = new Set();
+/* Дерево меню Winbox 4 берём из самого рендерера: схема окна обязана
+   открываться по существующему пункту меню, иначе это уже не Winbox 4. */
+let WINBOX_MENU = new Set();
+try {
+  /* scene.js при загрузке вешает слушатель resize — в Node его надо заглушить */
+  global.window.addEventListener = global.window.addEventListener || function () {};
+  global.window.removeEventListener = global.window.removeEventListener || function () {};
+  require(path.join(WWW, 'js/scene.js'));
+  WINBOX_MENU = new Set(((global.window.Scene && global.window.Scene._menu) || []).map(g => g.g));
+} catch (e) {
+  errors.push('scene.js не загрузился: ' + e.message);
+}
+/* Особые пути: это не пункты меню, а окна/режимы самой программы Winbox 4. */
+const SPECIAL_PATHS = new Set(['Winbox 4', 'Safe Mode', 'Wireless', 'ZeroTier']);
+
 let articles = 0, scenes = 0, notes = 0, mappedSteps = 0, totalSteps = 0;
+
+/* Каждая картинка шага — окно Winbox 4: у него есть заголовок как в программе
+   и путь по настоящему дереву меню. Терминал тоже окно, но с командами. */
+function checkWinboxScene(a, sc, where) {
+  if (!sc || typeof sc !== 'object') { errors.push(`${a.id} ${where}: пустая схема`); return; }
+  if (!sc.win) errors.push(`${a.id} ${where}: у окна нет заголовка (win)`);
+  if (sc.term) {
+    if (!Array.isArray(sc.lines) || !sc.lines.length) errors.push(`${a.id} ${where}: терминал без строк`);
+  } else if (!sc.path) {
+    errors.push(`${a.id} ${where}: нет пути по меню Winbox 4`);
+  } else {
+    const top = String(sc.path).split('→')[0].trim();
+    if (!SPECIAL_PATHS.has(top) && !WINBOX_MENU.has(top)) {
+      errors.push(`${a.id} ${where}: «${top}» нет в дереве Winbox 4 (${sc.path})`);
+    }
+  }
+  if (sc.win && /(схем|рисун|макет|пример окна)/i.test(String(sc.win))) {
+    errors.push(`${a.id} ${where}: заголовок «${sc.win}» — это не название окна Winbox 4`);
+  }
+}
 
 DATA.forEach(g => {
   if (!g.id || !g.name) errors.push('Группа без id/name');
@@ -54,6 +89,7 @@ DATA.forEach(g => {
       if (st.sc) {
         mapped++;
         const sc = st.sc;
+        checkWinboxScene(a, sc, `шаг ${i + 1}`);
         if (!sc.marks) errors.push(`${a.id}: шаг ${i + 1} — у своей сцены нет marks:1`);
         const nums = [];
         const walk = (o) => {
@@ -109,6 +145,7 @@ DATA.forEach(g => {
 
     (a.scenes || []).forEach((sc, si) => {
       scenes++;
+      checkWinboxScene(a, sc, `[${si}]`);
       const marks = new Set();
       const scan = v => { if (v && typeof v === 'object' && v.m) marks.add(v.m); };
       (sc.rows || []).forEach(r => r.forEach(scan));
@@ -195,6 +232,31 @@ HARDEN.forEach((g, gi) => {
   });
 });
 
+/* Примеры из жизни: у каждой статьи должен быть свой разбор — ситуация,
+   что сделали, что получилось. Это не «где применяется», а живой случай. */
+const CASES = global.window.CASES || {};
+let caseCount = 0;
+const caseTexts = new Map();
+DATA.forEach(g => (g.items || []).forEach(a => {
+  const c = CASES[a.id];
+  if (!c) { errors.push(`${a.id}: нет примера из жизни`); return; }
+  caseCount++;
+  if (!c.s || c.s.length < 40) errors.push(`${a.id}: пример — пустая или короткая ситуация`);
+  if (!c.d || c.d.length < 40) errors.push(`${a.id}: пример — нет «что сделали»`);
+  if (!c.r || c.r.length < 30) errors.push(`${a.id}: пример — нет «что получилось»`);
+  if (c.s) {
+    if (caseTexts.has(c.s)) errors.push(`${a.id}: ситуация совпадает с ${caseTexts.get(c.s)}`);
+    else caseTexts.set(c.s, a.id);
+  }
+  // в примере должны быть конкретные числа/модели, а не общие слова
+  /* конкретика: цифра, модель железа или порт — иначе это не пример, а пересказ */
+  const caseAll = String(c.s) + ' ' + String(c.d) + ' ' + String(c.r);
+  if (!/\d/.test(caseAll) && !/(RB\d|hAP|CRS|hEX|CHR|LTE|VLAN|DHCP|NAT|PPPoE)/i.test(caseAll)) {
+    errors.push(`${a.id}: пример без конкретики (ни цифры, ни модели, ни протокола)`);
+  }
+}));
+Object.keys(CASES).forEach(id => { if (!ids.has(id)) errors.push(`пример для несуществующей статьи: ${id}`); });
+
 // контент-пак (публикуется отдельно от APK)
 let packArticles = 0, packScenes = 0;
 const packPath = path.resolve(__dirname, '../content-pack/pack.json');
@@ -252,6 +314,7 @@ console.log(`Диагностика: симптомов ${DIAG.length}, шаго
 console.log(`Глоссарий: терминов ${GLO.length}, портов ${PORTS.length}` + (GLO.length ? ` (ошибок: ${gloBad})` : ''));
 console.log(`Защита от взлома: групп ${HARDEN.length}, пунктов ${hdItems}` + (HARDEN.length ? ` (ошибок: ${hdBad})` : ''));
 if (packArticles) console.log(`Контент-пак: статей ${packArticles}, схем ${packScenes}`);
+console.log(`Примеров из жизни: ${caseCount} из ${articles}`);
 
 if (errors.length) {
   console.error('\nОШИБКИ (' + errors.length + '):');

@@ -809,7 +809,7 @@ window.DATA.push({
       steps: [
         { t: 'Создайте поток', d: 'Tools → Traffic Generator → `+`: Name=`test1`, Interface=WAN, Dst. Address=203.0.113.20, Header Size=32, Frame Size=1500, Tx Size=1000 kbps.' },
         { t: 'Запуск', d: '✓ Enable (или кнопка Start) — трафик пойдёт сразу.' },
-        { t: 'Мониторинг', d: 'Interface → Traffic и Queues показывают фактическую скорость.' },
+        { t: 'Мониторинг', d: 'Interfaces → Traffic и Queues показывают фактическую скорость.' },
         { t: 'Остановка', d: 'Disable потока или ✕. Не оставляйте включённым.' }
       ],
       scenes: [{
@@ -862,7 +862,7 @@ window.DATA.push({
         { t: 'Включите RoMON', d: 'Tools → RoMON → Settings: Enabled=yes, Secrets=... (пароль RoMON).' },
         { t: 'На всех устройствах', d: 'Должен быть включён RoMON и одинаковый секрет (или пусто).' },
         { t: 'Winbox', d: 'В Winbox 4 вкладка RoMON → найдите устройство → Connect.' },
-        { t: 'Безопасность', d: 'Ограничьте RoMON только доверенными портами: на WAN отключайте (в Interface → Interface поле Discover/или firewall).' }
+        { t: 'Безопасность', d: 'Ограничьте RoMON только доверенными портами: на WAN отключайте (в Interfaces → Interface поле Discover/или firewall).' }
       ],
       scenes: [{
         path: 'Tools → RoMON', win: 'RoMON', noTools: true,

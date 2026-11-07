@@ -12,7 +12,7 @@
 
   ppp.items.push({
     id: 'ppp-pppoe-client', t: 'PPP → PPPoE Client — подключение к провайдеру', lvl: 1,
-    path: 'Interface → PPPoE Client (PPP → Interfaces)', tags: ['pppoe', 'клиент', 'провайдер', 'wan'],
+    path: 'Interfaces → PPPoE Client (PPP → Interfaces)', tags: ['pppoe', 'клиент', 'провайдер', 'wan'],
     purpose: 'PPPoE-клиент поднимает соединение с провайдером по логину и паролю. Это самый распространённый тип подключения в СНГ: сессия PPPoE даёт внешний IP, MTU 1492 и требует MSS-clamp.',
     usage: [
       'Домашний или офисный интернет от провайдера с авторизацией PPPoE.',
@@ -30,7 +30,7 @@
       'Иногда провайдер привязывает сессию к MAC — при замене роутера нужен клон MAC.'
     ],
     steps: [
-      { t: 'Создайте клиент', d: 'Interface → `+` → PPPoE Client (в Winbox 4: PPP → Interfaces → PPPoE Client): Name=`pppoe-out1`, Interface=`ether1-wan`, User=`login@provider`, Password=..., Profile=`default`.' },
+      { t: 'Создайте клиент', d: 'Interfaces → `+` → PPPoE Client (в Winbox 4: PPP → Interfaces → PPPoE Client): Name=`pppoe-out1`, Interface=`ether1-wan`, User=`login@provider`, Password=..., Profile=`default`.' },
       { t: 'Dial On Demand', d: 'Вкладка Dial Out: Dial On Demand=no, Add Default Route=yes, Use Peer DNS=yes (или свои DNS).' },
       { t: 'MTU/MSS', d: 'MTU=1492, MRU=1492. В IP → Firewall → Mangle добавьте change-mss 1400 для tcp syn по forward.' },
       { t: 'NAT', d: 'IP → Firewall → NAT: chain=srcnat, out-interface=`pppoe-out1`, action=masquerade.' },

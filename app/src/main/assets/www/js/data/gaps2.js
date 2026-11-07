@@ -282,7 +282,7 @@
       'Приём команд по SMS — потенциальный риск безопасности.'
     ],
     steps: [
-      { t: 'Модем', d: 'Interface → LTE: убедитесь, что модем определился и SIM активна.' },
+      { t: 'Модем', d: 'Interfaces → LTE: убедитесь, что модем определился и SIM активна.' },
       { t: 'SMS', d: 'Tools → SMS: вкладка Settings — Port=`lte1`, Center Number оператора (иногда auto).' },
       { t: 'Отправка', d: 'Вкладка Send: Phone Number=`+375...`, Message=`test` → Send.' },
       { t: 'Автоматизация', d: 'Scheduler/Script: `/tool sms send lte1 phone-number=+375... message="WAN down"`.' },
@@ -573,7 +573,7 @@
   /* ================= Interface ================= */
   iface.items.push({
     id: 'if-vxlan', t: 'VXLAN — L2 поверх L3 без MPLS', lvl: 3,
-    path: 'Interface → VXLAN', tags: ['vxlan', 'l2', 'overlay', 'туннель'],
+    path: 'Interfaces → VXLAN', tags: ['vxlan', 'l2', 'overlay', 'туннель'],
     purpose: 'VXLAN переносит Ethernet-кадры в UDP-пакетах. В отличие от EoIP, он лучше масштабируется (24-битный VNI) и работает через NAT, а на RouterOS 7 настраивается как обычный интерфейс с bridge.',
     usage: [
       'Связность L2 между площадками и облаком без MPLS.',
@@ -592,13 +592,13 @@
     ],
     steps: [
       { t: 'Транспорт', d: 'Поднимите WireGuard-туннель между площадками — VXLAN пойдёт через него.' },
-      { t: 'VXLAN', d: 'Interface → VXLAN → `+`: Name=`vxlan-10`, VNI=10, Port=4789, Remote IP=`10.99.0.2`, Local IP=`10.99.0.1`.' },
+      { t: 'VXLAN', d: 'Interfaces → VXLAN → `+`: Name=`vxlan-10`, VNI=10, Port=4789, Remote IP=`10.99.0.2`, Local IP=`10.99.0.1`.' },
       { t: 'Мост и VLAN', d: 'Bridge → Ports: добавьте `vxlan-10` в `bridge-lan`; при необходимости задайте PVID для нужного VLAN.' },
       { t: 'MTU', d: 'Транспортный интерфейс должен пропускать 1450+; поднимите MTU bridge или уменьшите MTU клиентов.' },
       { t: 'Проверка', d: '`/interface vxlan print`, ARP между площадками, ping внутри одного L2.' }
     ],
     scenes: [{
-      path: 'Interface → VXLAN', win: 'VXLAN', tabs: ['General'], tab: 'General', noTools: true,
+      path: 'Interfaces → VXLAN', win: 'VXLAN', tabs: ['General'], tab: 'General', noTools: true,
       form: {
         title: 'VXLAN', buttons: ['Apply', 'Cancel'],
         fields: [
@@ -629,7 +629,7 @@
 
   iface.items.push({
     id: 'if-ethernet-tune', t: 'Ethernet: скорость, дуплекс, flow control', lvl: 2,
-    path: 'Interface → Ethernet', tags: ['ethernet', 'скорость', 'дуплекс', 'flow-control'],
+    path: 'Interfaces → Ethernet', tags: ['ethernet', 'скорость', 'дуплекс', 'flow-control'],
     purpose: 'Настройки Ethernet решают классические проблемы «линк есть, а скорость 10 Мбит» и «ошибки на порту». Автосогласование обычно работает, но иногда его нужно отключить и задать параметры вручную — с обеих сторон одинаково.',
     usage: [
       'Старое оборудование не согласует скорость автоматически.',
@@ -647,13 +647,13 @@
       'Не заменяет исправный кабель.'
     ],
     steps: [
-      { t: 'Проверьте текущее', d: 'Interface → Ethernet: колонки Rate, Full Duplex, а в статусе — ошибки.' },
+      { t: 'Проверьте текущее', d: 'Interfaces → Ethernet: колонки Rate, Full Duplex, а в статусе — ошибки.' },
       { t: 'Настройка', d: 'Выберите порт → вкладка Ethernet: Speed=`1G-baseT-full` (или auto), Flow Control=auto.' },
-      { t: 'Ошибки', d: 'Interface → Ethernet → вкладка Status: счётчики RX/TX error, FCS error. Растут — проверяйте кабель.' },
+      { t: 'Ошибки', d: 'Interfaces → Ethernet → вкладка Status: счётчики RX/TX error, FCS error. Растут — проверяйте кабель.' },
       { t: 'Проверка', d: '`/interface ethernet print`, `/interface ethernet monitor ether1 once`.' }
     ],
     scenes: [{
-      path: 'Interface → Ethernet', win: 'Ethernet', tabs: ['Ethernet', 'Status'], tab: 'Ethernet', noTools: true,
+      path: 'Interfaces → Ethernet', win: 'Ethernet', tabs: ['Ethernet', 'Status'], tab: 'Ethernet', noTools: true,
       cols: [{ t: 'Name', w: 110 }, { t: 'Speed', w: 150 }, { t: 'Full Duplex', w: 110 }, { t: 'Flow Control', w: 120 }],
       rows: [
         [{ v: 'ether1-wan', m: 1 }, { v: '1G-baseT-full', m: 2 }, { v: 'yes', m: 3 }, { v: 'auto', m: 4 }]

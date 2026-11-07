@@ -206,7 +206,7 @@
   /* ---------------- PPTP ---------------- */
   vpn.items.push({
     id: 'vpn-pptp', t: 'PPTP — почему нельзя и как выключить', lvl: 1,
-    path: 'PPP → PPTP Server / Interface → PPTP Client', tags: ['pptp', 'устарело', 'безопасность'],
+    path: 'PPP → PPTP Server / Interfaces → PPTP Client', tags: ['pptp', 'устарело', 'безопасность'],
     purpose: 'PPTP — самый старый VPN-протокол в RouterOS. Аутентификация MS-CHAPv2 и шифрование MPPE взломаны: перехваченное рукопожатие позволяет восстановить пароль за минуты. Оставлять его включённым — значит держать открытую дверь в сеть.',
     usage: [
       'Единственный оставшийся вариант — совместимость с очень старым оборудованием, которое не умеет ничего другого.',
@@ -257,7 +257,7 @@
   /* ---------------- SSTP ---------------- */
   vpn.items.push({
     id: 'vpn-sstp', t: 'SSTP — VPN по TCP 443, когда всё остальное режут', lvl: 3,
-    path: 'PPP → SSTP Server / Interface → SSTP Client', tags: ['sstp', 'tls', '443', 'обход блокировок'],
+    path: 'PPP → SSTP Server / Interfaces → SSTP Client', tags: ['sstp', 'tls', '443', 'обход блокировок'],
     purpose: 'SSTP — это PPP внутри TLS. Трафик выглядит как обычный HTTPS на порту 443, поэтому проходит там, где запрещены GRE, ESP и UDP. Встроен в Windows и macOS, на iOS отсутствует.',
     usage: [
       'Гостиничные и корпоративные сети, где открыт только 443/tcp.',
@@ -316,7 +316,7 @@
   /* ---------------- OpenVPN ---------------- */
   vpn.items.push({
     id: 'vpn-openvpn', t: 'OpenVPN — совместимость и обход блокировок', lvl: 3,
-    path: 'PPP → OVPN Server / Interface → OVPN Client', tags: ['openvpn', 'tls', '443', 'клиент'],
+    path: 'PPP → OVPN Server / Interfaces → OVPN Client', tags: ['openvpn', 'tls', '443', 'клиент'],
     purpose: 'OpenVPN в RouterOS — PPP-сервер внутри TLS, как SSTP, но с собственным протоколом и клиентом OpenVPN на любой платформе. Даёт гибкость: TCP или UDP, любой порт, отдельные сертификаты клиентов.',
     usage: [
       'Нужен клиент на Linux/Android/iOS, где SSTP не поддерживается системно.',
@@ -405,14 +405,14 @@
     ],
     steps: [
       { t: 'Спланируйте адреса', d: 'Офис A: LAN 192.168.10.0/24, транспорт 203.0.113.20. Офис B: LAN 192.168.20.0/24, транспорт 203.0.113.10. Подсети не должны пересекаться.' },
-      { t: 'WireGuard-туннель', d: 'На обоих роутерах: Interface → WireGuard → `+` (порт 13231), затем Peers: публичный ключ партнёра, Allowed Address=`192.168.20.0/24`, Endpoint=`203.0.113.10:13231`, Keepalive=25s на «клиентской» стороне.' },
+      { t: 'WireGuard-туннель', d: 'На обоих роутерах: Interfaces → WireGuard → `+` (порт 13231), затем Peers: публичный ключ партнёра, Allowed Address=`192.168.20.0/24`, Endpoint=`203.0.113.10:13231`, Keepalive=25s на «клиентской» стороне.' },
       { t: 'Маршруты', d: 'IP → Routes → `+`: Dst. Address=`192.168.20.0/24`, Gateway=`wg-tunnel` (имя интерфейса). Симметрично на другой стороне.' },
       { t: 'Firewall', d: 'Разрешите UDP-порт туннеля на input только с адреса партнёра; forward между LAN и wg-интерфейсом — в обе стороны.' },
-      { t: 'Если нужен L2', d: 'Вместо маршрутов создайте EoIP-туннель (Interface → EoIP Tunnel) с remote-address партнёра и tunnel-id, добавьте оба конца в bridge. Обязательно зашейте IPsec-политикой между адресами туннелей.' },
+      { t: 'Если нужен L2', d: 'Вместо маршрутов создайте EoIP-туннель (Interfaces → EoIP Tunnel) с remote-address партнёра и tunnel-id, добавьте оба конца в bridge. Обязательно зашейте IPsec-политикой между адресами туннелей.' },
       { t: 'Проверка', d: 'С офиса A: `ping 192.168.20.1`, `traceroute`, затем доступ к конкретному сервису (SMB/1С) — именно он и должен работать.' }
     ],
     scenes: [{
-      path: 'Interface → WireGuard → Peers', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'Peers',
+      path: 'Interfaces → WireGuard → Peers', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'Peers',
       tools: [{ t: '+', id: 'add', m: 1 }, { t: '−' }, { t: '✓' }, { t: '✕' }],
       cols: [{ t: 'Interface', w: 90 }, { t: 'Public Key', w: 170 }, { t: 'Allowed Address', w: 170 }, { t: 'Endpoint', w: 150 }, { t: 'Keepalive', w: 80 }],
       rows: [
@@ -580,7 +580,7 @@
     ],
     steps: [
       { t: 'Счётчики и пакеты', d: 'Interfaces: у wg/ppp-интерфейса растёт Rx/Tx? Если Rx=0 — пакеты не доходят: firewall, NAT провайдера, неверный адрес/порт.' },
-      { t: 'Рукопожатие WireGuard', d: 'Interface → WireGuard → Peers: колонка Last Handshake. Пусто или старше 3 минут — ключи/Endpoint неверны.' },
+      { t: 'Рукопожатие WireGuard', d: 'Interfaces → WireGuard → Peers: колонка Last Handshake. Пусто или старше 3 минут — ключи/Endpoint неверны.' },
       { t: 'IPsec', d: 'IP → IPsec → Installed SAs: есть ли SA, в каком состоянии. Пусто — смотрите Log с топиком ipsec.' },
       { t: 'Логи', d: 'System → Logging: добавьте топики `ipsec,error`, `wireguard`, `ppp` на действие `memory` или `disk`. Затем Log: ищите `phase1 negotiation failed`, `no matching peer`, `invalid key`.' },
       { t: 'Маршруты и DNS', d: 'IP → Routes: маршрут активен (флаг A)? Пингуется ли адрес роутера на другой стороне? Резолвится ли внутреннее имя (`:resolve`).' },
@@ -618,7 +618,7 @@
     items: [
       {
         id: 'wg-interface', t: 'WireGuard → интерфейс и ключи', lvl: 1,
-        path: 'Interface → WireGuard', tags: ['wireguard', 'ключи', 'интерфейс'],
+        path: 'Interfaces → WireGuard', tags: ['wireguard', 'ключи', 'интерфейс'],
         purpose: 'WireGuard-интерфейс — это виртуальный порт со своей парой ключей (приватный/публичный) и списком пиров. Порт прослушивания, адрес и MTU задаются в одном окне; ключи генерируются на роутере автоматически.',
         usage: [
           'Создание основы для VPN-сервера или клиента.',
@@ -636,13 +636,13 @@
           'Приватный ключ, попавший в чужие руки, даёт полный доступ без пароля.'
         ],
         steps: [
-          { t: 'Создайте интерфейс', d: 'Interface → WireGuard → вкладка WireGuard → `+`: Name=`wg-vpn`, Listen Port=13231, MTU=1420.' },
+          { t: 'Создайте интерфейс', d: 'Interfaces → WireGuard → вкладка WireGuard → `+`: Name=`wg-vpn`, Listen Port=13231, MTU=1420.' },
           { t: 'Адрес интерфейса', d: 'IP → Address → `+`: Address=`10.99.0.1/24`, Interface=`wg-vpn`. Этот адрес станет шлюзом для клиентов.' },
           { t: 'Ключи', d: 'Откройте созданный интерфейс → кнопка Private Key: нажмите «Generate», скопируйте Public Key — он понадобится партнёру.' },
-          { t: 'Проверка', d: 'Interface → WireGuard: интерфейс в состоянии running(R), IP → Address показывает адрес.' }
+          { t: 'Проверка', d: 'Interfaces → WireGuard: интерфейс в состоянии running(R), IP → Address показывает адрес.' }
         ],
         scenes: [{
-          path: 'Interface → WireGuard', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'WireGuard',
+          path: 'Interfaces → WireGuard', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'WireGuard',
           tools: [{ t: '+', id: 'add', m: 1 }, { t: '−' }, { t: '✓' }, { t: '✕' }],
           cols: [{ t: 'Name', w: 140 }, { t: 'Listen Port', w: 110 }, { t: 'MTU', w: 90 }, { t: 'Private Key', w: 150 }, { t: 'Public Key', w: 170 }],
           rows: [
@@ -667,7 +667,7 @@
       },
       {
         id: 'wg-peers', t: 'WireGuard → Peers: кто и куда', lvl: 2,
-        path: 'Interface → WireGuard → Peers', tags: ['wireguard', 'peers', 'allowed-address', 'keepalive'],
+        path: 'Interfaces → WireGuard → Peers', tags: ['wireguard', 'peers', 'allowed-address', 'keepalive'],
         purpose: 'Пир — это вторая сторона туннеля: её публичный ключ, разрешённые адреса и, для клиента, Endpoint. Allowed Address работает и как маршрут: пакеты к этим адресам уходят этому пиру, а от него принимаются только с них.',
         usage: [
           'Подключение сотрудника (по одному пиру на устройство).',
@@ -685,14 +685,14 @@
           'Без Endpoint пир работает только после входящего пакета.'
         ],
         steps: [
-          { t: 'Создайте пира', d: 'Interface → WireGuard → вкладка Peers → `+`: Interface=`wg-vpn`, Public Key=ключ партнёра, Allowed Address=`10.99.0.2/32` (клиент) или `192.168.20.0/24` (филиал).' },
+          { t: 'Создайте пира', d: 'Interfaces → WireGuard → вкладка Peers → `+`: Interface=`wg-vpn`, Public Key=ключ партнёра, Allowed Address=`10.99.0.2/32` (клиент) или `192.168.20.0/24` (филиал).' },
           { t: 'Endpoint', d: 'Для сервера Endpoint оставляют пустым; для клиента — `203.0.113.20:13231`. Если партнёр за NAT, Endpoint на «серверной» стороне не нужен — он появится после первого пакета.' },
           { t: 'Keepalive', d: 'Persistent Keepalive=25s ставится на стороне за NAT, чтобы туннель не «засыпал».' },
           { t: 'Права', d: 'Allowed Address задаёт и маршрут, и маску доступа: `10.99.0.2/32` — только этот адрес, `0.0.0.0/0` — весь трафик через туннель.' },
           { t: 'Проверка', d: 'Peers → колонка Last Handshake обновляется каждые ~2 минуты; `Rx/Tx` растут при трафике.' }
         ],
         scenes: [{
-          path: 'Interface → WireGuard → Peers', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'Peers',
+          path: 'Interfaces → WireGuard → Peers', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'Peers',
           tools: [{ t: '+', id: 'add', m: 1 }, { t: '−' }, { t: '✓' }, { t: '✕' }],
           cols: [{ t: 'Interface', w: 90 }, { t: 'Public Key', w: 160 }, { t: 'Allowed Address', w: 150 }, { t: 'Endpoint', w: 150 }, { t: 'Keepalive', w: 80 }, { t: 'Last Handshake', w: 110 }],
           rows: [
@@ -718,7 +718,7 @@
       },
       {
         id: 'wg-server', t: 'WireGuard-сервер для сотрудников за 10 минут', lvl: 2,
-        path: 'Interface → WireGuard + PPP / IP → Firewall', tags: ['wireguard', 'сервер', 'road-warrior'],
+        path: 'Interfaces → WireGuard + PPP / IP → Firewall', tags: ['wireguard', 'сервер', 'road-warrior'],
         purpose: 'Самый быстрый способ дать сотрудникам доступ в офис: один WireGuard-интерфейс на роутере, по пиру на устройство, masquerade для выхода в интернет и правила firewall. Никаких PPP-профилей и сертификатов.',
         usage: [
           'Удалённая работа с офисными сервисами (1С, файлы, камеры).',
@@ -736,7 +736,7 @@
           'Отзыв доступа = удалить пир, иначе ключ продолжит работать.'
         ],
         steps: [
-          { t: 'Интерфейс', d: 'Interface → WireGuard → `+`: Name=`wg-vpn`, Listen Port=13231.' },
+          { t: 'Интерфейс', d: 'Interfaces → WireGuard → `+`: Name=`wg-vpn`, Listen Port=13231.' },
           { t: 'Адрес', d: 'IP → Address → `+`: `10.99.0.1/24` на wg-vpn.' },
           { t: 'Пир сотрудника', d: 'Peers → `+`: Public Key клиента, Allowed Address=`10.99.0.2/32`. Ключ клиента удобно сгенерировать в приложении WireGuard на телефоне и скопировать.' },
           { t: 'Выход в интернет', d: 'IP → Firewall → NAT: chain=srcnat, src-address=`10.99.0.0/24`, out-interface=WAN, action=masquerade (если нужен full tunnel).' },
@@ -771,7 +771,7 @@
       },
       {
         id: 'wg-client-config', t: 'WireGuard-конфиг для телефона и ноутбука (QR)', lvl: 1,
-        path: 'Interface → WireGuard → Peers → Show Client Config', tags: ['wireguard', 'qr', 'клиент', 'конфиг'],
+        path: 'Interfaces → WireGuard → Peers → Show Client Config', tags: ['wireguard', 'qr', 'клиент', 'конфиг'],
         purpose: 'Winbox 4 умеет экспортировать готовый клиентский конфиг (и QR-код) прямо из окна пира. Это исключает опечатки в ключах и адресах — телефон подключается сканированием кода.',
         usage: [
           'Выдать доступ сотруднику за минуту.',
@@ -795,7 +795,7 @@
           { t: 'Проверка', d: 'На роутере: Peers → Last Handshake обновился, счётчик Rx/Tx растёт; в приложении виден обмен данными.' }
         ],
         scenes: [{
-          path: 'Interface → WireGuard → Peers', win: 'Peer', tabs: ['General', 'Client Config'], tab: 'Client Config', noTools: true,
+          path: 'Interfaces → WireGuard → Peers', win: 'Peer', tabs: ['General', 'Client Config'], tab: 'Client Config', noTools: true,
           form: {
             title: 'wg-client-phone', buttons: ['Close'],
             fields: [
@@ -824,7 +824,7 @@
       },
       {
         id: 'wg-site', t: 'WireGuard между офисами: маршруты и firewall', lvl: 3,
-        path: 'Interface → WireGuard + IP → Routes', tags: ['wireguard', 'site-to-site', 'маршруты'],
+        path: 'Interfaces → WireGuard + IP → Routes', tags: ['wireguard', 'site-to-site', 'маршруты'],
         purpose: 'Для связи двух площадок через WireGuard нужны три вещи: пир с Allowed Address партнёрской подсети, статический маршрут на этот туннель и разрешение forward. Адреса туннеля (10.99.0.1/30) — это транспорт, а LAN-подсети маршрутизируются поверх.',
         usage: [
           'Офис ↔ офис, офис ↔ облако, офис ↔ дата-центр.',
@@ -875,7 +875,7 @@
       },
       {
         id: 'wg-troubleshoot', t: 'WireGuard не поднимается: 7 причин', lvl: 2,
-        path: 'Interface → WireGuard → Peers / Tools → Torch', tags: ['wireguard', 'диагностика', 'handshake'],
+        path: 'Interfaces → WireGuard → Peers / Tools → Torch', tags: ['wireguard', 'диагностика', 'handshake'],
         purpose: 'WireGuard молча отбрасывает некорректные пакеты — сообщений об ошибке нет. Диагностика строится на трёх показателях: есть ли Last Handshake, растут ли Rx/Tx и доходят ли пакеты до порта.',
         usage: [
           'Туннель «есть», но трафика нет.',
@@ -902,7 +902,7 @@
           { t: 'Проверка с другой сети', d: 'Попробуйте с мобильного интернета: если работает — проблема в сети клиента (фильтрация UDP).' }
         ],
         scenes: [{
-          path: 'Interface → WireGuard → Peers', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'Peers', noTools: true,
+          path: 'Interfaces → WireGuard → Peers', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'Peers', noTools: true,
           cols: [{ t: 'Public Key', w: 160 }, { t: 'Allowed Address', w: 180 }, { t: 'Endpoint', w: 150 }, { t: 'Rx', w: 90 }, { t: 'Tx', w: 90 }, { t: 'Last Handshake', w: 120 }],
           rows: [
             [{ v: 'pX4r…7bQ=', m: 1 }, { v: '10.99.0.2/32', m: 2 }, { v: '198.51.100.7:51820', m: 3 }, '1.2 MiB', '3.4 MiB', { v: '18s ago', m: 4 }]

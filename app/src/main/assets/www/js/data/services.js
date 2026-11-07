@@ -288,7 +288,7 @@ window.DATA.push({
         { t: 'Откройте Interface Queues', d: 'Queues → Interface Queues: список интерфейсов и типов очередей.' },
         { t: 'Выберите тип', d: 'Для интерфейса укажите Queue Type, например `ethernet-default` или `cake`.' },
         { t: 'Ограничьте скорость', d: 'Лучше через Simple Queue на интерфейсе (`target=WAN`), т. к. Interface Queue только выбирает алгоритм.' },
-        { t: 'Проверка', d: 'Interface → Traffic: исходящая скорость не превышает настроенную.' }
+        { t: 'Проверка', d: 'Interfaces → Traffic: исходящая скорость не превышает настроенную.' }
       ],
       scenes: [{
         path: 'Queues → Interface Queues', win: 'Interface Queues',

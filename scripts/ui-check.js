@@ -833,6 +833,93 @@ async function checkBackupMail() {
   ok('мастер: выключение убирает поля времени', doc.querySelector('[data-g="backupMail"]').classList.contains('off'));
 }
 
+/* Примеры из жизни и настоящие снимки Winbox 4: у каждой статьи должен быть
+   разбор реального случая, а под шагом — либо живой снимок, либо схема окна
+   с честной подписью. Плюс дерево меню должно совпадать с Winbox 4. */
+async function checkCasesAndShots() {
+  console.log('\nПримеры из жизни и настоящие снимки Winbox 4');
+  const win = boot('windows');
+
+  // 1) Пример из жизни есть у каждой статьи.
+  const audit = win.eval(`(function(){
+    const C = window.CASES || {};
+    let arts = 0, withCase = 0, shortCase = [];
+    (window.DATA || []).forEach(function (g) {
+      (g.items || []).forEach(function (a) {
+        arts++;
+        const c = C[a.id];
+        if (!c) return;
+        withCase++;
+        if (!c.s || !c.d || !c.r || c.s.length < 40 || c.d.length < 40) shortCase.push(a.id);
+      });
+    });
+    return { arts: arts, withCase: withCase, shortCase: shortCase };
+  })()`);
+  ok('статей в учебнике не меньше двухсот', audit.arts >= 200, 'статей: ' + audit.arts);
+  ok('пример из жизни есть у каждой статьи', audit.withCase === audit.arts,
+    'с примером ' + audit.withCase + ' из ' + audit.arts);
+  ok('в примерах заполнены ситуация, действия и результат', audit.shortCase.length === 0,
+    audit.shortCase.slice(0, 5).join(', '));
+
+  // 2) Пример показывается в статье и попадает в экспорт.
+  win.location.hash = '#/ip-firewall-filter';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(d => setTimeout(d, 40));
+  let html = win.document.getElementById('content').innerHTML;
+  ok('карточка «Пример из жизни» на странице статьи', /Пример из жизни/.test(html));
+  ok('в примере есть «что сделали» и «что получилось»',
+    /Что сделали/.test(html) && /Что получилось/.test(html));
+
+  // 3) Дерево меню — как в Winbox 4 (порядок из живых снимков).
+  const menu = win.eval('window.Scene._menu.map(g => g.g)');
+  const iFiles = menu.indexOf('Files'), iLog = menu.indexOf('Log');
+  const iTerm = menu.indexOf('New Terminal'), iRadius = menu.indexOf('RADIUS'), iTools = menu.indexOf('Tools');
+  ok('в дереве есть New Terminal и RADIUS', iTerm > 0 && iRadius > 0, menu.join(', '));
+  ok('порядок как в Winbox 4: Files → Log → New Terminal → RADIUS → Tools',
+    iFiles < iLog && iLog < iTerm && iTerm < iRadius && iRadius < iTools);
+
+  // 4) Настоящие снимки: файлы на месте, все используются, шаг их показывает.
+  const shots = win.eval(`(function(){
+    const S = window.SHOT_STEPS || {};
+    const files = Object.keys(S).reduce(function (acc, id) {
+      Object.keys(S[id]).forEach(function (k) { acc[S[id][k]] = (acc[S[id][k]] || 0) + 1; });
+      return acc;
+    }, {});
+    return { articles: Object.keys(S).length, files: files };
+  })()`);
+  const fs2 = require('fs');
+  const dir = path.join(ROOT, 'app/src/main/assets/www/img/shots');
+  const onDisk = fs2.readdirSync(dir);
+  const missing = Object.keys(shots.files).filter(f => onDisk.indexOf(f) < 0);
+  ok('все привязанные снимки лежат в img/shots', missing.length === 0, missing.join(', '));
+  ok('каждый снимок галереи используется хотя бы в одной статье',
+    onDisk.every(f => shots.files[f]), 'не используется: ' + onDisk.filter(f => !shots.files[f]).join(', '));
+  ok('настоящие снимки привязаны к десяткам статей', shots.articles >= 30, 'статей: ' + shots.articles);
+
+  win.location.hash = '#/if-bridge';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(d => setTimeout(d, 40));
+  html = win.document.getElementById('content').innerHTML;
+  ok('под шагом показывается настоящий снимок Winbox 4',
+    /<img[^>]+img\/shots\/bridge-new\.jpg/.test(html));
+  ok('снимок подписан как скриншот Winbox 4', /Скриншот настоящего Winbox 4/.test(html));
+
+  // 5) Там, где снимка нет, схема честно подписана.
+  win.location.hash = '#/sys-scheduler';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(d => setTimeout(d, 40));
+  html = win.document.getElementById('content').innerHTML;
+  ok('схема окна подписана как схема', /Схема окна Winbox 4/.test(html));
+
+  // 6) Галерея живых снимков открывается и грузит картинки.
+  win.location.hash = '#/win4';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(d => setTimeout(d, 40));
+  html = win.document.getElementById('content').innerHTML;
+  ok('галерея «Окна Winbox 4» рисуется', /img\/shots\//.test(html));
+  ok('в галерее есть настоящие файлы снимков', /\.jpg/.test(html));
+}
+
 /* Все экраны инструментов должны рисоваться без исключений.
    Раньше это ловил отдельный скрипт; теперь проверка живёт здесь, чтобы
    после правки одного экрана не падал другой (общие функции легко сломать). */
@@ -889,6 +976,7 @@ async function checkAllRoutes() {
     await checkWanFailover();
     await checkWanAutoAndVpn();
     await checkBackupMail();
+    await checkCasesAndShots();
     await checkNetVpn();
     await checkWifiPackage();
     await checkAllRoutes();

@@ -514,6 +514,14 @@
       html += card('Где применяется', 'iface', '<ul class="clean">' +
         a.usage.map(function (u) { return '<li>' + inline(u) + '</li>'; }).join('') + '</ul>');
     }
+    const lifeCase = (window.CASES && window.CASES[a.id]) || null;
+    if (lifeCase) {
+      html += '<section class="card case-card"><h3 class="card-h">' + svg('book', 15) +
+        'Пример из жизни</h3>' +
+        '<p class="case-s">' + inline(lifeCase.s) + '</p>' +
+        '<p><b>Что сделали.</b> ' + inline(lifeCase.d) + '</p>' +
+        '<p><b>Что получилось.</b> ' + inline(lifeCase.r) + '</p></section>';
+    }
     if (a.pros || a.cons) {
       html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Плюсы и минусы</h3>' +
         '<div class="pc">' +
@@ -544,7 +552,9 @@
       html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Инструкция по настройке</h3>' +
         (withShots ? '<div class="hint" style="margin:-4px 0 10px">Под каждым шагом — окно Winbox 4 ' +
           'с красными номерами на кнопках и полях, а под окном — расшифровка: что нажимать в порядке ' +
-          '1, 2, 3 … Номера на картинке и в списке совпадают. Тап по окну открывает его на весь экран.</div>' : '') +
+          '1, 2, 3 … Номера на картинке и в списке совпадают. Тап по окну открывает его на весь экран. ' +
+          'Где окно подписано «Скриншот настоящего Winbox 4» — это живой снимок программы, ' +
+          'а «Схема окна Winbox 4» — точная схема того же окна с подписями.</div>' : '') +
         '<ol class="steps">' +
         a.steps.map(function (s, i) {
           if (typeof s === 'string') {
@@ -1330,8 +1340,20 @@
     const shots = content.querySelectorAll('.step-shot');
     Array.prototype.forEach.call(shots, function (host) {
       const i = parseInt(host.getAttribute('data-si'), 10);
+      /* Сначала настоящий снимок Winbox 4 (data/photos.js), потом схема окна. */
+      const map = (window.SHOT_STEPS && window.SHOT_STEPS[a.id]) || null;
+      const photo = map ? map[i] : null;
+      if (photo) {
+        host.innerHTML = '<figure class="w4-step">' +
+          '<a href="img/shots/' + esc(photo) + '" target="_blank" rel="noopener">' +
+          '<img loading="lazy" src="img/shots/' + esc(photo) + '" alt="Окно Winbox 4"></a>' +
+          '<figcaption>Скриншот настоящего Winbox 4 — снят в CI на живом RouterOS. ' +
+          '<a href="#/win4">Все окна Winbox 4</a></figcaption></figure>';
+        return;
+      }
       const pick = stepSceneFor(a, i);
       if (!pick) return;
+      host.insertAdjacentHTML('afterbegin', '<div class="shot-tag">Схема окна Winbox 4</div>');
       Scene.mount(host, [pick.spec], { compact: true });
     });
 
@@ -3770,6 +3792,11 @@
       parts.push('<p><b>Где применяется:</b></p><ul>' + a.usage.map(function (u) {
         return '<li>' + inline(u) + '</li>';
       }).join('') + '</ul>');
+    }
+    const life = (window.CASES && window.CASES[a.id]) || null;
+    if (life) {
+      parts.push('<p><b>Пример из жизни.</b> ' + inline(life.s) + '</p>' +
+        '<p><b>Что сделали.</b> ' + inline(life.d) + ' <b>Что получилось.</b> ' + inline(life.r) + '</p>');
     }
     if (a.steps && a.steps.length) {
       parts.push('<p><b>Порядок настройки:</b></p><ol>' + a.steps.map(function (st) {
