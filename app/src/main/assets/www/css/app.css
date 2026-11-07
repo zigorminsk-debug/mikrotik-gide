@@ -344,6 +344,8 @@ code.inl{
   display:flex;align-items:center;gap:4px;padding:4px 6px;background:#e9edf0;
   border-bottom:1px solid #c9d0d5;flex-wrap:wrap;
 }
+.wb-dlgtabs{background:#e2e7ea;border-bottom:1px solid #c2cbd2;padding:3px 5px;flex-wrap:wrap}
+.wb-form>.wb-dlgtabs{margin:-6px -6px 6px;border-radius:4px 4px 0 0}
 .wb-tab{
   background:#dfe5ea;border:1px solid #c2cbd2;border-radius:4px;padding:2px 9px;
   font-size:11.5px;color:#252b31;white-space:nowrap;

@@ -726,9 +726,10 @@
   }
 
   /* ---------- форма ---------- */
-  function form(spec) {
+  function form(spec, tabsHost) {
     const f = prepareForm(spec);
     const box = el('div', 'wb-form');
+    if (tabsHost) box.appendChild(tabsHost);
 
     const body = el('div', 'wb-form-body');
     (f.fields || []).forEach(function (fd, i) {
@@ -1134,8 +1135,9 @@
     main.appendChild(tb);
 
     const dlgTabs = (pf && pf.tabs) || null;
+    let dlgTabsHost = null;
     if (dlgTabs && dlgTabs.length) {
-      const tabs = el('div', 'wb-tabs');
+      dlgTabsHost = el('div', 'wb-tabs wb-dlgtabs');
       const onT = pf.tab || dlgTabs[0];
       const tmarks = (pf && pf.tabMarks) || {};
       dlgTabs.forEach(function (t, i) {
@@ -1143,9 +1145,8 @@
         /* номер на вкладке диалога: «5 — перейдите на вкладку Dial Out» */
         const mk = tmarks[t] || ((pf && pf.tabMark === t) ? (pf.tabMarkN || 1) : 0);
         if (mk) { d.setAttribute('data-m', mk); d.classList.add('wb-target'); }
-        tabs.appendChild(d);
+        dlgTabsHost.appendChild(d);
       });
-      main.appendChild(tabs);
     }
 
     if (spec.tabs && spec.tabs.length) {
@@ -1193,7 +1194,7 @@
     const work = el('div', 'wb-work');
     const body = el('div', 'wb-body');
     if (spec.cols) body.appendChild(table(spec));
-    if (spec.form) body.appendChild(form(spec));
+    if (spec.form) body.appendChild(form(spec, dlgTabsHost));
     if (spec.bodyHtml) body.insertAdjacentHTML('beforeend', spec.bodyHtml);
     applyDim(body, spec);
     work.appendChild(body);
