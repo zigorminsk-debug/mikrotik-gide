@@ -68,7 +68,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p /tmp/wb docs/shots
-          rm -f docs/shots/*.png docs/shots/*.jpg docs/shots/*.txt docs/shots/jpg/*.jpg || true
+          rm -f docs/shots/*.png docs/shots/*.txt docs/shots/probe-*.jpg || true
           curl -fL --retry 3 -o /tmp/wb/chr.zip "https://download.mikrotik.com/routeros/${CHR_VER}/chr-${CHR_VER}.img.zip"
           curl -fL --retry 3 -o /tmp/wb/winbox.zip "$WINBOX_URL"
           cd /tmp/wb
@@ -87,6 +87,7 @@ jobs:
             -drive file=chr.qcow2,format=qcow2,if=ide,index=0 \
             -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
             -device e1000,netdev=n0 \
+            -serial file:/tmp/wb/serial.log \
             -display none -monitor unix:/tmp/wb/mon.sock,server,nowait \
             -daemonize -pidfile /tmp/wb/qemu.pid
           sleep 5
@@ -94,34 +95,46 @@ jobs:
 
       - name: Дождаться, когда RouterOS загрузится
         run: |
-          set -x
+          set -ux
           cd "$GITHUB_WORKSPACE"
           ready=0
-          for i in $(seq 1 30); do
+          for i in $(seq 1 40); do
             sleep 20
             t=$((i*20))
-            if nc -z -w 3 127.0.0.1 8291 2>/dev/null; then
-              ready=1; echo "RouterOS слушает 8291 на ${t}c" >> docs/shots/report.txt; break
+            # порт 8291 у QEMU открывается сразу, поэтому ждём консоль RouterOS в serial.log
+            if grep -qiE 'login:|RouterOS' /tmp/wb/serial.log 2>/dev/null; then
+              ready=1; echo "консоль RouterOS в serial.log на ${t}c" >> docs/shots/report.txt; break
             fi
-            echo "t=${t}c  8291 закрыт" >> docs/shots/report.txt
+            echo "t=${t}c serial: $(tail -c 200 /tmp/wb/serial.log 2>/dev/null | tr -d '\r' | tail -1)" >> docs/shots/report.txt
           done
-          [ "$ready" = 1 ] || echo "RouterOS не ответил за 10 минут" >> docs/shots/report.txt
-          sleep 20
+          echo "ready=$ready" >> docs/shots/report.txt
+          sleep 30
 
       - name: Запустить Xvfb и Winbox 4
         run: |
-          set -euxo pipefail
+          set -ux
           cd "$GITHUB_WORKSPACE"
-          Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp > /tmp/wb/xvfb.log 2>&1 &
-          sleep 2
-          cd /tmp/wb/winbox
-          BIN=$(find . -maxdepth 2 -type f -executable -exec file {} \; | grep -i ELF | head -1 | cut -d: -f1)
-          echo "BIN=$BIN" >> "$GITHUB_WORKSPACE/docs/shots/report.txt"
-          echo "MODE=$MODE" >> "$GITHUB_WORKSPACE/docs/shots/report.txt"
-          chmod +x "$BIN"
+          if ! pgrep -f 'Xvfb :99' >/dev/null; then
+            Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp > /tmp/wb/xvfb.log 2>&1 &
+            sleep 3
+          fi
           export QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1
-          nohup "$(pwd)/$BIN" > /tmp/wb/winbox.log 2>&1 &
-          sleep 14
+          BIN=$(ls /tmp/wb/winbox/WinBox 2>/dev/null || find /tmp/wb/winbox -maxdepth 2 -name 'WinBox*' -type f -perm -u+x | head -1)
+          echo "BIN=$BIN" >> docs/shots/report.txt
+          chmod +x "$BIN" 2>/dev/null
+          for k in 1 2 3; do
+            if ! pgrep -f 'WinBox' >/dev/null; then
+              ( cd /tmp/wb/winbox && nohup "$BIN" >> /tmp/wb/winbox.log 2>&1 & )
+              sleep 15
+            fi
+            if pgrep -f 'WinBox' >/dev/null; then
+              echo "Winbox запущен (попытка $k)" >> docs/shots/report.txt; break
+            fi
+            echo "Winbox не поднялся (попытка $k), лог:" >> docs/shots/report.txt
+            tail -20 /tmp/wb/winbox.log >> docs/shots/report.txt 2>/dev/null
+            sleep 5
+          done
+          ps aux | grep -E 'WinBox|Xvfb' | grep -v grep >> docs/shots/report.txt || true
 
       - name: Снять окна (настоящий Winbox 4)
         run: |

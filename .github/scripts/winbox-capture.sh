@@ -50,7 +50,34 @@ shot_win() {
     cp "$OUT/raw-$1.png" "$OUT/$1.png"
   rm -f "$OUT/raw-$1.png"
   convert "$OUT/$1.png" -resize 900x -quality 82 "$OUT/jpg/$1.jpg" 2>/dev/null || true
-  echo "$1|$(titles)" >> "$OUT/manifest.txt"
+  echo "$1|1|$(titles)" >> "$OUT/manifest.txt"
+}
+
+
+# 0 — в области окна только серый рабочий стол, >5 — открылось окно со списком
+content_sd() {
+  geom
+  import -window root /tmp/wb/chk.png 2>/dev/null || { echo 0; return; }
+  convert /tmp/wb/chk.png -crop "600x380+$((X + 200))+$((Y + 60))" +repage \
+    -format "%[fx:int(standard_deviation*1000)]" info: 2>/dev/null || echo 0
+}
+
+# клик по пункту дерева с проверкой: не открылось — пробуем двойной клик
+click_item() {   # y [suby]
+  local y=$1 suby=${2:-} sd
+  geom
+  xdotool mousemove $((X + 60)) $((Y + y)) click 1; sleep 2
+  sd=$(content_sd)
+  log "  [click] y=+$y → sd=$sd"
+  if [ "${sd:-0}" -le 5 ]; then
+    xdotool mousemove $((X + 60)) $((Y + y)) click --repeat 2 --delay 120 1; sleep 3
+    sd=$(content_sd); log "  [click] y=+$y двойной → sd=$sd"
+  fi
+  [ -n "$suby" ] || { echo "$sd"; return; }
+  xdotool mousemove $((X + 200)) $((Y + suby)) click 1; sleep 2
+  local sd2; sd2=$(content_sd)
+  log "  [click] подменю y=+$suby → sd=$sd2"
+  echo "$sd2"
 }
 
 restart_winbox() {
@@ -95,18 +122,29 @@ connected() {
 
 # --- клик по пункту дерева (и подменю), затем кадр ---
 open_item() {   # name y suby new
-  local name=$1 y=$2 suby=$3 new=${4:-0}
+  local name=$1 y=$2 suby=$3 new=${4:-0} sd
   geom
   xdotool windowactivate --sync "$WID" 2>/dev/null || true
-  xdotool mousemove $((X + 60)) $((Y + y)) click 1; sleep 2
-  if [ -n "$suby" ] && [ "$suby" != "-" ]; then
-    xdotool mousemove $((X + 200)) $((Y + suby)) click 1; sleep 2
+  sd=$(click_item "$y" "$( [ "$suby" = "-" ] && echo '' || echo "$suby" )")
+  if [ "${sd:-0}" -le 5 ]; then
+    log "  ПУСТО: $name (пункт y=+$y) — окно не открылось, кадр не сохраняем"
+    echo "$name|0|-" >> "$OUT/manifest.txt"
+    xdotool key Escape 2>/dev/null || true
+    return 1
   fi
   if [ "$new" = "1" ]; then
     xdotool mousemove $((X + 182)) $((Y + 164)) click 1; sleep 2
+    local sd2; sd2=$(content_sd)
+    log "  [click] New → sd=$sd2"
+    if [ "${sd2:-0}" -le 5 ]; then
+      log "  ПУСТО: $name (кнопка New не нажалась)"
+      echo "$name|0|-" >> "$OUT/manifest.txt"
+      xdotool key Escape 2>/dev/null || true
+      return 1
+    fi
   fi
   shot_win "$name"
-  log "  снято: $name (пункт y=+$y$( [ "$suby" != "-" ] && echo ", подменю y=+$suby" )$( [ "$new" = "1" ] && echo ', New' )) окна: $(titles)"
+  log "  снято: $name (пункт y=+$y$( [ "$suby" != "-" ] && echo ", подменю y=+$suby" )$( [ "$new" = "1" ] && echo ', New' ))"
   xdotool key Escape 2>/dev/null || true
   sleep 1
 }
@@ -136,41 +174,39 @@ case "$MODE" in
     done
     ;;
   probe)
-    # Разведка: выясняем, как Winbox 4 открывает ПОДМЕНЮ и есть ли поиск по меню.
-    # По этим кадрам задаются точные координаты для capture.
-    first=1
-    while IFS='|' read -r name y suby new; do
-      case "$name" in ''|\#*) continue;; esac
-      [ "$first" = 1 ] && { first=0; } 
+    # Разведка: как Winbox 4 открывает ПОДМЕНЮ и есть ли поиск по меню.
+    # Кадры сохраняем в JPEG — их немного, но они нужны, чтобы вычитать координаты.
+    shot_jpg() {
+      import -window root "/tmp/wb/p-$1.png" 2>/dev/null || true
+      convert "/tmp/wb/p-$1.png" -resize 1100x -quality 80 "$OUT/probe-$1.jpg" 2>/dev/null || true
+    }
+    for pair in interfaces:105 ip:243 system:335 tools:496 ; do
+      name=${pair%%:*}; y=${pair##*:}
       geom
       xdotool windowactivate --sync "$WID" 2>/dev/null || true
-      # 1) клик по пункту: какое окно открывается
       xdotool mousemove $((X + 60)) $((Y + y)) click 1; sleep 2
-      shot "probe-$name-a"
-      log "  probe-$name-a (y=+$y)"
-      # 2) клик по стрелке справа от пункта: появляется ли подменю
+      shot_jpg "$name-1-click"
       xdotool mousemove $((X + 127)) $((Y + y)) click 1; sleep 2
-      shot "probe-$name-b"
-      log "  probe-$name-b (стрелка)"
-      # 3) клик по первой строке подменю правее пункта
+      shot_jpg "$name-2-arrow"
+      # наводим мышь на пункт — вдруг подменю появляется по наведению
+      xdotool mousemove $((X + 40)) $((Y + y)); sleep 2
+      shot_jpg "$name-3-hover"
       xdotool mousemove $((X + 180)) $((Y + y + 23)) click 1; sleep 2
-      shot "probe-$name-c"
-      log "  probe-$name-c (первая строка подменю)"
+      shot_jpg "$name-4-row"
+      log "  probe-$name: сняты click/arrow/hover/row"
       xdotool key Escape 2>/dev/null || true; sleep 0.5
       xdotool key Escape 2>/dev/null || true; sleep 1
-    done < "$LIST"
+    done
 
-    # 4) есть ли поиск по меню: жмём лупу в шапке и печатаем запрос
+    # поиск по меню: лупа в шапке окна
     geom
     xdotool mousemove $((X + 287)) $((Y + 16)) click 1; sleep 1
     xdotool type --delay 60 'filter'; sleep 2
-    shot "probe-search-1"
-    log "  probe-search-1 (лупа + 'filter')"
+    shot_jpg "search-1-typed"
     xdotool key Return; sleep 3
-    shot "probe-search-2"
-    log "  probe-search-2 (Return)"
+    shot_jpg "search-2-enter"
+    log "  probe-search: сняты typed/enter"
     ;;
-
   capture)
     n=0
     while IFS='|' read -r name y suby new; do
