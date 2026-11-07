@@ -156,12 +156,16 @@ def sd_now(X, Y, W, H):
 
 
 def tree_words(X, Y, H):
-    return ocr(X + 2, Y + 20, 150, H - 130, 'tree')
+    return ocr(X, Y + 16, 210, H - 120, 'tree')
 
 
 def logged_in(X, Y, H):
-    """Вошли в роутер, если в дереве есть Quick Set (на экране входа его нет)."""
-    return find(tree_words(X, Y, H), 'Quick Set') is not None
+    """Вошли в роутер, если в дереве есть пункты меню (на экране входа их нет)."""
+    words = tree_words(X, Y, H)
+    if find(words, 'Quick Set') or find(words, 'Interfaces'):
+        return True
+    return len([w for w in words if clean(w[0]) in
+                ('wifi', 'bridge', 'ppp', 'mesh', 'ip', 'system', 'tools', 'files', 'log')]) >= 3
 
 
 def field_text(X, Y):
@@ -222,11 +226,12 @@ def connect(X, Y, W, H, tries=24):
     «порт отвечает» ничего не значит: единственный критерий — дерево меню.
     """
     for attempt in range(1, tries + 1):
+        X, Y, W, H = geom()          # окно могло измениться после входа
         if logged_in(X, Y, H):
             log('вход выполнен (попытка %d)' % attempt)
             return True
         activate()
-        escape(1)
+        escape(2)
         if neighbors_connect(X, Y, W, H):
             log('вход через Neighbors (попытка %d)' % attempt)
             return True
@@ -242,6 +247,9 @@ def connect(X, Y, W, H, tries=24):
         if logged_in(X, Y, H):
             log('вход по кнопке Connect (попытка %d)' % attempt)
             return True
+        if attempt <= 4:
+            run(['import', '-window', 'root',
+                 os.path.join(OUT, 'dbg-attempt-%d.png' % attempt)])
         log('  попытка %d: роутер ещё не пустил, ждём 30 с' % attempt)
         time.sleep(30)
     return False
@@ -308,6 +316,8 @@ def main():
         return
     escape(1)
     time.sleep(2)
+    X, Y, W, H = geom()
+    log('окно после входа: %dx%d+%d+%d' % (W, H, X, Y))
     shoot('03-desktop', X, Y, W, H)
     with open(TASKS, encoding='utf-8') as f:
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
