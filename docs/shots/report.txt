@@ -79,8 +79,24 @@ BIN=./WinBox
   снято: system-users (пункт y=+530, подпункт y=+76)
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
   [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  снято: system-scripts (пункт y=+338, подпункт y=+646)
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  снято: system-scheduler (пункт y=+338, подпункт y=+669)
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  подменю ip открыто → tree-ip.png
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  подменю system открыто → tree-system.png
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  подменю tools открыто → tree-tools.png
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  подменю routing открыто → tree-routing.png
 === время ===
-Wed Nov  4 05:57:00 UTC 2026
+Sat Nov  7 18:11:34 UTC 2026
 === qemu-img ===
 image: chr.qcow2
 file format: qcow2
@@ -156,39 +172,47 @@ PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/s
 WBOXSESS,INFO: newer version available for RouterOS:7.25.1
 WBOXSESS,INFO: first clock synced
 === процессы ===
-runner      3855 41.4  2.1 3158520 350308 ?      Sl   05:32  10:11 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      4269  0.2  0.5 225632 81912 ?        S    05:48   0:01 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      6035  1.3  0.6 947860 105200 ?       Sl   05:56   0:00 ./WinBox
+runner      4794 14.4  2.1 3184220 350480 ?      Sl   17:44   3:52 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      5159  0.2  0.5 226720 84084 ?        S    18:01   0:01 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      7455  1.3  0.6 948640 106648 ?       Sl   18:11   0:00 ./WinBox
 === файлы ===
-total 1648
--rw-r--r-- 1 runner runner  61193 Nov  4 05:48 01-login.png
--rw-r--r-- 1 runner runner  61864 Nov  4 05:56 02-typed.png
--rw-r--r-- 1 runner runner  62251 Nov  4 05:56 03-desktop.png
--rw-r--r-- 1 runner runner   2135 Nov  4 05:34 08-chr-120.png
--rw-r--r-- 1 runner runner   2147 Nov  4 05:36 08-chr-210.png
--rw-r--r-- 1 runner runner   2147 Nov  4 05:33 08-chr-30.png
--rw-r--r-- 1 runner runner   1066 Nov  4 05:38 08-chr-300.png
--rw-r--r-- 1 runner runner   1075 Nov  4 05:40 08-chr-390.png
--rw-r--r-- 1 runner runner   1066 Nov  4 05:41 08-chr-480.png
--rw-r--r-- 1 runner runner   1075 Nov  4 05:43 08-chr-570.png
--rw-r--r-- 1 runner runner   1066 Nov  4 05:45 08-chr-660.png
--rw-r--r-- 1 runner runner   1075 Nov  4 05:47 08-chr-750.png
--rw-r--r-- 1 runner runner   3655 Nov  4 05:31 README.md
--rw-r--r-- 1 runner runner   8376 Nov  4 05:57 report.txt
--rw-r--r-- 1 runner runner 110024 Nov  4 05:55 win-bridge-new.png
--rw-r--r-- 1 runner runner  80389 Nov  4 05:50 win-bridge.png
--rw-r--r-- 1 runner runner  73423 Nov  4 05:54 win-dot1x.png
--rw-r--r-- 1 runner runner  73601 Nov  4 05:52 win-files.png
--rw-r--r-- 1 runner runner  86400 Nov  4 05:49 win-interfaces.png
--rw-r--r-- 1 runner runner  72082 Nov  4 05:50 win-ip-address.png
--rw-r--r-- 1 runner runner  80758 Nov  4 05:56 win-ip-cloud.png
--rw-r--r-- 1 runner runner  76618 Nov  4 05:51 win-ip-routes.png
--rw-r--r-- 1 runner runner  99735 Nov  4 05:51 win-ip-services.png
--rw-r--r-- 1 runner runner  79996 Nov  4 05:53 win-log.png
--rw-r--r-- 1 runner runner  85060 Nov  4 05:53 win-ppp.png
--rw-r--r-- 1 runner runner  82482 Nov  4 05:52 win-queue.png
--rw-r--r-- 1 runner runner 108821 Nov  4 05:49 win-quickset.png
--rw-r--r-- 1 runner runner  77111 Nov  4 05:54 win-radius.png
--rw-r--r-- 1 runner runner  66307 Nov  4 05:56 win-system-users.png
--rw-r--r-- 1 runner runner  82306 Nov  4 05:53 win-system.png
--rw-r--r-- 1 runner runner  76125 Nov  4 05:55 win-tools.png
+total 2136
+-rw-r--r-- 1 runner runner  61193 Nov  7 18:01 01-login.png
+-rw-r--r-- 1 runner runner  65118 Nov  7 18:11 02-typed.png
+-rw-r--r-- 1 runner runner  62070 Nov  7 18:11 03-desktop.png
+-rw-r--r-- 1 runner runner   1066 Nov  7 17:47 08-chr-120.png
+-rw-r--r-- 1 runner runner   1075 Nov  7 17:48 08-chr-210.png
+-rw-r--r-- 1 runner runner   2147 Nov  7 17:45 08-chr-30.png
+-rw-r--r-- 1 runner runner   1066 Nov  7 17:50 08-chr-300.png
+-rw-r--r-- 1 runner runner   1075 Nov  7 17:52 08-chr-390.png
+-rw-r--r-- 1 runner runner   1066 Nov  7 17:54 08-chr-480.png
+-rw-r--r-- 1 runner runner   1075 Nov  7 17:56 08-chr-570.png
+-rw-r--r-- 1 runner runner    306 Nov  7 17:57 08-chr-660.png
+-rw-r--r-- 1 runner runner    306 Nov  7 17:59 08-chr-750.png
+-rw-r--r-- 1 runner runner   3655 Nov  7 17:44 README.md
+-rw-r--r-- 1 runner runner     76 Nov  7 18:11 ps.txt
+-rw-r--r-- 1 runner runner   9649 Nov  7 18:11 report.txt
+-rw-r--r-- 1 runner runner  85192 Nov  7 18:10 tree-ip.png
+-rw-r--r-- 1 runner runner  70995 Nov  7 18:11 tree-routing.png
+-rw-r--r-- 1 runner runner  86524 Nov  7 18:10 tree-system.png
+-rw-r--r-- 1 runner runner  80668 Nov  7 18:11 tree-tools.png
+-rw-r--r-- 1 runner runner 110300 Nov  7 18:07 win-bridge-new.png
+-rw-r--r-- 1 runner runner  80689 Nov  7 18:02 win-bridge.png
+-rw-r--r-- 1 runner runner  72802 Nov  7 18:06 win-dot1x.png
+-rw-r--r-- 1 runner runner  73628 Nov  7 18:04 win-files.png
+-rw-r--r-- 1 runner runner  86520 Nov  7 18:02 win-interfaces.png
+-rw-r--r-- 1 runner runner  71915 Nov  7 18:03 win-ip-address.png
+-rw-r--r-- 1 runner runner  80678 Nov  7 18:08 win-ip-cloud.png
+-rw-r--r-- 1 runner runner  76501 Nov  7 18:03 win-ip-routes.png
+-rw-r--r-- 1 runner runner  99799 Nov  7 18:04 win-ip-services.png
+-rw-r--r-- 1 runner runner  79969 Nov  7 18:05 win-log.png
+-rw-r--r-- 1 runner runner  85068 Nov  7 18:05 win-ppp.png
+-rw-r--r-- 1 runner runner  82289 Nov  7 18:04 win-queue.png
+-rw-r--r-- 1 runner runner 109031 Nov  7 18:01 win-quickset.png
+-rw-r--r-- 1 runner runner  76885 Nov  7 18:07 win-radius.png
+-rw-r--r-- 1 runner runner  76184 Nov  7 18:09 win-system-scheduler.png
+-rw-r--r-- 1 runner runner  83034 Nov  7 18:09 win-system-scripts.png
+-rw-r--r-- 1 runner runner  66273 Nov  7 18:08 win-system-users.png
+-rw-r--r-- 1 runner runner  81633 Nov  7 18:06 win-system.png
+-rw-r--r-- 1 runner runner  76130 Nov  7 18:07 win-tools.png
+-rw-r--r-- 1 runner runner    410 Nov  7 18:11 xwininfo-2.txt
