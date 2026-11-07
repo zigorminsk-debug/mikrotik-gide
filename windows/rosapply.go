@@ -402,7 +402,15 @@ func rosApply(address, user, pass, text string, stopOnError bool) ([]rosApplyRes
 
 	// Что реально стало на роутере: адреса и SSID. Без этого человек видит
 	// «выполнено», а на деле адрес или имя сети остались прежними.
-	results = append(results, verifyApplyState(c)...)
+	state, wirelessRows, wifiRows := verifyApplyState(c)
+	results = append(results, state...)
+	// Отдельно — самое частое расхождение: конфиг собран для одного пакета
+	// Wi-Fi, а на роутере другой. Тогда все команды /interface wifi уходят в
+	// несуществующее меню, обёртки :do … on-error={} их глотают, и SSID
+	// остаётся заводским. Говорим об этом прямо, а не «готово».
+	for _, msg := range wifiProblems(wifiWantFrom(text), wirelessRows, wifiRows) {
+		results = append(results, rosApplyResult{Status: "error", Raw: "/interface wireless", Message: msg})
+	}
 
 	for _, step := range late {
 		cmd := step.Cmd
@@ -519,7 +527,7 @@ func runScriptBatch(c *rosConn, batch []rosStep) ([]rosApplyResult, int) {
 // verifyApplyState читает фактическое состояние после применения.
 // Строки со статусом "state" интерфейс показывает отдельным блоком
 // «Сейчас на роутере»: по ним видно, поменялся ли адрес и SSID.
-func verifyApplyState(c *rosConn) []rosApplyResult {
+func verifyApplyState(c *rosConn) (results []rosApplyResult, wireless, wifi []map[string]string) {
 	checks := []struct {
 		path   string
 		fields []string
@@ -534,6 +542,12 @@ func verifyApplyState(c *rosConn) []rosApplyResult {
 		rows, err := c.runCommand(ch.path + " print")
 		if err != nil {
 			continue // меню может отсутствовать (нет пакета wifi и т.п.)
+		}
+		switch ch.path {
+		case "/interface wireless":
+			wireless = rows
+		case "/interface wifi":
+			wifi = rows
 		}
 		for _, row := range rows {
 			if len(out) >= maxRows {
@@ -553,6 +567,155 @@ func verifyApplyState(c *rosConn) []rosApplyResult {
 				Raw:     ch.path,
 				Message: strings.Join(parts, " · "),
 			})
+		}
+	}
+	return out, wireless, wifi
+}
+
+// wifiWant — что конфиг требует от Wi-Fi: имена радиоинтерфейсов и SSID,
+// а также какой пакет он вообще трогает. Читается по тексту конфига, включая
+// строки-скрипты: в пакете wifi команда set идёт с [find where name="wifi1"],
+// и без разбора скриптовых строк расхождение пакетов было бы не видно.
+type wifiWant struct {
+	Wireless     []string // wlan1, wlan2 — из /interface wireless set
+	Wifi         []string // wifi1, wifi2 — из /interface wifi set
+	SSID         string   // ожидаемое имя сети
+	UsesWireless bool     // конфиг вообще обращается к /interface wireless …
+	UsesWifi     bool     // … и к /interface wifi …
+}
+
+func wifiWantFrom(text string) wifiWant {
+	var want wifiWant
+	for _, line := range strings.Split(text, "\n") {
+		l := strings.TrimSpace(line)
+		if l == "" || strings.HasPrefix(l, "#") {
+			continue
+		}
+		// Строки-скрипты (:do, :if, [find …]) разбираем по тексту.
+		if strings.Contains(l, "/interface wifi") {
+			want.UsesWifi = true
+		}
+		if strings.Contains(l, "/interface wireless") {
+			want.UsesWireless = true
+		}
+		cmd, ok := parseConfigLine(l)
+		if !ok || cmd.Script {
+			continue
+		}
+		if cmd.Action == "set" {
+			names := strings.Fields(cmd.Args["numbers"])
+			switch cmd.Path {
+			case "/interface/wireless":
+				want.Wireless = append(want.Wireless, names...)
+			case "/interface/wifi":
+				want.Wifi = append(want.Wifi, names...)
+			}
+		}
+		if ssid := strings.TrimSpace(cmd.Args["ssid"]); ssid != "" && want.SSID == "" {
+			want.SSID = ssid
+		}
+	}
+	return want
+}
+
+func radioNames(rows []map[string]string) []string {
+	var out []string
+	for _, r := range rows {
+		if n := strings.TrimSpace(r["name"]); n != "" {
+			out = append(out, n)
+		}
+	}
+	return out
+}
+
+func hasRadio(rows []map[string]string, name string) bool {
+	for _, n := range radioNames(rows) {
+		if n == name {
+			return true
+		}
+	}
+	return false
+}
+
+// wifiProblems сравнивает желаемое с реальным и возвращает человеческие
+// объяснения расхождений. Пустой список — Wi-Fi применился.
+func wifiProblems(want wifiWant, wireless, wifi []map[string]string) []string {
+	var out []string
+	// Главное расхождение: пакеты разные. Тогда команды раздела Wi-Fi уходят
+	// в несуществующее меню, обёртки :do … on-error={} их глотают, а на
+	// роутере остаётся заводской SSID — ровно то, что видел пользователь.
+	if want.UsesWifi && len(wifi) == 0 && len(wireless) > 0 {
+		out = append(out, "раздел Wi-Fi не выполнен: конфиг собран для пакета wifi "+
+			"(/interface wifi …), а на роутере пакет wireless ("+
+			strings.Join(radioNames(wireless), ", ")+"). SSID и пароль остались прежними. "+
+			"Соберите конфиг с моделью hAP ac³, hAP ac², cAP ac или RB951G — "+
+			"или установите пакет wifi и перезагрузите роутер.")
+	}
+	if want.UsesWireless && len(wireless) == 0 && len(wifi) > 0 {
+		out = append(out, "раздел Wi-Fi не выполнен: конфиг собран для пакета wireless "+
+			"(/interface wireless …), а на роутере пакет wifi ("+
+			strings.Join(radioNames(wifi), ", ")+"). Соберите конфиг с моделью hAP ax²/ax³ или cAP ax.")
+	}
+	if len(want.Wireless) > 0 {
+		if len(wireless) == 0 {
+			out = append(out, "раздел Wi-Fi не выполнен: в конфиге команды для "+
+				strings.Join(want.Wireless, ", ")+", а на роутере нет пакета wireless "+
+				"(меню /interface wireless отсутствует). Конфиг собран для пакета wifi.")
+		} else {
+			var missing []string
+			for _, n := range want.Wireless {
+				if !hasRadio(wireless, n) {
+					missing = append(missing, n)
+				}
+			}
+			if len(missing) > 0 {
+				out = append(out, "раздел Wi-Fi не выполнен: нет радиоинтерфейса "+
+					strings.Join(missing, ", ")+" (на роутере: "+
+					strings.Join(radioNames(wireless), ", ")+"). Проверьте имя радио в мастере.")
+			}
+		}
+	}
+	if len(want.Wifi) > 0 && !want.UsesWifi {
+		if len(wifi) == 0 {
+			msg := "раздел Wi-Fi не выполнен: в конфиге команды для " +
+				strings.Join(want.Wifi, ", ") + ", а на роутере нет пакета wifi"
+			if names := radioNames(wireless); len(names) > 0 {
+				msg += " (есть пакет wireless: " + strings.Join(names, ", ") +
+					"). Выберите модель с пакетом wireless — hAP ac³, hAP ac², cAP ac, RB951G."
+			}
+			out = append(out, msg)
+		} else {
+			var missing []string
+			for _, n := range want.Wifi {
+				if !hasRadio(wifi, n) {
+					missing = append(missing, n)
+				}
+			}
+			if len(missing) > 0 {
+				out = append(out, "раздел Wi-Fi не выполнен: нет радиоинтерфейса "+
+					strings.Join(missing, ", ")+" (на роутере: "+
+					strings.Join(radioNames(wifi), ", ")+").")
+			}
+		}
+	}
+	// Пакет wireless задаёт ssid прямо на интерфейсе — значит его можно
+	// проверить. У пакета wifi ssid живёт в профиле configuration, там
+	// проверка была бы ложной.
+	if want.SSID != "" && len(want.Wireless) > 0 && len(wireless) > 0 {
+		var got []string
+		found := false
+		for _, r := range wireless {
+			if s := strings.TrimSpace(r["ssid"]); s != "" {
+				got = append(got, s)
+				if s == want.SSID {
+					found = true
+				}
+			}
+		}
+		if !found && len(got) > 0 {
+			out = append(out, "SSID не поменялся: на роутере «"+strings.Join(got, "», «")+
+				"», в конфиге «"+want.SSID+"». Строки /interface wireless set не выполнились — "+
+				"смотрите текст ошибок выше.")
 		}
 	}
 	return out

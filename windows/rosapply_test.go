@@ -433,3 +433,58 @@ func TestAPIPath(t *testing.T) {
 		}
 	}
 }
+
+// Реальный случай с hAP ac³: конфиг собран для пакета wifi (wifi1/wifi2), а на
+// роутере пакет wireless с wlan1/wlan2 — SSID остался заводским, а отчёт
+// говорил «готово». Теперь расхождение обязано попасть в отчёт.
+func TestWifiPackageMismatch(t *testing.T) {
+	conf := `/interface wifi configuration add name=cfg-lan ssid="Office"`
+	want := wifiWantFrom(conf)
+	if want.SSID != "Office" {
+		t.Fatalf("SSID из конфига не разобран: %+v", want)
+	}
+
+	wireless := []map[string]string{
+		{"name": "wlan1", "ssid": "MikroTik-8132E8"},
+		{"name": "wlan2", "ssid": "MikroTik-8132E9"},
+	}
+	msgs := wifiProblems(want, wireless, nil)
+	if len(msgs) == 0 {
+		t.Fatal("расхождение пакетов не замечено")
+	}
+	joined := strings.Join(msgs, " | ")
+	for _, needle := range []string{"пакет wifi", "wlan1", "wlan2", "hAP ac"} {
+		if !strings.Contains(joined, needle) {
+			t.Errorf("в объяснении нет %q: %s", needle, joined)
+		}
+	}
+
+	// Совпадающий пакет: ssid задаётся на самом wlan — сравниваем с фактом.
+	want2 := wifiWantFrom(`/interface wireless set wlan1 ssid="Office" mode=ap-bridge`)
+	if len(want2.Wireless) != 1 || want2.Wireless[0] != "wlan1" || want2.SSID != "Office" {
+		t.Fatalf("команда для wlan1 разобрана неверно: %+v", want2)
+	}
+	if msgs := wifiProblems(want2, wireless, nil); len(msgs) != 1 ||
+		!strings.Contains(msgs[0], "SSID не поменялся") {
+		t.Fatalf("старый SSID должен быть замечен: %v", msgs)
+	}
+	fixed := []map[string]string{
+		{"name": "wlan1", "ssid": "Office"},
+		{"name": "wlan2", "ssid": "Office"},
+	}
+	if msgs := wifiProblems(want2, fixed, nil); len(msgs) != 0 {
+		t.Fatalf("применённый конфиг не должен давать ошибок: %v", msgs)
+	}
+
+	// Нет радиоинтерфейса с таким именем — тоже расхождение.
+	msgs = wifiProblems(wifiWant{Wireless: []string{"wlan9"}}, wireless, nil)
+	if len(msgs) != 1 || !strings.Contains(msgs[0], "wlan9") {
+		t.Fatalf("отсутствующее радио не замечено: %v", msgs)
+	}
+
+	// Пакет wifi и профиль configuration: у интерфейса ssid нет — проверка
+	// по интерфейсам не должна ругаться.
+	if msgs := wifiProblems(wifiWant{}, nil, wireless); len(msgs) != 0 {
+		t.Fatalf("без требований ошибок быть не должно: %v", msgs)
+	}
+}

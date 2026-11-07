@@ -306,6 +306,59 @@ async function checkWizardLan() {
   ok('в конфиге есть выражения [ … ] (их выполняет роутер)', hasExpr);
 }
 
+/* Реальный случай: hAP ac³ (RBD53iG, IPQ4019) с пакетом wireless — wlan1/wlan2.
+   Опрос отдаёт плату как «hAP ac^3» (так её печатает RouterOS в выгрузках), а
+   код платы — RBD53iG-5HacD2HnD. Мастер обязан узнать модель и собрать команды
+   /interface wireless, а не /interface wifi: иначе раздел Wi-Fi молча не
+   выполняется, и SSID остаётся заводским MikroTik-8132E8. */
+async function checkWifiPackage() {
+  console.log('\nМастер: пакет Wi-Fi по плате роутера');
+  const win = boot('windows');
+  const model = (info) => win.eval('window.RosProbe.modelFor(' + JSON.stringify(info) + ')');
+
+  ok('плата RBD53iG-5HacD2HnD → hAP ac³', model({ board: 'RBD53iG-5HacD2HnD' }) === 'hap_ac3');
+  ok('плата «hAP ac^3» → hAP ac³', model({ board: 'hAP ac^3' }) === 'hap_ac3');
+  ok('плата «hAP ac³» → hAP ac³', model({ board: 'hAP ac³' }) === 'hap_ac3');
+  ok('плата C53UiG → hAP ax³', model({ board: 'C53UiG+5HPaxD2HPaxD' }) === 'hap_ax3');
+  ok('плата C52iG → hAP ax²', model({ board: 'C52iG-5HaxD2HaxD' }) === 'hap_ax2');
+  ok('неизвестная плата не притворяется моделью', model({ board: 'RB9999-XX' }) === '');
+
+  // Паспорт роутера с wireless-пакетом должен вести к wlan1, а не wifi1.
+  const fields = win.eval(`window.RosProbe.fieldsFor({
+    board: 'RBD53iG-5HacD2HnD', version: '7.10.2', wifi: 'legacy',
+    radios: ['wlan1', 'wlan2'], wifi5: true
+  })`);
+  ok('паспорт: тип Wi-Fi = legacy', fields.wifiKind === 'legacy');
+  ok('паспорт: радио wlan1', fields.wifiRadio === 'wlan1');
+  ok('паспорт: модель hAP ac³', fields.model === 'hap_ac3');
+
+  const gen = (o) => win.eval('(function(){ const w = window.ConfigWizard;' +
+    ' const o = Object.assign({}, w.defaults, ' + JSON.stringify(o) + ');' +
+    ' return w.generate(o).text || ""; })()');
+
+  // 1) Модель hAP ac³: только пакет wireless.
+  const ac3 = gen({ model: 'hap_ac3', wan: 'dhcp', lanIp: '192.168.90.1', lanPrefix: 24,
+    wifi: true, wifiSsid: 'Office', wifiPass: 'turbo2*(+', dhcp: true });
+  ok('hAP ac³: команды на wlan1', /\/interface wireless set wlan1 /.test(ac3));
+  ok('hAP ac³: SSID в команде для wlan1', /\/interface wireless set wlan1 [^\n]*ssid="?Office"?/.test(ac3));
+  ok('hAP ac³: нет команд пакета wifi', !/\/interface wifi /.test(ac3));
+  ok('hAP ac³: есть предупреждение о отсутствии пакета wireless',
+    /ВНИМАНИЕ: на роутере нет пакета wireless/.test(ac3));
+
+  // 2) Без модели и без wifiKind — по умолчанию wireless (большинство роутеров),
+  //    а не молчаливый пакет wifi, как было.
+  const unknown = gen({ wan: 'dhcp', wifi: true, wifiSsid: 'Office', wifiPass: 'Passw0rd!1', dhcp: true });
+  ok('без модели выбран пакет wireless', /\/interface wireless set wlan1 /.test(unknown));
+  ok('без модели нет команд пакета wifi', !/\/interface wifi /.test(unknown));
+
+  // 3) Явно пакет wifi (hAP ax³) — обратная сторона: предупреждение про пакет wifi.
+  const ax3 = gen({ model: 'hap_ax3', wifi: true, wifiKind: 'wifi', wifiSsid: 'Office',
+    wifiPass: 'Passw0rd!1', dhcp: true, wan: 'dhcp' });
+  ok('hAP ax³: профиль configuration в пакете wifi', /\/interface wifi configuration add /.test(ax3));
+  ok('hAP ax³: предупреждение о отсутствии пакета wifi',
+    /ВНИМАНИЕ: на роутере нет пакета wifi/.test(ax3));
+}
+
 /* Все экраны инструментов должны рисоваться без исключений.
    Раньше это ловил отдельный скрипт; теперь проверка живёт здесь, чтобы
    после правки одного экрана не падал другой (общие функции легко сломать). */
@@ -359,6 +412,7 @@ async function checkAllRoutes() {
     await checkAndroidHint();
     await checkPortCheckRestOnly();
     await checkWizardLan();
+    await checkWifiPackage();
     await checkAllRoutes();
   } catch (e) {
     fails.push('исключение: ' + (e && e.stack ? e.stack.split('\n')[0] : e));
