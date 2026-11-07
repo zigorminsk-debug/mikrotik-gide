@@ -27,60 +27,122 @@ t=780c  winbox-head=[]
 ждать по таймеру до 11 мин
 BIN=./WinBox
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: quickset (пункт y=+50)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: interfaces (пункт y=+95)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: bridge (пункт y=+146)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: ip-address (пункт y=+238, подпункт y=+53)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: ip-routes (пункт y=+238, подпункт y=+399)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: ip-services (пункт y=+238, подпункт y=+492)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: queue (пункт y=+353)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: files (пункт y=+398)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: log (пункт y=+421)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: ppp (пункт y=+170)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: system (пункт y=+338)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: dot1x (пункт y=+385)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: radius (пункт y=+477)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: tools (пункт y=+500)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: bridge-new (пункт y=+146, кнопка New)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: ip-cloud (пункт y=+238, подпункт y=+99)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
-  снято: system-users (пункт y=+530, подпункт y=+76)
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
   [старт] window=[WinBox 4.4] geo=1200x700+200+200
-  [после Enter] window=[admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox] geo=1200x700+200+200
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
+  [старт] window=[WinBox 4.4] geo=1200x700+200+200
+  [после Enter] window=[WinBox 4.4] geo=1200x700+200+200
+  [после кнопки Connect] window=[WinBox 4.4] geo=1200x700+200+200
+  [после двойного щелчка по соседу] window=[WinBox 4.4] geo=1200x700+200+200
+  подключение не удалось, окна этой группы пропущены
 === время ===
-Wed Nov  4 05:57:00 UTC 2026
+Sat Nov  7 18:24:11 UTC 2026
 === qemu-img ===
 image: chr.qcow2
 file format: qcow2
@@ -95,25 +157,6 @@ Format specific information:
     corrupt: false
     extended l2: false
 === winbox.log ===
-WBOXCONN,ERR: getting skin file fd
---- nv::message --------
- u32 [SYS_ERRNO]=ERROR_FAILED
- u32 [SYS_TYPE]=TYPE_REPLY
- u32 [SYS_STATUS]=STATUS_ERROR
- u32 [SYS_REQID]=4 0x4 4.0.0.0
- string [SYS_ERRSTR]=cannot open source file
- u32[2] [SYS_TO]=0, 1, 
- u32[2] [SYS_FROM]=2, 2, 
- string[1] [SYS_TRACE]=msg-proxy-7.24.6, 
-TUPLE,DBG: adding missing seps
-!!! TODO u32_array "Pairwise Ciphers" "WiFi"
-!!! TODO u32_array "RSN AKMS" "WiFi"
-TUPLE,DBG: adding missing seps
-WBOXSESS,INFO: upgrade check use subscribe
-PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/workspaces/__127.0.0.1.cfg.viw2"
-   versFile: NEWESTa7.stable status:"" STATE:0 fin:1 latestVersStr:
-WBOXSESS,INFO: newer version available for RouterOS:7.25.1
-WBOXSESS,INFO: first clock synced
 APP,INFO: version: "4.4"
 PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
 APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
@@ -122,73 +165,77 @@ APP,INFO: font from settings: "Inter"
 APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
 DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
-JGCACHE,INFO: cleanup skipped: lastcleanup fresh
+JGCACHE,INFO: cleanup skipped: no cache dir
 APP,UPDATE: version fetched: "4.5"
 APP,UPDATE: new version available, fetching changelog
 WBOXCONN status change "Looking up host..."
 WBOXCONN status change "Connecting..."
 WBOXCONN status change "Authenticating..."
-WBOXCONN status change "Auth OK."
-boardName=<CHR>
-boardArch=<i386>
-boardFamily=<x86>
-license=<6>
-skin=<default>
-displayName=<CHR QEMU Standard PC (i440FX + PIIX, 1996)>
-vers=<7.24.6 (long-term)>
-WBOXCONN,ERR: getting skin file fd
---- nv::message --------
- u32 [SYS_ERRNO]=ERROR_FAILED
- u32 [SYS_TYPE]=TYPE_REPLY
- u32 [SYS_STATUS]=STATUS_ERROR
- u32 [SYS_REQID]=4 0x4 4.0.0.0
- string [SYS_ERRSTR]=cannot open source file
- u32[2] [SYS_TO]=0, 1, 
- u32[2] [SYS_FROM]=2, 2, 
- string[1] [SYS_TRACE]=msg-proxy-7.24.6, 
-TUPLE,DBG: adding missing seps
-!!! TODO u32_array "Pairwise Ciphers" "WiFi"
-!!! TODO u32_array "RSN AKMS" "WiFi"
-TUPLE,DBG: adding missing seps
-WBOXSESS,INFO: upgrade check use subscribe
-PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/workspaces/__127.0.0.1.cfg.viw2"
-   versFile: NEWESTa7.stable status:"" STATE:0 fin:1 latestVersStr:
-WBOXSESS,INFO: newer version available for RouterOS:7.25.1
-WBOXSESS,INFO: first clock synced
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: no cache dir
+APP,UPDATE: version fetched: "4.5"
+APP,UPDATE: new version available, fetching changelog
+WBOXCONN status change "Looking up host..."
+WBOXCONN status change "Connecting..."
+WBOXCONN status change "Authenticating..."
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: no cache dir
+APP,UPDATE: version fetched: "4.5"
+APP,UPDATE: new version available, fetching changelog
+WBOXCONN status change "Looking up host..."
+WBOXCONN status change "Connecting..."
+WBOXCONN status change "Authenticating..."
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: no cache dir
+APP,UPDATE: version fetched: "4.5"
+APP,UPDATE: new version available, fetching changelog
+WBOXCONN status change "Looking up host..."
+WBOXCONN status change "Connecting..."
+WBOXCONN status change "Authenticating..."
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
 === процессы ===
-runner      3855 41.4  2.1 3158520 350308 ?      Sl   05:32  10:11 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      4269  0.2  0.5 225632 81912 ?        S    05:48   0:01 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      6035  1.3  0.6 947860 105200 ?       Sl   05:56   0:00 ./WinBox
+runner      3951  200  0.7 3109720 115048 ?      Sl   17:47  74:19 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4299  0.1  0.5 230520 88096 ?        S    18:03   0:02 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      7708  0.5  0.5 859928 91152 ?        Sl   18:23   0:00 ./WinBox
 === файлы ===
-total 1648
--rw-r--r-- 1 runner runner  61193 Nov  4 05:48 01-login.png
--rw-r--r-- 1 runner runner  61864 Nov  4 05:56 02-typed.png
--rw-r--r-- 1 runner runner  62251 Nov  4 05:56 03-desktop.png
--rw-r--r-- 1 runner runner   2135 Nov  4 05:34 08-chr-120.png
--rw-r--r-- 1 runner runner   2147 Nov  4 05:36 08-chr-210.png
--rw-r--r-- 1 runner runner   2147 Nov  4 05:33 08-chr-30.png
--rw-r--r-- 1 runner runner   1066 Nov  4 05:38 08-chr-300.png
--rw-r--r-- 1 runner runner   1075 Nov  4 05:40 08-chr-390.png
--rw-r--r-- 1 runner runner   1066 Nov  4 05:41 08-chr-480.png
--rw-r--r-- 1 runner runner   1075 Nov  4 05:43 08-chr-570.png
--rw-r--r-- 1 runner runner   1066 Nov  4 05:45 08-chr-660.png
--rw-r--r-- 1 runner runner   1075 Nov  4 05:47 08-chr-750.png
--rw-r--r-- 1 runner runner   3655 Nov  4 05:31 README.md
--rw-r--r-- 1 runner runner   8376 Nov  4 05:57 report.txt
--rw-r--r-- 1 runner runner 110024 Nov  4 05:55 win-bridge-new.png
--rw-r--r-- 1 runner runner  80389 Nov  4 05:50 win-bridge.png
--rw-r--r-- 1 runner runner  73423 Nov  4 05:54 win-dot1x.png
--rw-r--r-- 1 runner runner  73601 Nov  4 05:52 win-files.png
--rw-r--r-- 1 runner runner  86400 Nov  4 05:49 win-interfaces.png
--rw-r--r-- 1 runner runner  72082 Nov  4 05:50 win-ip-address.png
--rw-r--r-- 1 runner runner  80758 Nov  4 05:56 win-ip-cloud.png
--rw-r--r-- 1 runner runner  76618 Nov  4 05:51 win-ip-routes.png
--rw-r--r-- 1 runner runner  99735 Nov  4 05:51 win-ip-services.png
--rw-r--r-- 1 runner runner  79996 Nov  4 05:53 win-log.png
--rw-r--r-- 1 runner runner  85060 Nov  4 05:53 win-ppp.png
--rw-r--r-- 1 runner runner  82482 Nov  4 05:52 win-queue.png
--rw-r--r-- 1 runner runner 108821 Nov  4 05:49 win-quickset.png
--rw-r--r-- 1 runner runner  77111 Nov  4 05:54 win-radius.png
--rw-r--r-- 1 runner runner  66307 Nov  4 05:56 win-system-users.png
--rw-r--r-- 1 runner runner  82306 Nov  4 05:53 win-system.png
--rw-r--r-- 1 runner runner  76125 Nov  4 05:55 win-tools.png
+total 252
+-rw-r--r-- 1 runner runner 61193 Nov  7 18:03 01-login.png
+-rw-r--r-- 1 runner runner 61864 Nov  7 18:23 02-typed.png
+-rw-r--r-- 1 runner runner 61831 Nov  7 18:24 03-desktop.png
+-rw-r--r-- 1 runner runner  2135 Nov  7 17:49 08-chr-120.png
+-rw-r--r-- 1 runner runner  2147 Nov  7 17:51 08-chr-210.png
+-rw-r--r-- 1 runner runner  2147 Nov  7 17:47 08-chr-30.png
+-rw-r--r-- 1 runner runner  2135 Nov  7 17:53 08-chr-300.png
+-rw-r--r-- 1 runner runner  2147 Nov  7 17:54 08-chr-390.png
+-rw-r--r-- 1 runner runner  2135 Nov  7 17:56 08-chr-480.png
+-rw-r--r-- 1 runner runner  2147 Nov  7 17:58 08-chr-570.png
+-rw-r--r-- 1 runner runner  2135 Nov  7 18:00 08-chr-660.png
+-rw-r--r-- 1 runner runner  2147 Nov  7 18:01 08-chr-750.png
+-rw-r--r-- 1 runner runner  3655 Nov  7 17:46 README.md
+-rw-r--r-- 1 runner runner    76 Nov  7 18:24 ps.txt
+-rw-r--r-- 1 runner runner 14586 Nov  7 18:24 report.txt
+-rw-r--r-- 1 runner runner   349 Nov  7 18:24 xwininfo-2.txt
