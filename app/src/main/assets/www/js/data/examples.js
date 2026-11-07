@@ -62,6 +62,31 @@ window.EXAMPLES = [
     pitfall: 'Если LTE и основной канал имеют одинаковую distance, маршруты начнут «прыгать». Резерв всегда с большей distance.'
   },
   {
+    id: 'ex-wan-probe-failover',
+    t: 'Резервный интернет: у каждого канала своя проба',
+    d: 'Два провайдера в любых сочетаниях (DHCP/PPPoE/LTE). Каждый канал проверяется своим ' +
+      'пингом через отдельную таблицу маршрутизации, возврат на основной — после минуты ' +
+      'устойчивых ответов, поэтому роутер не «качелит».',
+    ic: 'down',
+    cat: 'internet',
+    art: 'task-wan-failover',
+    blocks: [
+      { h: '1. Таблицы и привязка проб', c: ':if ([:len [/routing table find where name="probe-wan1"]] = 0) do={/routing table add name=probe-wan1 fib}\n:if ([:len [/routing table find where name="probe-wan2"]] = 0) do={/routing table add name=probe-wan2 fib}\n/ip firewall mangle add chain=output dst-address=1.1.1.1 action=mark-routing new-routing-mark=probe-wan1 passthrough=no comment="wan-failover probe 1"\n/ip firewall mangle add chain=output dst-address=8.8.8.8 action=mark-routing new-routing-mark=probe-wan2 passthrough=no comment="wan-failover probe 2"' },
+      { h: '2. Подключение резерва (пример: LTE)', c: ':do {/interface lte set [find] disabled=no} on-error={}\n/ip dhcp-client add interface=lte1 add-default-route=yes default-route-distance=2 use-peer-dns=no disabled=no\n/interface list member add interface=lte1 list=WAN' },
+      { h: '3. Скрипт и планировщик', c: '# тело скрипта целиком — в статье «Резервный интернет: два провайдера»\n# затем:\n/system scheduler add name=wan-failover interval=10s start-time=startup on-event=wan-failover' },
+      { h: '4. NAT на оба канала', c: '/ip firewall nat add chain=srcnat out-interface-list=WAN action=masquerade' }
+    ],
+    check: '/routing table print\n/ip firewall mangle print where comment~"wan-failover"\n/ip route print where dst-address=0.0.0.0/0\n/log print where message~"wan-failover"',
+    tips: [
+      'Адреса проб должны различаться: 1.1.1.1 для основного, 8.8.8.8 для резервного.',
+      'Chain в mangle — output: это пинги самого роутера, а не трафик клиентов.',
+      'Пороги: fails=2 (20 с) и ups=6 (60 с) — начало хорошее для офиса.',
+      'Для PPPoE вместо /ip dhcp-client в скрипте используется /interface pppoe-client set … default-route-distance.'
+    ],
+    pitfall: 'Если оба маршрута по умолчанию имеют одинаковую distance, скрипт ничего не изменит: ' +
+      'резерв должен быть с distance 2, иначе трафик идёт по обоим «как получится».'
+  },
+  {
     id: 'ex-wifi-guest',
     t: 'Гостевая сеть Wi-Fi с изоляцией',
     d: 'Отдельный SSID, VLAN 20, свой DHCP и полная изоляция от рабочей сети, но с доступом в интернет.',

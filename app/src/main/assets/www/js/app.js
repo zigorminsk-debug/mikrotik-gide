@@ -1755,11 +1755,32 @@
       wizField('w-pppoePass', 'Пароль PPPoE', o.pppoePass) +
       '</div></section>';
 
-    html += '<section class="card"><h3 class="card-h">' + svg('down', 15) + 'Резервный канал</h3>' +
-      wizSwitch('w-failover', 'Второй WAN (LTE, второй провайдер)', o.failover, 'резервный маршрут с дистанцией 2') +
+    const wanKindOpts = [
+      { v: 'dhcp', t: 'DHCP (кабель от провайдера)' },
+      { v: 'pppoe', t: 'PPPoE (логин и пароль)' },
+      { v: 'lte', t: 'LTE (модем)' }
+    ];
+    html += '<section class="card"><h3 class="card-h">' + svg('down', 15) + 'Резервный интернет</h3>' +
+      wizSwitch('w-failover', 'Два провайдера: основной и резервный', o.failover,
+        'переключение по пингу, возврат после устойчивой связи') +
       '<div class="wz-group' + (o.failover ? '' : ' off') + '" data-g="failover">' +
-      wizField('w-wan2Port', 'Порт резервного канала', o.wan2Port, 'например lte1 или ether5') +
-      wizField('w-wan2Check', 'Адрес проверки канала', o.wan2Check, 'netwatch переключит маршрут') +
+      wizSelect('w-wan1Kind', 'Основной провайдер', o.wan1Kind || o.wan, wanKindOpts,
+        'как подключён основной канал') +
+      wizField('w-wan1Port', 'Интерфейс основного', o.wan1Port || o.wanPort, 'обычно ether1') +
+      wizField('w-wan1Probe', 'Проверочный адрес основного', o.wan1Probe,
+        'пинг через основной канал, например 1.1.1.1') +
+      wizSelect('w-wan2Kind', 'Резервный провайдер', o.wan2Kind, wanKindOpts, 'как подключён резерв') +
+      wizField('w-wan2Port', 'Интерфейс резервного', o.wan2Port, 'lte1, ether5 или pppoe-канал') +
+      wizField('w-wan2Check', 'Проверочный адрес резервного', o.wan2Check,
+        'пинг через резервный канал, например 8.8.8.8') +
+      wizField('w-wan2PppoeUser', 'Логин PPPoE резерва', o.wan2PppoeUser, 'нужен только для PPPoE') +
+      wizField('w-wan2PppoePass', 'Пароль PPPoE резерва', o.wan2PppoePass, 'нужен только для PPPoE') +
+      wizField('w-wanDownSecs', 'Считать канал упавшим, секунд', o.wanDownSecs, 'проверки каждые 10 с; по умолчанию 20') +
+      wizField('w-wanUpSecs', 'Возврат на основной, секунд устойчивого пинга', o.wanUpSecs, 'по умолчанию 60') +
+      '<p class="wz-h">Каждый канал проверяется своим адресом: 1.1.1.1 всегда идёт в основной, ' +
+      '8.8.8.8 — в резервный. Пока основной отвечает, трафик идёт через него; после ' +
+      esc(o.wanDownSecs) + ' с без ответа включается резерв, а возврат будет только после ' +
+      esc(o.wanUpSecs) + ' с непрерывных ответов — без «качелей».</p>' +
       '</div></section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('iface', 15) + 'LAN, DHCP и DNS</h3>' +
@@ -2723,7 +2744,13 @@
         return out;
       })(),
       model: g('w-model', 'generic'),
-      failover: on('w-failover'), wan2Port: g('w-wan2Port', 'lte1'), wan2Check: g('w-wan2Check', '8.8.8.8'),
+      failover: on('w-failover'),
+      wan1Kind: g('w-wan1Kind', 'dhcp'), wan1Port: g('w-wan1Port', 'ether1'),
+      wan1Probe: g('w-wan1Probe', '1.1.1.1'),
+      wan2Kind: g('w-wan2Kind', 'dhcp'), wan2Port: g('w-wan2Port', 'lte1'),
+      wan2Check: g('w-wan2Check', '8.8.8.8'),
+      wan2PppoeUser: g('w-wan2PppoeUser', 'login2'), wan2PppoePass: g('w-wan2PppoePass', 'password2'),
+      wanDownSecs: g('w-wanDownSecs', 20), wanUpSecs: g('w-wanUpSecs', 60),
       harden: on('w-harden'), resetBefore: on('w-reset'),
       hotspot: on('w-hotspot'), hotspotPass: g('w-hotspotPass', 'guest-2026'),
       qos: on('w-qos'), wanDown: g('w-wanDown', 100), wanUp: g('w-wanUp', 100),
@@ -2881,7 +2908,8 @@
         wizStore(wizCollect());
       });
     });
-    ['w-wan', 'w-ipv6', 'w-tz', 'w-wifiCountry', 'w-wifiWidth', 'w-model'].forEach(function (id) {
+    ['w-wan', 'w-ipv6', 'w-tz', 'w-wifiCountry', 'w-wifiWidth', 'w-model',
+      'w-wan1Kind', 'w-wan2Kind'].forEach(function (id) {
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', function () { sync(); wizStore(wizCollect()); });
     });
