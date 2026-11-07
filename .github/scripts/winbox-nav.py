@@ -194,8 +194,29 @@ def fill_address(X, Y, wid):
     return False
 
 
-def connect(X, Y, W, H, tries=20):
-    """Заполняем Connect to и жмём Connect — до получаса, пока не появится дерево.
+def neighbors_connect(X, Y, W, H):
+    """Вход без клавиатуры: вкладка Neighbors → двойной щелчок по роутеру.
+
+    Надёжнее ввода адреса: в Xvfb фокус клавиатуры гуляет, а мышь работает
+    всегда. CHR виден в Neighbors по MAC, даже если адрес не набирается.
+    """
+    click(X + 744, Y + 48)               # вкладка Neighbors
+    time.sleep(1.5)
+    words = ocr(X + 380, Y + 60, W - 430, 150, 'neighbors')
+    hit = find(words, '127.0.0.1') or find(words, 'CHR')
+    if not hit:
+        log('  Neighbors: роутера в списке ещё нет (%s)' %
+            ' '.join(w[0] for w in words[:14]))
+        return False
+    log('  Neighbors: нашёл %r, двойной щелчок' % hit[0])
+    run(['xdotool', 'mousemove', str(hit[1]), str(hit[2])])
+    run(['xdotool', 'click', '--repeat', '2', '--delay', '120', '1'])
+    time.sleep(10)
+    return logged_in(X, Y, H)
+
+
+def connect(X, Y, W, H, tries=24):
+    """Вход в роутер: Neighbors, затем ввод адреса, затем кнопка Connect.
 
     RouterOS в QEMU грузится 10-15 минут, а порт 8291 открыт сразу, поэтому
     «порт отвечает» ничего не значит: единственный критерий — дерево меню.
@@ -204,18 +225,22 @@ def connect(X, Y, W, H, tries=20):
         if logged_in(X, Y, H):
             log('вход выполнен (попытка %d)' % attempt)
             return True
-        wid = activate()
+        activate()
         escape(1)
-        fill_address(X, Y, wid)
-        run(['xdotool', 'key', 'Return'])
-        time.sleep(9)
-        if logged_in(X, Y, H):
-            log('вход выполнен по Enter (попытка %d)' % attempt)
+        if neighbors_connect(X, Y, W, H):
+            log('вход через Neighbors (попытка %d)' % attempt)
             return True
+        wid = activate()
+        if fill_address(X, Y, wid):
+            run(['xdotool', 'key', 'Return'])
+            time.sleep(9)
+            if logged_in(X, Y, H):
+                log('вход по Enter (попытка %d)' % attempt)
+                return True
         click(X + 248, Y + 379)          # кнопка Connect
         time.sleep(9)
         if logged_in(X, Y, H):
-            log('вход выполнен по кнопке Connect (попытка %d)' % attempt)
+            log('вход по кнопке Connect (попытка %d)' % attempt)
             return True
         log('  попытка %d: роутер ещё не пустил, ждём 30 с' % attempt)
         time.sleep(30)
