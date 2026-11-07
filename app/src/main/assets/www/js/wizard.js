@@ -44,7 +44,17 @@
     dnsStatic: [],          // [{name, address}] — локальные имена
     segments: [],           // [{vlanId, name, ip, port}] — дополнительные VLAN
     model: 'generic',       // generic | hex | ax2 | ax3 | rb4011 | crs328
-    failover: false, wan2Port: 'lte1', wan2Check: '8.8.8.8',
+    failover: false,
+    /* Резервный интернет. Каждый канал описывается своей тройкой:
+       тип подключения (dhcp | pppoe | lte | static), интерфейс и адрес,
+       который пингуется ИМЕННО через этот канал. Переключение — по пингу,
+       возврат — только после устойчивых ответов (wanUpSecs). */
+    wan1Kind: '', wan2Kind: '',           // пусто = взять из wan / dhcp для второго
+    wan1Port: '', wan2Port: 'lte1',
+    wan1Probe: '1.1.1.1', wan2Check: '8.8.8.8',
+    wan2PppoeUser: 'login2', wan2PppoePass: 'password2',
+    wanDownSecs: 20,   // сколько «нет пинга» держится, прежде чем переключиться
+    wanUpSecs: 60,     // сколько секунд устойчивого пинга, прежде чем вернуться
     harden: false,          // расширенная защита (сервисы, MAC-сервер, blacklist)
     hotspot: false, hotspotPass: 'guest-2026',
     qos: false, wanDown: 100, wanUp: 100,
@@ -433,6 +443,19 @@
       const lanList = expandPorts(opt(o, 'lanPorts'));
       if (lanList.indexOf(w2) >= 0) warn('wan2Port', 'Порт резервного канала входит в список LAN — уберите его оттуда');
       if (!ipOk(opt(o, 'wan2Check'))) warn('wan2Check', 'Адрес проверки канала не похож на IP — оставьте 8.8.8.8');
+      if (!ipOk(clean(opt(o, 'wan1Probe')))) warn('wan1Probe', 'Адрес проверки основного канала не похож на IP — оставьте 1.1.1.1');
+      if (clean(opt(o, 'wan1Probe')) === clean(opt(o, 'wan2Check'))) {
+        err('wan2Check', 'Адреса проверки основного и резервного канала должны различаться — ' +
+          'иначе один и тот же пинг нельзя направить в два разных канала');
+      }
+      const down = parseInt(opt(o, 'wanDownSecs'), 10);
+      const up = parseInt(opt(o, 'wanUpSecs'), 10);
+      if (!(down >= 5 && down <= 300)) err('wanDownSecs', 'Падение канала: от 5 до 300 секунд');
+      if (!(up >= 10 && up <= 900)) err('wanUpSecs', 'Возврат на основной: от 10 до 900 секунд');
+      if (up < down) warn('wanUpSecs', 'Возврат быстрее переключения — рискуете получить «качели»');
+      if (clean(opt(o, 'wan2Kind')) === 'pppoe' && String(opt(o, 'wan2PppoeUser')).length < 2) {
+        err('wan2PppoeUser', 'Для PPPoE-резерва укажите логин провайдера');
+      }
     }
 
     const segVlans = {};
@@ -697,28 +720,176 @@
     }
 
     if (failoverOn) {
-      push('', '# Резервный канал: основной маршрут дистанция 1, резервный — 2');
-      push('/ip dhcp-client add interface=' + wan2Port + ' add-default-route=yes default-route-distance=2 use-peer-dns=no disabled=no',
-        '/interface list member add interface=' + wan2Port + ' list=WAN');
-      let downCmd, upCmd;
-      if (wanMode === 'static') {
-        const gw = clean(opt(o, 'wanGw'));
-        downCmd = '/ip route set [find dst-address=0.0.0.0/0 gateway=' + gw + '] distance=10';
-        upCmd = '/ip route set [find dst-address=0.0.0.0/0 gateway=' + gw + '] distance=1';
-      } else if (wanMode === 'pppoe') {
-        downCmd = '/interface pppoe-client set [find name=wan-pppoe] default-route-distance=10';
-        upCmd = '/interface pppoe-client set [find name=wan-pppoe] default-route-distance=1';
+      /* ---------- Резервный интернет с проверкой пингом ----------
+         Наивный failover «netwatch пингует 8.8.8.8 и меняет distance»
+         не годится: он не проверяет резервный канал, пинг с роутера идёт
+         по главной таблице и не говорит, какой провайдер отвечает, а
+         возврат происходит на первом же пакете — получаются «качели».
+
+         Здесь каждый канал проверяется СВОИМ адресом, привязанным к каналу
+         через mangle + отдельные таблицы маршрутизации. Поэтому проба идёт
+         именно через нужного провайдера, даже когда он не используется.
+         Возврат — только после серии успешных проверок (wanUpSecs), иначе
+         трафик остаётся на резерве. */
+      const w2Kind = clean(opt(o, 'wan2Kind')) || (wan2Port === 'lte1' ? 'lte' : 'dhcp');
+      const w1Kind = clean(opt(o, 'wan1Kind')) || wanMode;
+      const probe1 = ipOk(clean(opt(o, 'wan1Probe'))) ? clean(opt(o, 'wan1Probe')) : '1.1.1.1';
+      const probe2 = ipOk(clean(opt(o, 'wan2Check'))) ? clean(opt(o, 'wan2Check')) : '8.8.8.8';
+      const step = 10;   // интервал планировщика, секунд
+      const downSecs = Math.max(5, parseInt(opt(o, 'wanDownSecs'), 10) || 20);
+      const upSecs = Math.max(10, parseInt(opt(o, 'wanUpSecs'), 10) || 60);
+      const failCount = Math.max(2, Math.round(downSecs / step));
+      const upCount = Math.max(2, Math.round(upSecs / step));
+      const wan1If = wanMode === 'pppoe' ? 'wan-pppoe' : wanPort;
+      const wan2If = w2Kind === 'pppoe' ? 'wan2-pppoe' : wan2Port;
+
+      push('', '# ---------- Резервный интернет: два канала, проверка пингом ----------');
+      push('# Основной канал (' + w1Kind + '): ' + wan1If + ', проба ' + probe1,
+        '# Резервный канал (' + w2Kind + '): ' + wan2If + ', проба ' + probe2,
+        '# Падение считается после ' + failCount + ' неудачных проверок подряд (' + downSecs + ' с),',
+        '# возврат на основной — после ' + upCount + ' удачных подряд (' + upSecs + ' с устойчивого пинга).');
+
+      // Подключение резервного канала
+      if (w2Kind === 'pppoe') {
+        push('/interface pppoe-client add name=wan2-pppoe interface=' + wan2Port +
+          ' user=' + q(opt(o, 'wan2PppoeUser')) + ' password=' + q(opt(o, 'wan2PppoePass')) +
+          ' add-default-route=yes default-route-distance=2 use-peer-dns=no disabled=no',
+          '/interface list member add interface=wan2-pppoe list=WAN');
+      } else if (w2Kind === 'lte') {
+        push('# LTE-интерфейс создаётся сам, когда модем определён: /interface lte print',
+          ':do {/interface lte set [find] disabled=no} on-error={}',
+          ':do {/ip route set [find dst-address="0.0.0.0/0" gateway~"' + wan2Port + '"] distance=2} on-error={}',
+          ':do {/interface list member add interface=' + wan2Port + ' list=WAN} on-error={}');
       } else {
-        downCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=10';
-        upCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=1';
+        push('/ip dhcp-client add interface=' + wan2Port + ' add-default-route=yes default-route-distance=2 use-peer-dns=no disabled=no',
+          ':do {/interface list member add interface=' + wan2Port + ' list=WAN} on-error={}');
       }
-      if (mailOn) {
-        downCmd += '; ' + mailSend('WAN1 down', 'Основной канал упал, включён резервный маршрут.');
-        upCmd += '; ' + mailSend('WAN1 up', 'Основной канал восстановлен.');
+
+      // Отдельные таблицы: проба каждого канала идёт своим путём
+      push('# Таблицы маршрутизации для проб: адрес пробы всегда уходит в свой канал',
+        ':if ([:len [/routing table find where name="probe-wan1"]] = 0) do={/routing table add name=probe-wan1 fib}',
+        ':if ([:len [/routing table find where name="probe-wan2"]] = 0) do={/routing table add name=probe-wan2 fib}',
+        ':if ([:len [/ip firewall mangle find where comment="wan-failover probe 1"]] = 0) do={' +
+          '/ip firewall mangle add chain=output dst-address=' + probe1 +
+          ' action=mark-routing new-routing-mark=probe-wan1 passthrough=no comment="wan-failover probe 1"}',
+        ':if ([:len [/ip firewall mangle find where comment="wan-failover probe 2"]] = 0) do={' +
+          '/ip firewall mangle add chain=output dst-address=' + probe2 +
+          ' action=mark-routing new-routing-mark=probe-wan2 passthrough=no comment="wan-failover probe 2"}',
+        '# Шлюз канала (DHCP/PPPoE/LTE) известен только после подключения, поэтому маршруты',
+        '# для проб скрипт создаёт и обновляет сам — вручную их прописывать не нужно.');
+
+      // Что делать с маршрутом основного канала при падении и возврате
+      let offCmd, onCmd;
+      if (w1Kind === 'static') {
+        const gw = clean(opt(o, 'wanGw'));
+        offCmd = '/ip route set [find dst-address="0.0.0.0/0" gateway=' + gw + '] distance=20';
+        onCmd = '/ip route set [find dst-address="0.0.0.0/0" gateway=' + gw + '] distance=1';
+      } else if (w1Kind === 'pppoe') {
+        offCmd = '/interface pppoe-client set [find name=wan-pppoe] default-route-distance=20';
+        onCmd = '/interface pppoe-client set [find name=wan-pppoe] default-route-distance=1';
+      } else if (w1Kind === 'lte') {
+        offCmd = '/ip route set [find dst-address="0.0.0.0/0" gateway~"' + wan1If + '"] distance=20';
+        onCmd = '/ip route set [find dst-address="0.0.0.0/0" gateway~"' + wan1If + '"] distance=1';
+      } else {
+        offCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=20';
+        onCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=1';
       }
-      push('/tool netwatch add host=' + (ipOk(opt(o, 'wan2Check')) ? clean(opt(o, 'wan2Check')) : '8.8.8.8') +
-        ' interval=30s comment="wan1 failover" down-script=' + q(downCmd) + ' up-script=' + q(upCmd),
-        '# Если канал оживёт, netwatch вернёт основному маршруту дистанцию 1.');
+
+      // Сам скрипт: многострочный, поэтому в конфиг уходит одной строкой
+      // с \r\n — так RouterOS хранит его в /system script (как в .rsc-выгрузке).
+      const common = [
+        '# wan-failover: переключение на резервный канал по пингу, без «качелей».',
+        '# Проба каждого канала идёт через свою таблицу (mangle + probe-wan1/2),',
+        '# поэтому видно, какой провайдер жив, даже когда трафик идёт через другой.',
+        ':local wan1If "' + wan1If + '"',
+        ':local wan2If "' + wan2If + '"',
+        ':local p1a "' + probe1 + '"',
+        ':local p2a "' + probe2 + '"',
+        '# fails — подряд неудачных проверок до переключения (' + downSecs + ' с),',
+        '# ups — подряд удачных проверок до возврата (' + upSecs + ' с)',
+        ':local fails ' + failCount,
+        ':local ups ' + upCount,
+        ':global wanMode',
+        ':global wanBad',
+        ':global wanGood',
+        ':if ([:typeof $wanMode] = "nothing") do={:set wanMode "main"}',
+        ':if ([:typeof $wanBad] = "nothing") do={:set wanBad 0}',
+        ':if ([:typeof $wanGood] = "nothing") do={:set wanGood 0}',
+        '',
+        '# 1. Шлюз канала и служебный маршрут для пробы',
+        ':local gw ""',
+        ':local pz ""',
+        ':do {',
+        '  :foreach r in=[/ip route find where dst-address="0.0.0.0/0" and gateway~$wan1If] do={',
+        '    :set pz [/ip route get $r gateway]',
+        '  }',
+        '} on-error={}',
+        ':if ([:typeof $pz] = "str") do={',
+        '  :local cut [:find $pz "%"]',
+        '  :if ([:typeof $cut] = "num") do={:set gw [:pick $pz 0 $cut]} else={:set gw $pz}',
+        '}',
+        ':local p1 0',
+        ':local p2 0',
+        ':if ($gw != "") do={',
+        '  :local rt [/ip route find where routing-table="probe-wan1"]',
+        '  :if ([:len $rt] = 0) do={',
+        '    /ip route add dst-address=0.0.0.0/0 gateway=$gw routing-table=probe-wan1 distance=1 comment="wan-failover probe-route 1"',
+        '  } else={',
+        '    :if ([/ip route get ($rt->0) gateway] != $gw) do={/ip route set ($rt->0) gateway=$gw}',
+        '  }',
+        '}',
+        ':local gw2 ""',
+        ':local pz2 ""',
+        ':do {',
+        '  :foreach r in=[/ip route find where dst-address="0.0.0.0/0" and gateway~$wan2If] do={',
+        '    :set pz2 [/ip route get $r gateway]',
+        '  }',
+        '} on-error={}',
+        ':if ([:typeof $pz2] = "str") do={',
+        '  :local cut2 [:find $pz2 "%"]',
+        '  :if ([:typeof $cut2] = "num") do={:set gw2 [:pick $pz2 0 $cut2]} else={:set gw2 $pz2}',
+        '}',
+        ':if ($gw2 != "") do={',
+        '  :local rt2 [/ip route find where routing-table="probe-wan2"]',
+        '  :if ([:len $rt2] = 0) do={',
+        '    /ip route add dst-address=0.0.0.0/0 gateway=$gw2 routing-table=probe-wan2 distance=1 comment="wan-failover probe-route 2"',
+        '  } else={',
+        '    :if ([/ip route get ($rt2->0) gateway] != $gw2) do={/ip route set ($rt2->0) gateway=$gw2}',
+        '  }',
+        '}',
+        '',
+        '# 2. Параллельная проверка: каждый пинг уходит в свой канал',
+        ':if ($gw != "") do={:set p1 [/ping $p1a count=3 interval=200ms]}',
+        ':if ($gw2 != "") do={:set p2 [/ping $p2a count=3 interval=200ms]}',
+        '',
+        '# 3. Серии: any fail — счётчик возврата обнуляется (защита от «качелей»)',
+        ':if ($p1 > 0) do={:set wanGood ($wanGood + 1); :set wanBad 0} else={:set wanBad ($wanBad + 1); :set wanGood 0}',
+        '',
+        '# 4. Переключение',
+        ':if ($wanMode = "main") do={',
+        '  :if ($wanBad >= $fails) do={',
+        '    :if ($p2 > 0) do={',
+        '      ' + offCmd,
+        '      :set wanMode "backup"',
+        '      :log warning "wan-failover: основной канал не отвечает — включён резервный"',
+        '    } else={',
+        '      :log error "wan-failover: не отвечает ни основной, ни резервный канал"',
+        '    }',
+        '  }',
+        '} else={',
+        '  :if ($wanGood >= $ups) do={',
+        '    ' + onCmd,
+        '    :set wanMode "main"',
+        '    :log info "wan-failover: основной канал устойчив — вернулся на него"',
+        '  }',
+        '}'
+      ];
+      const BS = String.fromCharCode(92), NL = String.fromCharCode(10), Q = String.fromCharCode(34);
+      const srcText = common.join(NL).split(BS).join(BS + BS).split(Q).join(BS + Q).split(NL).join(BS + 'r' + BS + 'n');
+      push('/system script add name=wan-failover policy=read,write,test,policy source=' + Q + srcText + Q,
+        ':if ([:len [/system scheduler find where name="wan-failover"]] = 0) do={' +
+          '/system scheduler add name=wan-failover interval=' + step + 's start-time=startup on-event=wan-failover}',
+        '# Проверка: /system script run wan-failover; /log print where message~"wan-failover"');
     }
 
     sec('LAN, DHCP и DNS');

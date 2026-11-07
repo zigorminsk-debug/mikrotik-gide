@@ -45,7 +45,7 @@ window.COURSE = [
   {
     day: 7, title: 'Надёжность: резерв, мониторинг, диагностика', hours: 1.5,
     goal: 'Сделать так, чтобы сеть переживала сбои, и уметь быстро находить причину.',
-    items: ['task-failover', 'task-backup-automation', 'tool-netwatch', 'tool-torch', 'task-monitoring'],
+    items: ['task-failover', 'task-wan-failover', 'task-backup-automation', 'tool-netwatch', 'tool-torch', 'task-monitoring'],
     task: 'Настройте резервный канал с netwatch, автобэкап, отправку логов и проверьте переключение, отключив основной линк.',
     check: '/tool netwatch print\n/log print where topics~"netwatch"'
   }

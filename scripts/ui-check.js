@@ -359,6 +359,109 @@ async function checkWifiPackage() {
     /ВНИМАНИЕ: на роутере нет пакета wifi/.test(ax3));
 }
 
+/* Резервный интернет: два провайдера, проверка каждого канала своим пингом.
+   Проверяем и статью (её читают), и генератор (по ней настраивают роутер). */
+async function checkWanFailover() {
+  console.log('\nРезервный интернет: пробы, пороги, возврат');
+  const win = boot('windows');
+
+  const art = win.eval(`(function(){
+    const D = window.DATA || [];
+    for (let i = 0; i < D.length; i++) {
+      const its = D[i].items || [];
+      for (let j = 0; j < its.length; j++) if (its[j].id === 'task-wan-failover') return its[j];
+    }
+    return null;
+  })()`);
+  ok('статья о резервном интернете есть', !!art);
+  if (art) {
+    ok('шагов не меньше десяти', (art.steps || []).length >= 10, 'шагов: ' + (art.steps || []).length);
+    ok('схем окон не меньше четырёх', (art.scenes || []).length >= 4);
+    const body = Array.isArray(art.config) ? art.config.join('\n') : String(art.config || '');
+    ok('есть тело скрипта для копирования',
+      /:local ups 6/.test(body) && /:local fails 2/.test(body));
+    ok('в скрипте статьи проба каждого канала', /1\.1\.1\.1/.test(body) && /8\.8\.8\.8/.test(body));
+    ok('объяснено про возврат и «качели»',
+      /возврат/i.test(art.purpose) && /(качел|дёрга)/i.test(art.purpose));
+    // Скрипт вставляют руками, поэтому он должен быть синтаксически целым:
+    // парные скобки и кавычки, без «висячих» комментариев в конце строк.
+    const opens = (body.match(/\{/g) || []).length, closes = (body.match(/\}/g) || []).length;
+    ok('скобки в теле скрипта парные', opens === closes, opens + ' открыто, ' + closes + ' закрыто');
+    ok('кавычки в теле скрипта парные',
+      (body.match(/"/g) || []).length % 2 === 0);
+    ok('в теле скрипта нет комментариев после команды',
+      !/^[^#\n]+#/m.test(body));
+    ok('есть испытание с выдёргиванием кабеля',
+      (art.steps || []).some(s => /Выдерните кабель/.test(s.d || '')));
+    ok('есть ошибка про одинаковые адреса проверки',
+      (art.mistakes || []).some(m => /одним адресом/.test(m)));
+  }
+
+  const gen = (o) => win.eval('(function(){ const w = window.ConfigWizard;' +
+    ' const o = Object.assign({}, w.defaults, ' + JSON.stringify(o) + ');' +
+    ' return w.generate(o).text || ""; })()');
+  const val = (o) => win.eval('(function(){ const w = window.ConfigWizard;' +
+    ' const o = Object.assign({}, w.defaults, ' + JSON.stringify(o) + ');' +
+    ' return w.validate(o) || []; })()');
+
+  const base = { model: 'hap_ac3', wan: 'dhcp', wanPort: 'ether1', dhcp: true, nat: true,
+    failover: true, wan1Kind: 'dhcp', wan2Kind: 'lte', wan2Port: 'lte1',
+    wan1Probe: '1.1.1.1', wan2Check: '8.8.8.8', wanDownSecs: 20, wanUpSecs: 60 };
+  const conf = gen(base);
+
+  ok('две таблицы маршрутизации для проб',
+    /routing table add name=probe-wan1/.test(conf) && /routing table add name=probe-wan2/.test(conf));
+  ok('mangle: проба основного помечена probe-wan1',
+    /chain=output dst-address=1\.1\.1\.1 action=mark-routing new-routing-mark=probe-wan1/.test(conf));
+  ok('mangle: проба резервного помечена probe-wan2',
+    /chain=output dst-address=8\.8\.8\.8 action=mark-routing new-routing-mark=probe-wan2/.test(conf));
+  ok('скрипт wan-failover создаётся', /\/system script add name=wan-failover/.test(conf));
+  ok('скрипт хранится многострочным (\r\n)', /\\r\\n/.test(conf));
+  ok('порог падения 2 проверки (20 с)', /:local fails 2/.test(conf));
+  ok('порог возврата 6 проверок (60 с)', /:local ups 6/.test(conf));
+  ok('возврат на основной включён', /default-route-distance=1/.test(conf));
+  ok('уход на резерв включён', /default-route-distance=20/.test(conf));
+  ok('резерв поднят с distance=2', /default-route-distance=2/.test(conf));
+  ok('планировщик раз в 10 секунд',
+    /system scheduler add name=wan-failover interval=10s start-time=startup on-event=wan-failover/.test(conf));
+
+  // Другие пороги должны попасть в скрипт, а не остаться дефолтными.
+  const slow = gen(Object.assign({}, base, { wanDownSecs: 30, wanUpSecs: 120 }));
+  ok('пороги из мастера: 30 с → 3 проверки', /:local fails 3/.test(slow));
+  ok('пороги из мастера: 120 с → 12 проверок', /:local ups 12/.test(slow));
+
+  // PPPoE: и основной, и резервный — через pppoe-клиенты
+  const ppp = gen(Object.assign({}, base, {
+    wan: 'pppoe', pppoeUser: 'prov1', pppoePass: 'pass1', wan1Kind: 'pppoe',
+    wan2Kind: 'pppoe', wan2Port: 'ether5', wan2PppoeUser: 'prov2', wan2PppoePass: 'pass2'
+  }));
+  ok('резервный PPPoE-клиент создаётся с логином',
+    /pppoe-client add name=wan2-pppoe interface=ether5 user="?prov2"?/.test(ppp));
+  ok('PPPoE-резерв с расстоянием 2', /default-route-distance=2/.test(ppp));
+  ok('для PPPoE distance меняется у клиента, а не у dhcp',
+    /interface pppoe-client set \[find name=wan-pppoe\] default-route-distance=20/.test(ppp));
+
+  const bad = val(Object.assign({}, base, { wan2Check: '1.1.1.1' }));
+  ok('одинаковые адреса проверки — ошибка',
+    bad.some(i => i.level === 'error' && /различаться/.test(i.msg)));
+  const badUp = val(Object.assign({}, base, { wanDownSecs: 20, wanUpSecs: 5 }));
+  ok('возврат быстрее падения не проходит проверку',
+    badUp.some(i => i.level === 'error' && /Возврат на основной/.test(i.msg)));
+  const badSecs = val(Object.assign({}, base, { wanDownSecs: 1 }));
+  ok('слишком короткий порог падения не проходит',
+    badSecs.some(i => i.level === 'error' && /Падение канала/.test(i.msg)));
+
+  // Страница статьи должна рисоваться и показывать копируемый скрипт.
+  win.location.hash = '#/task-wan-failover';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(r => setTimeout(r, 60));
+  const page = text(q(win, '#content'));
+  ok('статья открывается по адресу', /Резервный интернет/.test(page));
+  ok('на странице есть шаги', /Поймите схему на пальцах/.test(page));
+  ok('на странице есть тело скрипта', /wan-failover/.test(page) && /:local ups 6/.test(page));
+  ok('на странице есть испытание кабелем', /Выдерните кабель/.test(page));
+}
+
 /* Все экраны инструментов должны рисоваться без исключений.
    Раньше это ловил отдельный скрипт; теперь проверка живёт здесь, чтобы
    после правки одного экрана не падал другой (общие функции легко сломать). */
@@ -412,6 +515,7 @@ async function checkAllRoutes() {
     await checkAndroidHint();
     await checkPortCheckRestOnly();
     await checkWizardLan();
+    await checkWanFailover();
     await checkWifiPackage();
     await checkAllRoutes();
   } catch (e) {
