@@ -208,6 +208,12 @@ ol.steps>li:not(:last-child)::after{
 .step-shot .scene-cap{font-size:calc(11.5px * var(--fsm, 1));margin:0 0 5px}
 .step-shot .scene-host{border-radius:9px}
 .step-shot .scene-block.compact .notes{display:none}
+/* сцена-инструкция (marks:1): подписи 1, 2, 3 под окном не скрываем —
+   без них номера на картинке ничего не объясняют */
+.step-shot .scene-block.compact.guide .notes{display:flex;margin:7px 0 0;gap:5px}
+.step-shot .scene-block.compact.guide .notes li{font-size:calc(12.5px * var(--fsm, 1));gap:7px}
+.step-shot .scene-block.compact.guide .notes .n{width:17px;height:17px;font-size:calc(10px * var(--fsm, 1))}
+.step-shot .scene-block.guide{background:rgba(225,29,72,.03);border:1px solid rgba(225,29,72,.16);border-radius:10px;padding:7px 7px 5px}
 .step-shot .scene-block.compact .scene-hint{display:none}
 .step-shot .scene-zoom{font-size:calc(10px * var(--fsm, 1));padding:2px 6px}
 .wb .dim{opacity:.32;filter:grayscale(.35)}

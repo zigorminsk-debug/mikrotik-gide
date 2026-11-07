@@ -132,165 +132,513 @@
       '8.8.8.8 (или адрес шлюза провайдера, если он не блокирует ICMP).',
     steps: [
       {
-        t: 'Поймите схему на пальцах',
-        d: 'Представьте две дороги из дома в город. Пока главная дорога свободна — едем по ней. ' +
-          'Раз в десять секунд роутер отправляет «разведчика» по главной дороге (пинг 1.1.1.1) ' +
-          'и второго разведчика по запасной (пинг 8.8.8.8). Если главный разведчик не вернулся ' +
-          'два раза подряд — роутер переключает весь трафик на запасную дорогу. Вернётся главный ' +
-          'разведчик шесть раз подряд (минута) — трафик вернётся на главную. Всё это время оба ' +
-          'разведчика ходят одновременно, поэтому роутер всегда знает состояние обеих дорог.'
+        t: 'Как это работает: две дороги и два разведчика',
+        d: 'Из дома в город ведут две дороги: главная (основной провайдер) и запасная (резервный). ' +
+          'Раз в 10 секунд роутер отправляет разведчика по главной дороге (пинг 1.1.1.1) и второго — ' +
+          'по запасной (пинг 8.8.8.8). Разведчики идут одновременно, поэтому роутер всегда знает, ' +
+          'жива ли каждая дорога, даже когда весь трафик идёт по одной из них. ' +
+          'Главный разведчик не вернулся 2 раза подряд (20 секунд) — трафик уходит на запасную дорогу. ' +
+          'Вернулся 6 раз подряд (60 секунд) — трафик возвращается на главную. ' +
+          'Такая задержка возврата и есть защита от «качелей»: канал должен доказать, что он стабилен.',
+        noScene: true
       },
       {
-        t: 'Посмотрите, какие интерфейсы есть у роутера',
-        d: 'Winbox → **Interfaces** (или терминал: `/interface print`). Найдите основной канал ' +
-          '(обычно `ether1`, а для PPPoE появится `wan-pppoe`) и резервный (`lte1` для модема, ' +
-          '`ether5` для второго кабеля). Запишите их имена — они понадобятся в скрипте.'
+        t: 'Найдите в Winbox оба канала',
+        d: 'Сначала выясните имена интерфейсов — они понадобятся дальше. ' +
+          '1 — откройте в дереве слева группу **Interfaces**. ' +
+          '2 — пункт **Interface**: здесь список всех портов. ' +
+          '3 — основной канал: почти всегда `ether1` (если вход по PPPoE, интерфейс будет называться ' +
+          '`wan-pppoe`, а `ether1` останется «под ним»). ' +
+          '4 — порт, куда воткнут резервный кабель: возьмите свободный, например `ether5`. ' +
+          '5 — вставленный LTE-модем виден как `lte1`. ' +
+          '6 — кнопка Find понадобится, если интерфейсов много. Запишите имена: дальше в статье — ' +
+          '`ether1` и `lte1`, подставьте свои.',
+        sc: {
+          marks: 1,
+          cap: 'Interfaces: где смотреть имена каналов',
+          path: 'Interfaces → Interface', menu: { grp: 1, sub: 2 },
+          win: 'Interfaces',
+          tabs: ['Interface', 'Interface List', 'Ethernet', 'VLAN', 'Bonding', 'Bridge', 'LTE'],
+          tab: 'Interface',
+          cols: [{ t: 'Name', w: 104 }, { t: 'Type', w: 70 }, { t: 'Actual MTU', w: 88 },
+            { t: 'Running', w: 74 }, { t: 'Comment', w: 214 }],
+          rows: [
+            [{ v: 'ether1', m: 3 }, { v: 'ether' }, { v: '1500' }, { v: 'yes', c: 'ok' }, 'основной провайдер — кабель'],
+            [{ v: 'ether5', m: 4 }, { v: 'ether' }, { v: '1500' }, { v: 'yes' }, 'свободный порт под резервный кабель'],
+            [{ v: 'lte1', m: 5 }, { v: 'lte' }, { v: '1500' }, { v: 'yes' }, 'резерв — LTE-модем'],
+            ['bridge-lan', 'bridge', '1500', 'yes', 'локальная сеть']
+          ],
+          sel: 0,
+          tools: [{ t: '⌕', m: 6 }],
+          notes: [
+            '1 — откройте группу Interfaces в дереве меню',
+            '2 — пункт Interface: список портов и туннелей',
+            '3 — основной канал (обычно ether1)',
+            '4 — порт под резервный кабель',
+            '5 — LTE-модем определяется как lte1',
+            '6 — Find: быстрый поиск интерфейса по имени'
+          ]
+        }
       },
       {
-        t: 'Поднимите второй канал',
-        d: 'Резерв должен работать сам по себе, ещё до всех проверок. **DHCP**: IP → DHCP Client → ' +
-          '`+` → Interface=`ether5`, Add Default Route=yes, Default Route Distance=**2**. ' +
-          '**PPPoE**: PPP → `+` → PPPoE Client → Interface=`ether5`, вкладка Dial Out: User и Password ' +
-          'от провайдера, Add Default Route=yes, Default Route Distance=**2**. ' +
-          '**LTE**: вставьте модем, дождитесь `lte1` в Interfaces, затем IP → DHCP Client для `lte1` ' +
-          'с расстоянием 2 (или маршрут с distance=2, если адрес статический).'
+        t: 'Резервный канал № 1 — кабель с DHCP',
+        d: 'Самый частый случай: второй провайдер выдаёт адрес автоматически. ' +
+          '1 — в дереве меню откройте **IP**. ' +
+          '2 — пункт **DHCP Client**. ' +
+          '3 — в списке уже есть строка основного канала: у неё Default Route Distance = 1. ' +
+          '4 — нажмите **+** в панели окна — откроется New DHCP Client. ' +
+          '5 — Interface: порт резерва (`ether5`). ' +
+          '6 — Add Default Route: **yes**, иначе резерв не станет маршрутом по умолчанию. ' +
+          '7 — Default Route Distance: **2** — резерв всегда «второй». ' +
+          '8 — OK. Через несколько секунд в строке появится адрес и слово bound.',
+        sc: {
+          marks: 1,
+          cap: 'IP → DHCP Client: включаем резервный канал',
+          path: 'IP → DHCP Client', menu: { grp: 1, sub: 2 },
+          win: 'DHCP Client',
+          cols: [{ t: 'Interface', w: 92 }, { t: 'Address', w: 122 }, { t: 'Gateway', w: 108 },
+            { t: 'Default Route Distance', w: 146 }, { t: 'Status', w: 92 }],
+          rows: [[{ v: 'ether1' }, { v: '203.0.113.45/24' }, { v: '203.0.113.1' }, { v: '1', m: 3 }, { v: 'bound', c: 'ok' }]],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 4 }],
+          form: {
+            title: 'New DHCP Client',
+            fields: [
+              { l: 'Interface', v: 'ether5', type: 'select', m: 5 },
+              { l: 'Add Default Route', v: 'yes', m: 6 },
+              { l: 'Default Route Distance', v: '2', m: 7 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 8 }]
+          },
+          notes: [
+            '1 — группа IP в дереве меню',
+            '2 — пункт DHCP Client',
+            '3 — основной канал: Distance = 1',
+            '4 — кнопка «+»: новый DHCP-клиент',
+            '5 — Interface: порт резерва',
+            '6 — Add Default Route: yes',
+            '7 — Default Route Distance: 2 (резерв второй)',
+            '8 — OK: применить'
+          ]
+        }
       },
       {
-        t: 'Проверьте, что маршрутов по умолчанию два',
-        d: 'IP → Routes: должно быть две строки `0.0.0.0/0`. У основного Distance=1, у резервного ' +
-          'Distance=2. Активен (флаг **A**) всегда тот, у которого меньше Distance. Если у обоих ' +
-          'стоит 1 — сначала исправьте это, иначе дальше смысла нет.'
+        t: 'Резервный канал № 2 — PPPoE (логин и пароль)',
+        d: 'Если второй провайдер выдаёт логин и пароль, канал поднимается через PPPoE. ' +
+          '1 — в дереве откройте **PPP**, 2 — пункт **Interfaces**. ' +
+          '3 — нажмите **+** — откроется диалог, выберите тип **PPPoE Client**. ' +
+          '4 — сначала вкладка **General**: Name (например `wan2-pppoe`) и Interface (`ether5`). ' +
+          '5 — затем вкладка **Dial Out**, там логин и пароль: 6 — User, 7 — Password. ' +
+          '8 — Add Default Route: **yes**. ' +
+          '9 — Default Route Distance: **2**. ' +
+          '10 — OK. Если логин верный, интерфейс станет running, а в IP → Address появится адрес.',
+        sc: {
+          marks: 1,
+          cap: 'PPP: клиент PPPoE для резервного канала',
+          path: 'PPP → Interfaces', menu: { grp: 1, sub: 2 },
+          win: 'PPP',
+          tabs: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'],
+          tab: 'Interfaces',
+          cols: [{ t: 'Name', w: 116 }, { t: 'Type', w: 84 }, { t: 'MTU', w: 60 },
+            { t: 'Running', w: 74 }, { t: 'Comment', w: 200 }],
+          rows: [[{ v: 'wan2-pppoe' }, { v: 'pppoe-out' }, { v: '1480' }, { v: 'yes', c: 'ok' }, 'резерв — PPPoE']],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 3 }],
+          form: {
+            title: 'PPPoE Client', tab: 'Dial Out', tabMarks: { General: 4, 'Dial Out': 5 },
+            fields: [
+              { l: 'Name', v: 'wan2-pppoe', t: 'General' },
+              { l: 'Interface', v: 'ether5', type: 'select', t: 'General' },
+              { l: 'User', v: 'login-ot-provaydera', t: 'Dial Out', m: 6 },
+              { l: 'Password', v: '••••••••', t: 'Dial Out', m: 7 },
+              { l: 'Add Default Route', v: 'yes', t: 'Dial Out', m: 8 },
+              { l: 'Default Route Distance', v: '2', t: 'Dial Out', m: 9 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 10 }]
+          },
+          notes: [
+            '1 — группа PPP в дереве меню',
+            '2 — пункт Interfaces',
+            '3 — «+»: создать подключение',
+            '4 — вкладка General: имя и порт',
+            '5 — вкладка Dial Out: здесь логин и пароль',
+            '6 — User из договора',
+            '7 — Password из договора',
+            '8 — Add Default Route: yes',
+            '9 — Default Route Distance: 2 (резерв второй)',
+            '10 — OK'
+          ]
+        }
       },
       {
-        t: 'Создайте две таблицы маршрутизации',
-        d: 'Routing → Tables → `+`. Первая: Name=`probe-wan1`, FIB=включён. Вторая: Name=`probe-wan2`. ' +
-          'Это не «второй интернет», а две отдельные карты дорог: по ним будут ходить только ' +
-          'разведчики-пинги. Рабочий трафик остаётся в таблице main.'
+        t: 'Резервный канал № 3 — LTE-модем',
+        d: 'Модем вставляют в USB, он определяется как `lte1`. ' +
+          'Откройте **Interfaces**, вкладка **LTE**: там задаётся APN (имя точки доступа) провайдера, ' +
+          'а у некоторых модемов — PIN. Без APN модем не выйдет в интернет. ' +
+          'Дальше два варианта, оба рабочие. ' +
+          '**Проще** — IP → DHCP Client → `+`, Interface=`lte1`, Add Default Route=yes, ' +
+          'Default Route Distance=**2** (как в шаге 3, только интерфейс другой). ' +
+          '**Если адрес выдаёт сам модем** (статический) — статический маршрут, как на картинке: ' +
+          '1 — откройте **IP**, 2 — пункт **Routes**. ' +
+          '3 — нажмите **+** → New Route. ' +
+          '4 — Dst. Address=`0.0.0.0/0` («весь интернет»). ' +
+          '5 — Gateway=`lte1` (для LTE и PPPoE вместо IP-шлюза пишут имя интерфейса). ' +
+          '6 — Distance=**2**. 7 — OK.',
+        sc: {
+          marks: 1,
+          cap: 'IP → Routes: маршрут в интернет через LTE-модем',
+          path: 'IP → Routes', menu: { grp: 1, sub: 2 },
+          win: 'Route List', tabs: ['Routes', 'Nexthops'], tab: 'Routes',
+          cols: [{ t: 'A', w: 24 }, { t: 'Dst. Address', w: 110 }, { t: 'Gateway', w: 130 },
+            { t: 'Distance', w: 76 }, { t: 'Routing Table', w: 104 }, { t: 'Comment', w: 176 }],
+          rows: [
+            [{ v: 'AS', c: 'ok' }, { v: '0.0.0.0/0' }, { v: '203.0.113.1' }, { v: '1' }, 'main', 'основной канал'],
+            [{ v: 'AS', c: 'ok' }, { v: '0.0.0.0/0' }, { v: 'lte1' }, { v: '2' }, 'main', 'резерв — LTE']
+          ],
+          sel: 1,
+          tools: [{ t: '+', id: 'add', m: 3 }],
+          form: {
+            title: 'New Route',
+            fields: [
+              { l: 'Dst. Address', v: '0.0.0.0/0', m: 4 },
+              { l: 'Gateway', v: 'lte1', m: 5 },
+              { l: 'Distance', v: '2', m: 6 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 7 }]
+          },
+          notes: [
+            '1 — группа IP',
+            '2 — пункт Routes: таблица маршрутов',
+            '3 — «+» → New Route',
+            '4 — Dst. Address: 0.0.0.0/0 — весь интернет',
+            '5 — Gateway: имя LTE-интерфейса',
+            '6 — Distance = 2: резерв уступает основному каналу',
+            '7 — OK'
+          ]
+        }
       },
       {
-        t: 'Привяжите проверочные адреса к каналам',
-        d: 'IP → Firewall → Mangle → `+` (вкладка General): Chain=`output`, Dst. Address=`1.1.1.1`; ' +
-          'вкладка Action: Action=`mark routing`, New Routing Mark=`probe-wan1`, Passthrough выключить. ' +
-          'Второе такое же правило: Dst. Address=`8.8.8.8`, New Routing Mark=`probe-wan2`. ' +
-          'Chain именно **output** — это трафик самого роутера, то есть наши пинги.'
+        t: 'Проверьте два маршрута по умолчанию',
+        d: 'IP → Routes. Должно быть две строки `0.0.0.0/0` в таблице main: ' +
+          '1 — у основного Distance = 1, 2 — у резервного Distance = 2. ' +
+          '3 — буква A слева = маршрут активен; активен всегда тот, у кого меньше Distance. ' +
+          '4 — колонка Routing Table: обычный трафик живёт в main, пробы пойдут в отдельные таблицы ' +
+          '(создадим их в следующем шаге). Если у обоих маршрутов Distance = 1, сначала исправьте ' +
+          'это — иначе скрипту нечего переключать.',
+        sc: {
+          marks: 1,
+          cap: 'IP → Routes: два маршрута — основной и резервный',
+          path: 'IP → Routes',
+          win: 'Route List', tabs: ['Routes', 'Nexthops'], tab: 'Routes',
+          cols: [{ t: 'A', w: 24 }, { t: 'Dst. Address', w: 110 }, { t: 'Gateway', w: 128 },
+            { t: 'Distance', w: 76 }, { t: 'Routing Table', w: 104 }, { t: 'Comment', w: 176 }],
+          rows: [
+            [{ v: 'AS', c: 'ok', m: 3 }, { v: '0.0.0.0/0' }, { v: '203.0.113.1' }, { v: '1', m: 1 }, { v: 'main', m: 4 }, 'основной канал'],
+            [{ v: 'S' }, { v: '0.0.0.0/0' }, { v: 'lte1' }, { v: '2', m: 2 }, 'main', 'резервный канал']
+          ],
+          sel: 0,
+          notes: [
+            '1 — основной маршрут: Distance = 1',
+            '2 — резервный маршрут: Distance = 2',
+            '3 — A = активен, S = статический',
+            '4 — таблица main: по ней ходит весь обычный трафик'
+          ]
+        }
       },
       {
-        t: 'Создайте скрипт проверки',
-        d: 'System → Scripts → `+`. Name=`wan-failover`, Policy: read, write, test. В поле Source ' +
-          'вставьте тело скрипта из блока «Готовый конфиг» ниже (строки между `# wan-failover` и ' +
-          'последней закрывающей скобкой). Не меняйте отступы и кавычки — RouterOS к ним строг.'
+        t: 'Создайте две таблицы для проб',
+        d: 'Проба каждого канала должна идти своим путём, поэтому нужны две отдельные таблицы маршрутизации. ' +
+          '1 — в дереве меню откройте **Routing**, 2 — пункт **Table**. ' +
+          '3 — в окне уже есть строка main — это обычный трафик, её не трогаем. ' +
+          '4 — нажмите **+**: 5 — Name=`probe-wan1`, 6 — FIB включён (галочка), 7 — OK. ' +
+          'Повторите ещё раз для `probe-wan2`. Это не «второй интернет»: в этих таблицах будут жить ' +
+          'только служебные пинги-разведчики.',
+        sc: {
+          marks: 1,
+          cap: 'Routing → Table: две таблицы только для проб',
+          path: 'Routing → Table', menu: { grp: 1, sub: 2 },
+          win: 'Routing', tabs: ['Table', 'Rules', 'Nexthops', 'Filters', 'BGP', 'OSPF'], tab: 'Table',
+          cols: [{ t: 'Name', w: 150 }, { t: 'FIB', w: 70 }, { t: 'Comment', w: 300 }],
+          rows: [
+            [{ v: 'main', m: 3 }, { v: 'yes' }, 'обычный трафик'],
+            [{ v: 'probe-wan1' }, { v: 'yes' }, 'проба основного канала (1.1.1.1)'],
+            [{ v: 'probe-wan2' }, { v: 'yes' }, 'проба резервного канала (8.8.8.8)']
+          ],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 4 }],
+          form: {
+            title: 'New Table',
+            fields: [
+              { l: 'Name', v: 'probe-wan1', m: 5 },
+              { l: 'FIB', v: 'yes', m: 6 },
+              { l: 'Comment', v: 'проба основного канала' }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 7 }]
+          },
+          notes: [
+            '1 — группа Routing',
+            '2 — пункт Table',
+            '3 — main: рабочая таблица, её не меняем',
+            '4 — «+»: новая таблица',
+            '5 — Name: probe-wan1 (для второй — probe-wan2)',
+            '6 — FIB включён',
+            '7 — OK'
+          ]
+        }
       },
       {
-        t: 'Запускайте скрипт каждые 10 секунд',
-        d: 'System → Scheduler → `+`. Name=`wan-failover`, Interval=`00:00:10`, Start Time=`startup`, ' +
-          'On Event=`wan-failover`. Всё: с этого момента роутер проверяет оба канала круглосуточно.'
+        t: 'Правило mangle: какой пинг куда отправить',
+        d: 'Теперь скажем роутеру: «пинг на 1.1.1.1 — в таблицу probe-wan1». ' +
+          '1 — в дереве откройте **IP**, 2 — пункт **Firewall**, вкладка **Mangle** уже перед вами. ' +
+          '3 — нажмите **+** — откроется New Mangle Rule. ' +
+          '4 — вкладка General, Chain = **output** (это трафик самого роутера, то есть наши пинги; ' +
+          'forward здесь был бы ошибкой). ' +
+          '5 — Dst. Address = `1.1.1.1`. ' +
+          '6 — дальше вкладка **Action**: действие задаётся там, переходим в следующем шаге.',
+        sc: {
+          marks: 1,
+          cap: 'IP → Firewall → Mangle: New Mangle Rule, вкладка General',
+          path: 'IP → Firewall → Mangle', menu: { grp: 1, sub: 2 },
+          win: 'IP Firewall',
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
+          tab: 'Mangle', tabMark: 'Action', tabMarkN: 6,
+          cols: [{ t: 'Chain', w: 72 }, { t: 'Dst. Address', w: 112 }, { t: 'Action', w: 104 },
+            { t: 'New Routing Mark', w: 124 }, { t: 'Comment', w: 176 }],
+          rows: [['output', '1.1.1.1', 'mark routing', 'probe-wan1', 'wan-failover probe 1']],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 3 }],
+          form: {
+            title: 'New Mangle Rule', tab: 'General',
+            fields: [
+              { l: 'Chain', v: 'output', type: 'select', t: 'General', m: 4 },
+              { l: 'Dst. Address', v: '1.1.1.1', t: 'General', m: 5 },
+              { l: 'Action', v: 'mark routing', type: 'select', t: 'Action' },
+              { l: 'New Routing Mark', v: 'probe-wan1', type: 'select', t: 'Action' },
+              { l: 'Passthrough', v: 'no', t: 'Action' }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK' }]
+          },
+          notes: [
+            '1 — группа IP',
+            '2 — пункт Firewall, вкладка Mangle',
+            '3 — «+»: новое правило',
+            '4 — Chain = output: трафик самого роутера',
+            '5 — Dst. Address = 1.1.1.1: адрес пробы',
+            '6 — вкладка Action: там задаём действие'
+          ]
+        }
       },
       {
-        t: 'Запустите один раз руками и прочитайте лог',
-        d: 'System → Scripts → выберите `wan-failover` → кнопка Run Script (или в терминале ' +
-          '`/system script run wan-failover`). Затем Log: `:log` пишет строки только при смене ' +
-          'состояния. Пустой лог после запуска — это хорошо: оба канала живы, переключаться некуда.'
+        t: 'Действие правила: пометить маршрут',
+        d: 'На вкладке **Action** того же диалога: ' +
+          '1 — Action = **mark routing** («пометить маршрут»), ' +
+          '2 — New Routing Mark = `probe-wan1` (таблица из шага 6), ' +
+          '3 — Passthrough = **no** (правило решает само, дальше не передаём), ' +
+          '4 — OK. Второе правило делается так же, но с адресом `8.8.8.8` и меткой `probe-wan2`.',
+        sc: {
+          marks: 1,
+          cap: 'New Mangle Rule, вкладка Action: mark routing',
+          path: 'IP → Firewall → Mangle',
+          win: 'IP Firewall',
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
+          tab: 'Mangle',
+          cols: [{ t: 'Chain', w: 72 }, { t: 'Dst. Address', w: 112 }, { t: 'Action', w: 104 },
+            { t: 'New Routing Mark', w: 124 }, { t: 'Comment', w: 176 }],
+          rows: [['output', '1.1.1.1', 'mark routing', 'probe-wan1', 'wan-failover probe 1']],
+          sel: 0,
+          form: {
+            title: 'New Mangle Rule', tab: 'Action',
+            fields: [
+              { l: 'Chain', v: 'output', type: 'select', t: 'General' },
+              { l: 'Dst. Address', v: '1.1.1.1', t: 'General' },
+              { l: 'Action', v: 'mark routing', type: 'select', t: 'Action', m: 1 },
+              { l: 'New Routing Mark', v: 'probe-wan1', type: 'select', t: 'Action', m: 2 },
+              { l: 'Passthrough', v: 'no', t: 'Action', m: 3 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 4 }]
+          },
+          notes: [
+            '1 — Action = mark routing',
+            '2 — New Routing Mark = probe-wan1',
+            '3 — Passthrough = no',
+            '4 — OK: правило готово'
+          ]
+        }
       },
       {
-        t: 'Испытание №1: обрыв кабеля',
-        d: 'Выдерните кабель основного провайдера. Через 20 секунд (две неудачные проверки) в логе ' +
-          'появится «основной канал не отвечает — включён резервный», а интернет продолжит работать ' +
-          'через LTE/второй кабель. Убедитесь, что страницы открываются.'
+        t: 'Второе правило и проверка списка',
+        d: 'Вернитесь в список Mangle: 1 — должно быть первое правило (output, 1.1.1.1, mark routing, ' +
+          'probe-wan1), 2 — второе, точно такое же, но с 8.8.8.8 и probe-wan2. ' +
+          'Быстрее не заполнять второе вручную, а выделить первое и нажать **Copy** в правой панели окна, ' +
+          'затем поправить два поля. Пустой счётчик Bytes — нормально: пинг пойдёт, когда заработает скрипт.',
+        sc: {
+          marks: 1,
+          cap: 'Mangle: два правила для двух проб',
+          path: 'IP → Firewall → Mangle',
+          win: 'IP Firewall',
+          tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
+          tab: 'Mangle',
+          cols: [{ t: 'Chain', w: 66 }, { t: 'Dst. Address', w: 106 }, { t: 'Action', w: 100 },
+            { t: 'New Routing Mark', w: 118 }, { t: 'Bytes', w: 76 }, { t: 'Comment', w: 160 }],
+          rows: [
+            [{ v: 'output', m: 1 }, { v: '1.1.1.1' }, { v: 'mark routing' }, { v: 'probe-wan1' }, { v: '0 B' }, 'wan-failover probe 1'],
+            [{ v: 'output', m: 2 }, { v: '8.8.8.8' }, { v: 'mark routing' }, { v: 'probe-wan2' }, { v: '0 B' }, 'wan-failover probe 2']
+          ],
+          sel: 0,
+          rightTools: [{ t: 'Copy', i: '⧉', m: 3 }, { t: 'Find', i: '⌕' }],
+          notes: [
+            '1 — проба основного канала: 1.1.1.1 → probe-wan1',
+            '2 — проба резервного: 8.8.8.8 → probe-wan2',
+            '3 — Copy: скопировать правило и поправить два поля'
+          ]
+        }
       },
       {
-        t: 'Испытание №2: возврат через минуту',
-        d: 'Вставьте кабель обратно и включите секундомер. Роутер вернётся на основной канал не сразу, ' +
-          'а примерно через 60 секунд — когда наберётся шесть успешных проверок подряд. В логе будет ' +
-          '«основной канал устойчив — вернулся на него». Если канал «мигает», возврат будет отложен — ' +
-          'именно этого мы и добивались.'
+        t: 'Скрипт проверки: System → Scripts',
+        d: 'Скрипт — это «мозг» схемы: пингует, считает серии и переключает маршруты. ' +
+          '1 — откройте **System**, 2 — пункт **Scripts**, 3 — нажмите **+**. ' +
+          '4 — Name = `wan-failover`. ' +
+          '5 — Policy отметьте **read**, **write**, **test** (без write скрипт не сможет менять маршрут). ' +
+          '6 — поле **Source**: вставьте туда тело скрипта из блока «Готовый конфиг» внизу статьи ' +
+          '(всё, что начинается с `# wan-failover`). Копируйте целиком: RouterOS строг к кавычкам. ' +
+          '7 — OK. Кнопка Run Script запускает скрипт один раз вручную.',
+        sc: {
+          marks: 1,
+          cap: 'System → Scripts: куда вставить тело скрипта',
+          path: 'System → Scripts', menu: { grp: 1, sub: 2 },
+          win: 'System', tabs: ['Scripts', 'Scheduler', 'Logging', 'Users', 'Files'], tab: 'Scripts',
+          cols: [{ t: 'Name', w: 130 }, { t: 'Owner', w: 76 }, { t: 'Policy', w: 150 },
+            { t: 'Run Count', w: 80 }, { t: 'Comment', w: 180 }],
+          rows: [[{ v: 'wan-failover' }, { v: 'admin' }, { v: 'read,write,test' }, { v: '0' }, 'переключение каналов']],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 3 }],
+          form: {
+            title: 'New Script',
+            fields: [
+              { l: 'Name', v: 'wan-failover', m: 4 },
+              { l: 'Policy', v: 'read, write, test', m: 5 },
+              { l: 'Source', v: '# wan-failover: переключение на резервный канал по пингу\n:local wan1If "ether1"\n:local wan2If "lte1"\n:local fails 2\n:local ups 6\n… тело скрипта целиком из блока «Готовый конфиг» …', type: 'area', m: 6 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 7 }]
+          },
+          notes: [
+            '1 — группа System',
+            '2 — пункт Scripts',
+            '3 — «+»: новый скрипт',
+            '4 — Name: wan-failover',
+            '5 — Policy: read, write, test',
+            '6 — Source: тело скрипта из блока «Готовый конфиг»',
+            '7 — OK'
+          ]
+        }
       },
       {
-        t: 'Настройте пороги под себя',
-        d: 'В скрипте две строки: `:local fails 2` (падение: 2 проверки × 10 с = 20 с) и ' +
-          '`:local ups 6` (возврат: 6 × 10 с = 60 с). Хотите быстрее реакцию — уменьшайте `fails`, ' +
-          'но не до 1: одиночный потерянный пакет не должен ронять канал. Хотите ещё спокойнее — ' +
-          'увеличивайте `ups`.'
+        t: 'Планировщик: запускать каждые 10 секунд',
+        d: 'Скрипт сам по себе не работает — его надо запускать по расписанию. ' +
+          '1 — откройте **System**, 2 — пункт **Scheduler**, 3 — нажмите **+**. ' +
+          '4 — Name = `wan-failover`. ' +
+          '5 — Start Time = **startup** (задача стартует сразу после включения роутера). ' +
+          '6 — Interval = `00:00:10`. ' +
+          '7 — On Event = `wan-failover` (имя скрипта из прошлого шага). ' +
+          '8 — OK. С этого момента роутер проверяет оба канала круглосуточно.',
+        sc: {
+          marks: 1,
+          cap: 'System → Scheduler: запуск скрипта по таймеру',
+          path: 'System → Scheduler', menu: { grp: 1, sub: 2 },
+          win: 'System', tabs: ['Scripts', 'Scheduler', 'Logging', 'Users', 'Files'], tab: 'Scheduler',
+          cols: [{ t: 'Name', w: 124 }, { t: 'Start Time', w: 100 }, { t: 'Interval', w: 92 },
+            { t: 'On Event', w: 124 }, { t: 'Run Count', w: 86 }, { t: 'Comment', w: 150 }],
+          rows: [[{ v: 'wan-failover' }, { v: 'startup' }, { v: '00:00:10' }, { v: 'wan-failover' }, { v: '8640' }, 'проверка каналов']],
+          sel: 0,
+          tools: [{ t: '+', id: 'add', m: 3 }],
+          form: {
+            title: 'New Scheduler',
+            fields: [
+              { l: 'Name', v: 'wan-failover', m: 4 },
+              { l: 'Start Time', v: 'startup', m: 5 },
+              { l: 'Interval', v: '00:00:10', m: 6 },
+              { l: 'On Event', v: 'wan-failover', m: 7 }
+            ],
+            buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 8 }]
+          },
+          notes: [
+            '1 — группа System',
+            '2 — пункт Scheduler',
+            '3 — «+»: новая задача',
+            '4 — Name: wan-failover',
+            '5 — Start Time: startup',
+            '6 — Interval: 00:00:10 (раз в 10 секунд)',
+            '7 — On Event: имя скрипта',
+            '8 — OK'
+          ]
+        }
+      },
+      {
+        t: 'Первый запуск и чтение лога',
+        d: 'Нажмите в System → Scripts кнопку **Run Script** (или выполните `:execute wan-failover` ' +
+          'в терминале), затем откройте **Log** в дереве меню. ' +
+          '1 — строки с меткой `wan-failover` пишет наш скрипт: они появляются только при смене состояния. ' +
+          '2 — topics подсказывают важность: info — вернулись на основной канал, warning — ушли на резерв, ' +
+          'error — не отвечают оба канала. ' +
+          '3 — время события: по нему видно, через сколько секунд роутер среагировал. ' +
+          'Пустой лог после первого запуска — это хорошо: оба канала живы, переключаться некуда.',
+        sc: {
+          marks: 1,
+          cap: 'Log: что пишет скрипт',
+          path: 'Log',
+          win: 'Log', noTools: true,
+          cols: [{ t: 'Time', w: 96 }, { t: 'Topics', w: 120 }, { t: 'Message', w: 556 }],
+          rows: [
+            [{ v: 'nov/07 09:14:02' }, { v: 'script,info ', m: 2 }, { v: 'wan-failover: основной канал устойчив — вернулся на него', m: 1 }],
+            [{ v: 'nov/07 09:12:48', m: 3 }, { v: 'script,warning', m: 2 }, { v: 'wan-failover: основной канал не отвечает — включён резервный', m: 1 }]
+          ],
+          sel: 0,
+          notes: [
+            '1 — сообщения скрипта wan-failover',
+            '2 — topics: info — вернулись, warning — ушли на резерв',
+            '3 — время: сколько секунд роутер думал'
+          ]
+        }
+      },
+      {
+        t: 'Испытание: выдерните кабель',
+        d: 'Проверка на живом роутере важнее любых настроек. ' +
+          '1 — выдерните кабель основного провайдера и засеките время: примерно через 20 секунд ' +
+          '(две неудачные проверки) в логе появится «основной канал не отвечает — включён резервный», ' +
+          'и страницы продолжат открываться через резерв. ' +
+          '2 — вставьте кабель обратно: возврат случится не сразу, а примерно через минуту ' +
+          '(шесть успешных проверок подряд) — в логе будет «основной канал устойчив — вернулся на него». ' +
+          '3 — время в строках покажет точную реакцию. Если канал «мигает», возврат будет отложен — ' +
+          'именно этого мы и добивались.',
+        sc: {
+          marks: 1,
+          cap: 'Log после двух испытаний: уход на резерв и возврат',
+          path: 'Log',
+          win: 'Log', noTools: true,
+          cols: [{ t: 'Time', w: 96 }, { t: 'Topics', w: 120 }, { t: 'Message', w: 556 }],
+          rows: [
+            [{ v: 'nov/07 10:03:11', m: 3 }, { v: 'script,info' }, { v: 'wan-failover: основной канал устойчив — вернулся на него', m: 2 }],
+            [{ v: 'nov/07 10:01:08', m: 3 }, { v: 'script,warning' }, { v: 'wan-failover: основной канал не отвечает — включён резервный', m: 1 }]
+          ],
+          sel: 0,
+          notes: [
+            '1 — уход на резерв: 20 секунд без ответа',
+            '2 — возврат: минута успешных пингов подряд',
+            '3 — время события'
+          ]
+        }
+      },
+      {
+        t: 'Пороги под себя: 20 секунд и минута',
+        d: 'В теле скрипта всего две настройки: `:local fails 2` — сколько проверок подряд без ответа ' +
+          'считать падением (2 × 10 с = 20 с), и `:local ups 6` — сколько успешных проверок подряд нужно ' +
+          'для возврата (6 × 10 с = 60 с). Хотите реакцию быстрее — уменьшайте `fails`, но не до единицы: ' +
+          'один потерянный пакет не должен ронять канал. Хотите спокойнее — увеличивайте `ups`. ' +
+          'Правило простое: `ups` всегда больше `fails`, иначе получатся «качели».',
+        noScene: true
       }
     ],
-    scenes: [
-      {
-        path: 'Routing → Tables',
-        win: 'Routing / Tables',
-        tabs: ['Tables', 'Rules'],
-        cols: [{ t: 'Name', w: 150 }, { t: 'FIB', w: 60 }, { t: 'Comment', w: 240 }],
-        rows: [
-          [{ v: 'main', m: 1 }, { v: 'yes' }, 'обычный трафик'],
-          [{ v: 'probe-wan1', m: 2 }, { v: 'yes' }, 'проба основного канала (1.1.1.1)'],
-          [{ v: 'probe-wan2', m: 3 }, { v: 'yes' }, 'проба резервного канала (8.8.8.8)']
-        ],
-        sel: 1,
-        tools: [{ t: '+', id: 'add', m: 4 }],
-        notes: [
-          'Главная таблица — по ней ходит весь обычный трафик',
-          'Таблица пробы основного канала',
-          'Таблица пробы резервного канала',
-          'Кнопка добавления таблицы'
-        ]
-      },
-      {
-        path: 'IP → Firewall → Mangle',
-        win: 'Mangle',
-        tabs: ['Mangle', 'Rules'],
-        cols: [{ t: 'Chain', w: 80 }, { t: 'Src. Address', w: 110 }, { t: 'Dst. Address', w: 120 },
-          { t: 'Action', w: 110 }, { t: 'New Routing Mark', w: 130 }, { t: 'Comment', w: 150 }],
-        rows: [
-          [{ v: 'output', m: 1 }, '', { v: '1.1.1.1', m: 2 }, { v: 'mark routing', m: 3 }, { v: 'probe-wan1', m: 4 }, 'wan-failover probe 1'],
-          [{ v: 'output' }, '', { v: '8.8.8.8' }, 'mark routing', 'probe-wan2', 'wan-failover probe 2']
-        ],
-        sel: 0,
-        tools: [{ t: '+', id: 'add', m: 5 }],
-        notes: [
-          'output — трафик самого роутера (наши пинги), а не клиентов',
-          'Адрес проверки: всегда уходит в свой канал',
-          'Действие «пометить маршрут»',
-          'Метка = таблица probe-wan1 из предыдущего шага',
-          'Кнопка добавления правила'
-        ]
-      },
-      {
-        path: 'IP → Routes',
-        win: 'Route List',
-        tabs: ['Routes', 'Nexthops'],
-        cols: [{ t: 'A', w: 26 }, { t: 'Dst. Address', w: 110 }, { t: 'Gateway', w: 150 },
-          { t: 'Distance', w: 76 }, { t: 'Routing Table', w: 110 }, { t: 'Comment', w: 160 }],
-        rows: [
-          [{ v: 'AS', c: 'ok', m: 1 }, { v: '0.0.0.0/0', m: 2 }, { v: '203.0.113.1', m: 3 }, { v: '1', m: 4 }, 'main', 'основной канал'],
-          [{ v: 'S' }, '0.0.0.0/0', '10.71.14.9', '2', 'main', 'резервный канал'],
-          [{ v: 'AS', c: 'ok' }, '0.0.0.0/0', '203.0.113.1', '1', { v: 'probe-wan1', m: 5 }, 'wan-failover probe-route 1'],
-          [{ v: 'AS', c: 'ok' }, '0.0.0.0/0', '10.71.14.9', '1', 'probe-wan2', 'wan-failover probe-route 2']
-        ],
-        sel: 0,
-        notes: [
-          'A — маршрут активен, S — статический',
-          'Маршрут по умолчанию: два первых — рабочие, два последних — только для проб',
-          'Шлюз провайдера; для LTE и PPPoE здесь будет имя интерфейса',
-          'Меньшая distance — приоритет. Скрипт поднимает её до 20 при аварии',
-          'Проба идёт по своей таблице, поэтому видит именно свой канал'
-        ]
-      },
-      {
-        path: 'System → Scheduler',
-        win: 'Scheduler',
-        tabs: ['Scheduler'],
-        cols: [{ t: 'Name', w: 130 }, { t: 'Interval', w: 90 }, { t: 'Start Time', w: 110 },
-          { t: 'On Event', w: 130 }, { t: 'Run Count', w: 90 }],
-        rows: [[{ v: 'wan-failover', m: 1 }, { v: '00:00:10', m: 2 }, { v: 'startup', m: 3 }, { v: 'wan-failover', m: 4 }, { v: '0' }]],
-        sel: 0,
-        tools: [{ t: '+', id: 'add', m: 5 }],
-        notes: [
-          'Имя задачи — для порядка',
-          'Раз в 10 секунд: две пробы и решение',
-          'Работает с момента загрузки роутера',
-          'Имя скрипта из System → Scripts',
-          'Кнопка добавления задачи'
-        ]
-      }
-    ],
+    scenes: [],
     configTitle: 'Тело скрипта — вставить в System → Scripts → New → Source',
     config: SCRIPT,
     check: [

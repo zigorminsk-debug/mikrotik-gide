@@ -390,8 +390,8 @@
     const tasks = (GROUPS.filter(function (g) { return g.id === 'tasks'; })[0] || { items: [] }).items.length;
     const scenesCount = FLAT.reduce(function (n, a) { return n + ((a.scenes || []).length); }, 0);
     const stepsCount = FLAT.reduce(function (n, a) { return n + ((a.steps || []).length); }, 0);
-    const quick = ['start-first-login', 'start-base-setup', 'ip-firewall-filter', 'ip-firewall-nat',
-      'ip-dhcp-server', 'start-backup', 'vpn-wireguard', 'task-lan-internet'];
+    const quick = ['start-first-login', 'start-base-setup', 'task-wan-failover', 'wg-server',
+      'wg-client-config', 'ip-firewall-nat', 'ip-dhcp-server', 'start-backup'];
 
     let html = '<div class="wrap">';
     html += '<div class="hero">' +
@@ -416,7 +416,12 @@
     });
     html += '</div>';
 
+    /* Раздел «Резервный интернет и VPN» — первым: именно его искали и не находили */
     html += '<div class="home-tools">' +
+      toolCard('#/task-wan-failover', 'Резервный интернет', 'два провайдера, переключение по пингу — 15 шагов', 'ip') +
+      toolCard('#/wg-server', 'WireGuard-сервер', 'доступ к своей сети с телефона и ПК', 'svc') +
+      toolCard('#/wg-client-config', 'VPN на телефоне', 'QR-код и подключение за 5 минут', 'task') +
+      toolCard('#/wg-site', 'MikroTik как VPN-клиент', 'филиал подключается к серверу офиса', 'svc') +
       toolCard('#/course', 'Курс за 7 дней', 'по дню за подход: статьи + практика', 'book') +
       toolCard('#/harden', 'Защита от взлома', hardenCount() + ' пунктов по меню Winbox — проверить роутер', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'вставьте /export — 24 проверки с оценкой', 'task') +
@@ -532,10 +537,12 @@
     if (a.danger) html += '<div class="warn danger"><span class="wi">' + warnIcon() + '</span><div><b>Осторожно.</b> ' + inline(a.danger) + '</div></div>';
 
     if (a.steps && a.steps.length) {
-      const withShots = shotsEnabled() && (a.scenes && a.scenes.length);
+      const withShots = shotsEnabled() && ((a.scenes && a.scenes.length) ||
+        a.steps.some(function (s) { return s && typeof s === 'object' && s.sc; }));
       html += '<section class="card"><h3 class="card-h">' + svg('task', 15) + 'Инструкция по настройке</h3>' +
         (withShots ? '<div class="hint" style="margin:-4px 0 10px">Под каждым шагом — окно Winbox 4 ' +
-          'с красной рамкой на том элементе, о котором идёт речь. Тап по окну открывает его на весь экран.</div>' : '') +
+          'с красными номерами на кнопках и полях, а под окном — расшифровка: что нажимать в порядке ' +
+          '1, 2, 3 … Номера на картинке и в списке совпадают. Тап по окну открывает его на весь экран.</div>' : '') +
         '<ol class="steps">' +
         a.steps.map(function (s, i) {
           if (typeof s === 'string') {
@@ -764,6 +771,13 @@
     for (const k in sc) c[k] = sc[k];
     c.compact = true;
     c.cap = sc.cap || ('Окно Winbox: ' + (sc.path || sc.win || 'RouterOS 7'));
+    /* sc.marks — сцена-инструкция: номера и подписи к ним расставил автор
+       статьи (marks:1). Автофокус здесь запрещён: он оставил бы на картинке
+       один номер и одну подпись вместо пошагового списка 1, 2, 3 … */
+    if (sc.marks) {
+      delete c.focus;
+      return c;
+    }
     if (focus) c.focus = focus;
     else return stripMarks(sc);
     return c;
@@ -798,6 +812,7 @@
     const st = steps[i];
     const scenes = a.scenes || [];
     if (!st || typeof st === 'string') return null;
+    if (st.noScene) return null;               /* шаг-объяснение: картинка не нужна */
     if (!scenes.length && !st.sc) return null;
     if (st.sc && typeof st.sc === 'object') {
       return { spec: shotFor(st.sc, st.shot || null), src: 'own' };
