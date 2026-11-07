@@ -744,6 +744,95 @@ async function checkWanAutoAndVpn() {
   ok('роль «сервер» возвращает порт', gSrv && !gSrv.classList.contains('off'));
 }
 
+/* Бэкап и отправка конфигурации на e-mail должны быть в любом собранном конфиге:
+   это последняя линия обороны, когда роутер «окирпичился» или унесли. */
+async function checkBackupMail() {
+  console.log('\nБэкап и конфигурация на e-mail — во всех конфигурациях');
+  const win = boot('windows');
+  const gen = (o) => win.eval('(function(){ const w = window.ConfigWizard;' +
+    ' const o = Object.assign({}, w.defaults, ' + JSON.stringify(o) + ');' +
+    ' return w.generate(o).text || ""; })()');
+  const val = (o) => win.eval('(function(){ const w = window.ConfigWizard;' +
+    ' const o = Object.assign({}, w.defaults, ' + JSON.stringify(o) + ');' +
+    ' return w.validate(o) || []; })()');
+
+  const base = { model: 'hap_ac3', wan: 'dhcp', dhcp: true, lanIp: '192.168.88.1', lanPrefix: 24,
+    mailServer: 'smtp.yandex.ru', mailPort: 587, mailFrom: 'router@mail.by', mailTo: 'admin@mail.by',
+    mailUser: 'router', mailPass: 'app-pass' };
+
+  // 1) Флаги не заданы — раздел всё равно есть: он включён по умолчанию.
+  const conf = gen(base);
+  ok('раздел бэкапа есть без явных флагов', /Бэкап и отправка конфигурации на e-mail/.test(conf));
+  ok('скрипт backup-mail создаётся',
+    /\/system script add name=backup-mail policy=[^\n]*source=\{/.test(conf));
+  ok('сохраняется резервная копия .backup',
+    /\/system backup save name=\$tag dont-encrypt=yes/.test(conf));
+  ok('делается текстовый экспорт .rsc', /\/export file=\(\$tag \. "-cfg"\)/.test(conf));
+  ok('отправляются два письма', (conf.match(/\/tool e-mail send/g) || []).length === 2);
+  ok('к письму приложен .backup', /file=\(\$tag \. "\.backup"\)/.test(conf));
+  ok('к письму приложен .rsc', /file=\(\$tag \. "-cfg\.rsc"\)/.test(conf));
+  ok('планировщик на 03:30 каждый день',
+    /\/system scheduler add name=backup-mail start-time=03:30:00 interval=1d on-event=backup-mail/.test(conf));
+  ok('SMTP настроен ровно один раз', (conf.match(/\/tool e-mail set/g) || []).length === 1);
+
+  // 2) Время из мастера попадает в планировщик.
+  ok('время бэкапа из мастера', /start-time=02:15:00|start-time=02:15/.test(gen(Object.assign({}, base, { backupTime: '02:15' }))));
+
+  // 3) Раздел можно выключить — тогда ни скрипта, ни планировщика.
+  const off = gen(Object.assign({}, base, { backupMail: false, autobackup: false }));
+  ok('бэкап отключается флагом', !/backup-mail/.test(off), 'осталось: ' + (off.match(/backup-mail/g) || []).length);
+
+  // 4) Вместе с письмом о падении канала SMTP настраивается один раз.
+  const both = gen(Object.assign({}, base, { mail: true }));
+  ok('уведомления + бэкап: один /tool e-mail set',
+    (both.match(/\/tool e-mail set/g) || []).length === 1,
+    'нашли ' + (both.match(/\/tool e-mail set/g) || []).length);
+
+  // 5) Файлы прошлых дней убираются, чтобы не забивать flash.
+  ok('старые копии удаляются на роутере', /\/file remove \[find where name~"\^bak-"/.test(conf));
+
+  // 6) Валидация: заглушки и неверное время.
+  const warn = val(Object.assign({}, base, { mailTo: 'admin@example.com' }));
+  ok('заглушка example.com — предупреждение',
+    warn.some(x => /example\.com/.test(x.msg || '')), JSON.stringify(warn.map(x => x.msg)));
+  const badTime = val(Object.assign({}, base, { backupTime: 'ночью' }));
+  ok('неверное время бэкапа ловится', badTime.some(x => /backupTime|03:30/.test(x.msg || '')));
+
+  // 7) Каждый готовый пример конфигурации заканчивается таким же блоком.
+  const ex = win.eval(`(function(){
+    const all = window.EXAMPLES || [];
+    return all.map(function (x) {
+      const b = (x.blocks || []).filter(function (z) { return /backup-mail/.test(String(z.c || '')); });
+      return { id: x.id, h: b.length ? String(b[0].h || '') : '', code: b.length ? String(b[0].c) : '' };
+    });
+  })()`);
+  ok('примеров конфигов не меньше одиннадцати', ex.length >= 11, 'всего ' + ex.length);
+  ok('в каждом примере есть блок «Бэкап и конфиг на e-mail»',
+    ex.every(x => x.h === 'Бэкап и конфиг на e-mail'),
+    ex.filter(x => x.h !== 'Бэкап и конфиг на e-mail').map(x => x.id).join(', '));
+  ok('в блоке примера есть скрипт, планировщик и два письма',
+    ex.every(x => /\/system script add name=backup-mail/.test(x.code) &&
+      /\/system scheduler add name=backup-mail/.test(x.code) &&
+      (x.code.match(/\/tool e-mail send/g) || []).length === 2));
+
+  // 8) UI мастера: переключатель и время на месте, поля SMTP видны.
+  win.location.hash = '#/wizard';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(done => setTimeout(done, 40));
+  const doc = win.document;
+  ok('мастер: переключатель бэкапа на почту', !!doc.getElementById('w-backupMail'));
+  ok('мастер: время отправки', !!doc.getElementById('w-backupTime'));
+  const sw = doc.getElementById('w-backupMail');
+  const backGrp = doc.querySelector('[data-g="backupMail"]');
+  const mailGrp = doc.querySelector('[data-g="mail"]');
+  ok('мастер: бэкап включён по умолчанию', sw && sw.classList.contains('on'));
+  ok('мастер: время видно при включённом бэкапе', backGrp && !backGrp.classList.contains('off'));
+  ok('мастер: поля SMTP видны ради бэкапа', mailGrp && !mailGrp.classList.contains('off'));
+  if (sw) sw.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  await new Promise(done => setTimeout(done, 20));
+  ok('мастер: выключение убирает поля времени', doc.querySelector('[data-g="backupMail"]').classList.contains('off'));
+}
+
 /* Все экраны инструментов должны рисоваться без исключений.
    Раньше это ловил отдельный скрипт; теперь проверка живёт здесь, чтобы
    после правки одного экрана не падал другой (общие функции легко сломать). */
@@ -799,6 +888,7 @@ async function checkAllRoutes() {
     await checkWizardLan();
     await checkWanFailover();
     await checkWanAutoAndVpn();
+    await checkBackupMail();
     await checkNetVpn();
     await checkWifiPackage();
     await checkAllRoutes();
