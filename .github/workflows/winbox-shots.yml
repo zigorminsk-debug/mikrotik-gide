@@ -278,18 +278,18 @@ jobs:
           one bridge-new   146  -   1
           one ip-cloud     238  99  0
           one system-users 530  76  0
-
-          # --- калибровка: учимся открывать окна по названию, а не по координатам ---
-          if group; then search_open "Cloud" ip-cloud; fi
-          if group; then search_open "Firewall" firewall; fi
-          if group; then search_open "Users" users; fi
-          if group; then search_open "RoMON" romon; fi
-          if group; then search_open "Bandwidth Test" bandwidth; fi
+          # System длинное меню: Scripts и Scheduler лежат ниже Users
+          one system-scripts 338  646 0
+          one system-scheduler 338  669 0
 
           # --- разведка дерева: узнаём точные координаты подпунктов ---
+          # Функции search_open в этом файле нет (были вызовы без определения —
+          # шаг падал в конце и прогон считался неуспешным). Открываем окна тем
+          # же способом, что и остальные: клик по меню / подменю.
           if group; then probe_menu ip 238; fi
           if group; then probe_menu system 338; fi
           if group; then probe_menu tools 500; fi
+          if group; then probe_menu routing 315; fi
           xwininfo -root -tree > docs/shots/xwininfo-2.txt || true
           ps aux | grep -i winbox | grep -v grep > docs/shots/ps.txt || true
 
