@@ -74,6 +74,20 @@ def geom():
     return best
 
 
+def activate():
+    """Фокус окну: без него xdotool type уходит в пустоту."""
+    best, area = None, 0
+    for wid in run(['xdotool', 'search', '--name', 'WinBox']).stdout.split():
+        g = run(['xdotool', 'getwindowgeometry', '--shell', wid]).stdout
+        d = dict(re.findall(r'^(\w+)=(\d+)$', g, re.M))
+        if d and int(d['WIDTH']) * int(d['HEIGHT']) > area:
+            best, area = wid, int(d['WIDTH']) * int(d['HEIGHT'])
+    if best:
+        run(['xdotool', 'windowactivate', '--sync', best])
+        time.sleep(0.6)
+    return best
+
+
 def click(x, y, repeat=1):
     run(['xdotool', 'mousemove', str(int(x)), str(int(y))])
     run(['xdotool', 'click', '--repeat', str(repeat), '--delay', '120', '1'])
@@ -146,31 +160,37 @@ def logged_in(X, Y, H):
 
 
 def connect(X, Y, W, H, tries=20):
-    """Заполняем Connect to, жмём Enter — и так до получаса, пока не войдём.
+    """Заполняем Connect to и жмём Connect — до получаса, пока не появится дерево.
 
     RouterOS в QEMU грузится 10-15 минут, а порт 8291 открыт сразу, поэтому
-    «порт отвечает» ничего не значит: единственный критерий — появилось дерево.
+    «порт отвечает» ничего не значит: единственный критерий — дерево меню.
     """
     for attempt in range(1, tries + 1):
         if logged_in(X, Y, H):
             log('вход выполнен (попытка %d)' % attempt)
             return True
-        click(X + 300, Y + 291)          # поле Connect to
+        activate()
+        escape(1)
+        click(X + 320, Y + 288)          # поле Connect to
         run(['xdotool', 'key', '--clearmodifiers', 'ctrl+a'])
-        run(['xdotool', 'type', '--delay', '50', '127.0.0.1'])
+        run(['xdotool', 'type', '--delay', '80', '127.0.0.1'])
+        time.sleep(0.6)
+        field = ocr(X + 120, Y + 265, 420, 55, 'field')
+        log('  попытка %d: в поле — %r' % (attempt, ' '.join(w[0] for w in field)))
         run(['xdotool', 'key', 'Return'])
-        time.sleep(9)
+        time.sleep(8)
         if logged_in(X, Y, H):
             log('вход выполнен по Enter (попытка %d)' % attempt)
             return True
-        click(X + 182, Y + 431)          # кнопка Connect
-        time.sleep(9)
+        click(X + 248, Y + 379)          # кнопка Connect
+        time.sleep(8)
         if logged_in(X, Y, H):
             log('вход выполнен по кнопке Connect (попытка %d)' % attempt)
             return True
         log('  попытка %d: роутер ещё не пустил, ждём 30 с' % attempt)
         time.sleep(30)
     return False
+
 
 def escape(times=2):
     for _ in range(times):

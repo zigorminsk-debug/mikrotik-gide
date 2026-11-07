@@ -99,8 +99,8 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           # CHR под TCG грузится 8-12 минут; точный момент входа проверяет
           # winbox-nav.py — он повторяет попытку, пока не появится дерево меню.
-          sleep 420
-          echo "прошло 7 минут после старта QEMU" >> docs/shots/report.txt
+          sleep 240
+          echo "прошло 4 минуты после старта QEMU" >> docs/shots/report.txt
           tail -c 300 /tmp/wb/serial.log >> docs/shots/report.txt 2>/dev/null || true
 
       - name: Запустить Xvfb и Winbox 4
