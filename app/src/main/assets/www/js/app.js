@@ -1759,9 +1759,11 @@
       wizSelect('w-wan', 'Подключение к провайдеру', o.wan, [
         { v: 'dhcp', t: 'DHCP (автоматически)' },
         { v: 'static', t: 'Статический IP' },
-        { v: 'pppoe', t: 'PPPoE (логин и пароль)' }
-      ]) +
-      wizField('w-wanPort', 'Порт WAN', o.wanPort, 'обычно ether1') +
+        { v: 'pppoe', t: 'PPPoE (логин и пароль)' },
+        { v: 'lte', t: 'LTE (модем)' }
+      ], 'для LTE интерфейс lte1 подставится сам') +
+      wizField('w-wanPort', 'Интерфейс WAN', o.wanPort,
+        'подставляется по типу: LTE → lte1, кабель и PPPoE → ether1') +
       '<div class="wz-group' + (isStatic ? '' : ' off') + '" data-g="static">' +
       wizField('w-wanIp', 'IP-адрес WAN', o.wanIp) +
       wizField('w-wanPrefix', 'Префикс WAN', o.wanPrefix) +
@@ -1783,11 +1785,13 @@
       '<div class="wz-group' + (o.failover ? '' : ' off') + '" data-g="failover">' +
       wizSelect('w-wan1Kind', 'Основной провайдер', o.wan1Kind || o.wan, wanKindOpts,
         'как подключён основной канал') +
-      wizField('w-wan1Port', 'Интерфейс основного', o.wan1Port || o.wanPort, 'обычно ether1') +
+      wizField('w-wan1Port', 'Интерфейс основного', o.wan1Port || o.wanPort,
+        'выбирается по типу канала: LTE → lte1, кабель → ether1') +
       wizField('w-wan1Probe', 'Проверочный адрес основного', o.wan1Probe,
         'пинг через основной канал, например 1.1.1.1') +
-      wizSelect('w-wan2Kind', 'Резервный провайдер', o.wan2Kind, wanKindOpts, 'как подключён резерв') +
-      wizField('w-wan2Port', 'Интерфейс резервного', o.wan2Port, 'lte1, ether5 или pppoe-канал') +
+      wizSelect('w-wan2Kind', 'Резервный провайдер', o.wan2Kind || 'lte', wanKindOpts, 'как подключён резерв') +
+      wizField('w-wan2Port', 'Интерфейс резервного', o.wan2Port,
+        'по типу: LTE → lte1, кабель → ether5 (не совпадёт с основным)') +
       wizField('w-wan2Check', 'Проверочный адрес резервного', o.wan2Check,
         'пинг через резервный канал, например 8.8.8.8') +
       wizField('w-wan2PppoeUser', 'Логин PPPoE резерва', o.wan2PppoeUser, 'нужен только для PPPoE') +
@@ -1872,15 +1876,43 @@
       '</div></section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('down', 15) + 'VPN и серверы</h3>' +
-      wizSwitch('w-wg', 'WireGuard-сервер', o.wg, 'удалённый доступ сотрудников') +
+      wizSwitch('w-wg', 'WireGuard', o.wg, 'самый быстрый VPN: сервер на роутере или клиент к чужому серверу') +
       '<div class="wz-group' + (o.wg ? '' : ' off') + '" data-g="wg">' +
-      wizField('w-wgIp', 'Адрес WireGuard', o.wgIp) +
-      wizField('w-wgPort', 'Порт WireGuard', o.wgPort) +
+      wizSelect('w-wgMode', 'Роль роутера', o.wgMode || 'server', [
+        { v: 'server', t: 'Сервер — клиенты подключаются к роутеру' },
+        { v: 'client', t: 'Клиент — роутер подключается к другому серверу' }
+      ], 'сервер — удалённый доступ; клиент — связать филиал с офисом') +
+      wizField('w-wgIp', 'Адрес роутера в туннеле', o.wgIp, 'сервер: 10.10.10.1, клиент: адрес, выданный сервером') +
+      '</div>' +
+      '<div class="wz-group' + (o.wg && o.wgMode !== 'client' ? '' : ' off') + '" data-g="wgServer">' +
+      wizField('w-wgPort', 'Порт WireGuard (UDP)', o.wgPort, 'клиенты указывают его в Endpoint') +
+      '</div>' +
+      '<div class="wz-group' + (o.wg && o.wgMode === 'client' ? '' : ' off') + '" data-g="wgClient">' +
+      wizField('w-wgEndpoint', 'Адрес сервера', o.wgEndpoint, 'IP:порт, например 203.0.113.20:13231') +
+      wizField('w-wgServerPub', 'Публичный ключ сервера', o.wgServerPub, '44 символа Base64 — у администратора сервера') +
+      wizField('w-wgAllowed', 'Что забирать через туннель', o.wgAllowed,
+        '0.0.0.0/0 — весь трафик, или 10.10.10.0/24 — только офис') +
+      wizField('w-wgKeepalive', 'Keepalive, секунд', o.wgKeepalive, '25 — держит соединение через NAT') +
       '</div>' +
       wizSwitch('w-l2tp', 'L2TP/IPsec-сервер', o.l2tp, 'совместим с телефонами без клиента') +
       '<div class="wz-group' + (o.l2tp ? '' : ' off') + '" data-g="l2tp">' +
       wizField('w-l2tpPsk', 'IPsec PSK', o.l2tpPsk) +
       wizField('w-l2tpPool', 'Пул адресов для VPN', o.l2tpPool) +
+      '</div>' +
+      wizSwitch('w-ovpn', 'OpenVPN-сервер', o.ovpn, 'сертификаты выпускаются на роутере, клиент — OpenVPN Connect') +
+      '<div class="wz-group' + (o.ovpn ? '' : ' off') + '" data-g="ovpn">' +
+      wizField('w-ovpnCn', 'Имя сервера (CN)', o.ovpnCn, 'домен или внешний IP — попадёт в сертификат') +
+      wizField('w-ovpnPort', 'Порт OpenVPN (TCP)', o.ovpnPort, 'по умолчанию 1194') +
+      wizField('w-ovpnUser', 'Логин клиента', o.ovpnUser) +
+      wizField('w-ovpnPass', 'Пароль клиента', o.ovpnPass) +
+      wizField('w-ovpnServerDays', 'Срок серверного сертификата, дней', o.ovpnServerDays, '825 по умолчанию') +
+      wizField('w-ovpnClientDays', 'Срок клиентских сертификатов, дней', o.ovpnClientDays, '365 по умолчанию') +
+      '</div>' +
+      wizSwitch('w-sstp', 'SSTP-сервер', o.sstp, 'TCP 443 — работает там, где режут UDP (L2TP и WireGuard)') +
+      '<div class="wz-group' + (o.sstp ? '' : ' off') + '" data-g="sstp">' +
+      wizField('w-sstpPort', 'Порт SSTP', o.sstpPort, '443 — маскируется под обычный HTTPS') +
+      wizField('w-sstpUser', 'Логин клиента', o.sstpUser) +
+      wizField('w-sstpPass', 'Пароль клиента', o.sstpPass) +
       '</div>' +
       wizSwitch('w-pppoeServer', 'PPPoE-сервер для абонентов', o.pppoeServer, 'мини-ISP') +
       '<div class="wz-group' + (o.pppoeServer ? '' : ' off') + '" data-g="pppoeSrv">' +
@@ -2704,6 +2736,14 @@
       wifiGuestSsid: g('w-wifiGuestSsid', ''), wifiGuestPass: g('w-wifiGuestPass', ''),
       ipv6: g('w-ipv6', 'off'), ipv6Prefix: g('w-ipv6Prefix', ''),
       wg: on('w-wg'), wgIp: g('w-wgIp', '10.10.10.1'), wgPort: g('w-wgPort', 13231),
+      wgMode: g('w-wgMode', 'server'), wgEndpoint: g('w-wgEndpoint', ''),
+      wgServerPub: g('w-wgServerPub', ''), wgAllowed: g('w-wgAllowed', '0.0.0.0/0'),
+      wgKeepalive: g('w-wgKeepalive', 25),
+      ovpn: on('w-ovpn'), ovpnCn: g('w-ovpnCn', 'vpn.example.com'), ovpnPort: g('w-ovpnPort', 1194),
+      ovpnUser: g('w-ovpnUser', 'vpn1'), ovpnPass: g('w-ovpnPass', ''),
+      ovpnServerDays: g('w-ovpnServerDays', 825), ovpnClientDays: g('w-ovpnClientDays', 365),
+      sstp: on('w-sstp'), sstpPort: g('w-sstpPort', 443),
+      sstpUser: g('w-sstpUser', 'vpn1'), sstpPass: g('w-sstpPass', ''),
       l2tp: on('w-l2tp'), l2tpPsk: g('w-l2tpPsk', ''), l2tpPool: g('w-l2tpPool', ''),
       pppoeServer: on('w-pppoeServer'), pppoeServerPort: g('w-pppoeServerPort', 'ether5'),
       pppoePool: g('w-pppoePool', ''), pppoeServerUser: g('w-pppoeServerUser', ''),
@@ -2889,6 +2929,52 @@
       });
     }
 
+    /* Роль WireGuard: сервер (клиенты идут к нам) или клиент (идём к чужому серверу). */
+    const wgModeEl = function () {
+      const el = document.getElementById('w-wgMode');
+      return el ? el.value : 'server';
+    };
+
+    /* Имя интерфейса по типу канала — без ручного ввода:
+       LTE-модем → lte1, кабель и PPPoE → ether1 (основной) или ether5 (резерв).
+       Поле правится только тогда, когда пустое или противоречит типу,
+       поэтому введённый вручную свободный порт не затирается. */
+    const wanIfFor = function (kind, which) {
+      if (window.ConfigWizard && window.ConfigWizard.wanIfFor) return window.ConfigWizard.wanIfFor(kind, which);
+      return String(kind || '').toLowerCase() === 'lte' ? 'lte1' : (which === 'main' ? 'ether1' : 'ether5');
+    };
+    const setPort = function (id, want, wrong) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const v = String(el.value || '').trim();
+      if (!v || wrong(v)) el.value = want;
+    };
+    const autoPorts = function (force) {
+      const val = function (id, dflt) {
+        const el = document.getElementById(id);
+        return el && el.value ? el.value : dflt;
+      };
+      const mainKind = val('w-wan', 'dhcp');
+      const k1 = val('w-wan1Kind', mainKind);
+      const k2 = val('w-wan2Kind', 'lte');
+      const mainIf = wanIfFor(mainKind, 'main');
+      /* резерв: LTE-модем — lte1, кабель — ether5 (основной канал занят ether1) */
+      const backIf = k2 === 'lte' ? 'lte1' : 'ether5';
+      const fix = function (id, want, kind) {
+        if (force) {
+          const el = document.getElementById(id);
+          if (el) el.value = want;
+          return;
+        }
+        setPort(id, want, function (v) {
+          return kind === 'lte' ? v !== 'lte1' : v === 'lte1';
+        });
+      };
+      fix('w-wanPort', mainIf, mainKind);
+      fix('w-wan1Port', wanIfFor(k1, 'main'), k1);
+      fix('w-wan2Port', backIf, k2);
+    };
+
     const sync = function () {
       const on = function (id) {
         const el = document.getElementById(id);
@@ -2906,6 +2992,10 @@
         if (key === 'wifi') show = on('w-wifi');
         if (key === 'ipv6s') show = ipv6 && ipv6.value === 'static';
         if (key === 'wg') show = on('w-wg');
+        if (key === 'wgServer') show = on('w-wg') && wgModeEl() !== 'client';
+        if (key === 'wgClient') show = on('w-wg') && wgModeEl() === 'client';
+        if (key === 'ovpn') show = on('w-ovpn');
+        if (key === 'sstp') show = on('w-sstp');
         if (key === 'l2tp') show = on('w-l2tp');
         if (key === 'pppoeSrv') show = on('w-pppoeServer');
         if (key === 'failover') show = on('w-failover');
@@ -2926,10 +3016,14 @@
       });
     });
     ['w-wan', 'w-ipv6', 'w-tz', 'w-wifiCountry', 'w-wifiWidth', 'w-model',
-      'w-wan1Kind', 'w-wan2Kind'].forEach(function (id) {
+      'w-wan1Kind', 'w-wan2Kind', 'w-wgMode'].forEach(function (id) {
       const el = document.getElementById(id);
-      if (el) el.addEventListener('change', function () { sync(); wizStore(wizCollect()); });
+      if (el) el.addEventListener('change', function () {
+        if (id === 'w-wan' || id === 'w-wan1Kind' || id === 'w-wan2Kind') autoPorts(true);
+        sync(); wizStore(wizCollect());
+      });
     });
+    autoPorts(false);
 
     const rosBtn = document.getElementById('rosProbeBtn');
     if (rosBtn && window.RosProbe) {

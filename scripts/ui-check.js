@@ -617,6 +617,133 @@ async function checkNetVpn() {
   ok('на главной есть карточка WireGuard', /WireGuard/.test(home));
 }
 
+/* Интерфейс канала выбирается по типу подключения (LTE → lte1, кабель → ether1),
+   а в мастере появились WireGuard-клиент, OpenVPN и SSTP — проверяем и UI, и генератор. */
+async function checkWanAutoAndVpn() {
+  console.log('\nМастер: интерфейс по типу канала и все VPN');
+  const win = boot('windows');
+  const gen = (o) => win.eval('(function(){ const w = window.ConfigWizard;' +
+    ' const o = Object.assign({}, w.defaults, ' + JSON.stringify(o) + ');' +
+    ' return w.generate(o).text || ""; })()');
+  const val = (o) => win.eval('(function(){ const w = window.ConfigWizard;' +
+    ' const o = Object.assign({}, w.defaults, ' + JSON.stringify(o) + ');' +
+    ' return w.validate(o) || []; })()');
+
+  // 1) Имя интерфейса по типу канала — одна функция на весь проект.
+  const wif = (k, which) => win.eval('window.ConfigWizard.wanIfFor(' + JSON.stringify(k) + ',' +
+    JSON.stringify(which || 'main') + ')');
+  ok('LTE → lte1', wif('lte') === 'lte1', 'получили ' + wif('lte'));
+  ok('кабель → ether1', wif('dhcp') === 'ether1', 'получили ' + wif('dhcp'));
+  ok('PPPoE → ether1', wif('pppoe') === 'ether1');
+  ok('резервный кабель → ether5', wif('dhcp', 'backup') === 'ether5');
+
+  // 2) Основной канал по LTE сам получает lte1 и DHCP-клиента на модеме.
+  const lteConf = gen({ model: 'hap_ac3', wan: 'lte', wan1Kind: 'lte', wanPort: '', dhcp: true,
+    lanIp: '192.168.88.1', lanPrefix: 24, wg: false, l2tp: false, ovpn: false, sstp: false });
+  ok('LTE-канал: адрес берётся на lte1',
+    /\/ip dhcp-client add interface=lte1 /.test(lteConf), lteConf.split('\n').filter(l => /dhcp-client/.test(l))[0]);
+  ok('LTE-канал: модем включается', /\/interface lte set \[find\] disabled=no/.test(lteConf));
+  ok('LTE-канал: нет dhcp-client на ether1', !/dhcp-client add interface=ether1 /.test(lteConf));
+
+  // 3) Противоречие «LTE + ether1» ловится предупреждением, а не молча.
+  const bad = val({ wan: 'dhcp', wan1Kind: 'lte', wanPort: 'ether1' });
+  ok('LTE с ether1 — предупреждение мастера',
+    bad.some(x => /lte1/.test(x.msg || '')), JSON.stringify(bad.map(x => x.msg)));
+
+  // 4) WireGuard в роли клиента.
+  const wgCli = gen({ model: 'hap_ac3', wan: 'dhcp', dhcp: true, lanIp: '192.168.88.1', lanPrefix: 24,
+    wg: true, wgMode: 'client', wgEndpoint: '203.0.113.20:13231', wgIp: '10.10.10.5',
+    wgServerPub: 'aBcDeFgHiJkLmNoPqRsTuVwXyZ0123456789abcdefg=', wgAllowed: '0.0.0.0/0', wgKeepalive: 25,
+    l2tp: false, ovpn: false, sstp: false });
+  ok('WireGuard-клиент: интерфейс wg-client', /\/interface wireguard add name=wg-client/.test(wgCli));
+  ok('WireGuard-клиент: адрес и порт сервера в пире',
+    /endpoint-address="203\.0\.113\.20" endpoint-port=13231/.test(wgCli));
+  ok('WireGuard-клиент: keepalive держит NAT', /persistent-keepalive=25s/.test(wgCli));
+  ok('WireGuard-клиент: маршрут в туннель', /\/ip route add dst-address=0\.0\.0\.0\/0 gateway=wg-client/.test(wgCli));
+  ok('WireGuard-клиент: серверный порт не слушается', !/listen-port=13231/.test(wgCli));
+
+  // 5) Сервер остался сервером — регрессия.
+  const wgSrv = gen({ model: 'hap_ac3', wan: 'dhcp', dhcp: true, lanIp: '192.168.88.1', lanPrefix: 24,
+    wg: true, wgMode: 'server', wgIp: '10.10.10.1', wgPort: 13231, l2tp: false, ovpn: false, sstp: false });
+  ok('WireGuard-сервер: wg0 и listen-port', /name=wg0 listen-port=13231/.test(wgSrv));
+  ok('WireGuard-сервер: правило udp для входа', /protocol=udp dst-port=13231/.test(wgSrv));
+
+  // 6) OpenVPN: CA → серверный сертификат → сервер.
+  const ovpn = gen({ model: 'hap_ac3', wan: 'dhcp', dhcp: true, lanIp: '192.168.88.1', lanPrefix: 24,
+    wg: false, l2tp: false, sstp: false, ovpn: true, ovpnCn: 'vpn.example.com', ovpnPort: 1194,
+    ovpnUser: 'ivanov', ovpnPass: 'S3cret-2026' });
+  ok('OpenVPN: центр сертификации', /\/certificate add name=vpn-ca .*key-cert-sign,crl-sign/.test(ovpn));
+  ok('OpenVPN: серверный сертификат с CN', /common-name="vpn\.example\.com".*tls-server/.test(ovpn));
+  ok('OpenVPN: клиентский сертификат', /\/certificate add name=cli-1 .*tls-client/.test(ovpn));
+  ok('OpenVPN: сервер включён на 1194',
+    /\/interface ovpn-server server set enabled=yes port=1194/.test(ovpn));
+  ok('OpenVPN: учётная запись service=ovpn', /\/ppp secret add name=ivanov .* service=ovpn/.test(ovpn));
+  ok('OpenVPN: порт открыт в firewall', /chain=input protocol=tcp dst-port=1194 action=accept/.test(ovpn));
+
+  // 7) SSTP: тот же CA, но TCP 443.
+  const sstp = gen({ model: 'hap_ac3', wan: 'dhcp', dhcp: true, lanIp: '192.168.88.1', lanPrefix: 24,
+    wg: false, l2tp: false, ovpn: false, sstp: true, sstpPort: 443, sstpUser: 'petrov', sstpPass: 'Pass-2026' });
+  ok('SSTP: сервер на 443', /\/interface sstp-server server set enabled=yes port=443/.test(sstp));
+  ok('SSTP: учётная запись service=sstp', /\/ppp secret add name=petrov .* service=sstp/.test(sstp));
+  ok('SSTP: сертификат берётся из общего CA', /certificate=vpn-server/.test(sstp));
+
+  // 8) Валидация клиентских полей.
+  const noEnd = val({ wg: true, wgMode: 'client', wgEndpoint: '', wgServerPub: '' });
+  ok('WireGuard-клиент без адреса сервера — ошибка',
+    noEnd.some(x => x.level === 'error' && /wgEndpoint|адрес/i.test(x.msg || '')), JSON.stringify(noEnd.map(x => x.msg)));
+  const badPort = val({ ovpn: true, ovpnPort: 99999 });
+  ok('Порт OpenVPN вне диапазона — ошибка', badPort.some(x => x.level === 'error' && /ovpnPort|OpenVPN/i.test(x.msg || '')));
+
+  // 9) UI: поля и группы на месте, режим WireGuard переключает набор полей.
+  win.location.hash = '#/wizard';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(done => setTimeout(done, 40));
+  const doc = win.document;
+  const has = (id) => !!doc.getElementById(id);
+  ok('мастер: выбор роли WireGuard', has('w-wgMode'));
+  ok('мастер: поля клиента WireGuard', ['w-wgEndpoint', 'w-wgServerPub', 'w-wgAllowed', 'w-wgKeepalive'].every(has));
+  ok('мастер: поля OpenVPN', ['w-ovpnCn', 'w-ovpnPort', 'w-ovpnUser', 'w-ovpnPass'].every(has));
+  ok('мастер: поля SSTP', ['w-sstpPort', 'w-sstpUser', 'w-sstpPass'].every(has));
+  ok('мастер: LTE есть в списке основного канала',
+    Array.prototype.some.call(doc.querySelectorAll('#w-wan option'), o => o.value === 'lte'));
+
+  // смена типа канала переставляет интерфейс автоматически
+  const setSel = (id, v) => {
+    const el = doc.getElementById(id);
+    el.value = v;
+    el.dispatchEvent(new win.Event('change'));
+  };
+  const setVal = (id, v) => { const el = doc.getElementById(id); if (el) el.value = v; };
+  setVal('w-wan2Port', 'ether1');
+  setVal('w-wan1Port', 'ether1');
+  setSel('w-wan1Kind', 'lte');
+  await new Promise(done => setTimeout(done, 20));
+  ok('смена типа основного на LTE → lte1',
+    doc.getElementById('w-wan1Port').value === 'lte1', doc.getElementById('w-wan1Port').value);
+  setSel('w-wan2Kind', 'lte');
+  await new Promise(done => setTimeout(done, 20));
+  ok('смена типа резерва на LTE → lte1',
+    doc.getElementById('w-wan2Port').value === 'lte1', doc.getElementById('w-wan2Port').value);
+  setSel('w-wan1Kind', 'dhcp');
+  setSel('w-wan2Kind', 'dhcp');
+  await new Promise(done => setTimeout(done, 20));
+  ok('возврат к кабелю: основной ether1', doc.getElementById('w-wan1Port').value === 'ether1');
+  ok('возврат к кабелю: резерв ether5', doc.getElementById('w-wan2Port').value === 'ether5');
+
+  // переключение роли WireGuard показывает нужные поля
+  const wgSwitch = doc.getElementById('w-wg');
+  if (wgSwitch && !wgSwitch.classList.contains('on')) wgSwitch.dispatchEvent(new win.MouseEvent('click', { bubbles: true }));
+  setSel('w-wgMode', 'client');
+  await new Promise(done => setTimeout(done, 20));
+  const gSrv = doc.querySelector('[data-g="wgServer"]');
+  const gCli = doc.querySelector('[data-g="wgClient"]');
+  ok('роль «клиент» прячет серверные поля', gSrv && gSrv.classList.contains('off'));
+  ok('роль «клиент» показывает клиентские поля', gCli && !gCli.classList.contains('off'));
+  setSel('w-wgMode', 'server');
+  await new Promise(done => setTimeout(done, 20));
+  ok('роль «сервер» возвращает порт', gSrv && !gSrv.classList.contains('off'));
+}
+
 /* Все экраны инструментов должны рисоваться без исключений.
    Раньше это ловил отдельный скрипт; теперь проверка живёт здесь, чтобы
    после правки одного экрана не падал другой (общие функции легко сломать). */
@@ -671,6 +798,7 @@ async function checkAllRoutes() {
     await checkPortCheckRestOnly();
     await checkWizardLan();
     await checkWanFailover();
+    await checkWanAutoAndVpn();
     await checkNetVpn();
     await checkWifiPackage();
     await checkAllRoutes();
