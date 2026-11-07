@@ -422,6 +422,8 @@
       toolCard('#/wg-server', 'WireGuard-сервер', 'доступ к своей сети с телефона и ПК', 'svc') +
       toolCard('#/wg-client-config', 'VPN на телефоне', 'QR-код и подключение за 5 минут', 'task') +
       toolCard('#/wg-site', 'MikroTik как VPN-клиент', 'филиал подключается к серверу офиса', 'svc') +
+      toolCard('#/ppp-l2tp-server', 'L2TP/IPsec', 'VPN без приложений: Windows, Android, iPhone', 'svc') +
+      toolCard('#/ppp-ovpn-server', 'OpenVPN и сертификаты', 'свой CA, серверный и клиентские сертификаты', 'svc') +
       toolCard('#/course', 'Курс за 7 дней', 'по дню за подход: статьи + практика', 'book') +
       toolCard('#/harden', 'Защита от взлома', hardenCount() + ' пунктов по меню Winbox — проверить роутер', 'svc') +
       toolCard('#/audit', 'Аудит конфига', 'вставьте /export — 24 проверки с оценкой', 'task') +

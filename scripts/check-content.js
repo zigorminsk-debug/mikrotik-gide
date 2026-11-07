@@ -50,6 +50,38 @@ DATA.forEach(g => {
     let mapped = 0;
     (a.steps || []).forEach((st, i) => {
       if (!st || typeof st !== 'object') return;
+      /* шаг со своей сценой-инструкцией (st.sc): окно задано прямо в шаге */
+      if (st.sc) {
+        mapped++;
+        const sc = st.sc;
+        if (!sc.marks) errors.push(`${a.id}: шаг ${i + 1} — у своей сцены нет marks:1`);
+        const nums = [];
+        const walk = (o) => {
+          if (!o || typeof o !== 'object') return;
+          if (Array.isArray(o)) { o.forEach(walk); return; }
+          if (o.m) nums.push(Number(o.m));
+          for (const k in o) if (k !== 'm' && typeof o[k] === 'object') walk(o[k]);
+        };
+        walk(sc.rows); walk(sc.tools); walk(sc.rightTools);
+        if (sc.menu) { if (sc.menu.grp) nums.push(Number(sc.menu.grp)); if (sc.menu.sub) nums.push(Number(sc.menu.sub)); }
+        if (sc.tabMark) nums.push(Number(sc.tabMarkN || 1));
+        if (sc.form) {
+          const tabMode = (sc.form.fields || []).some(f => f && f.t);
+          const vis = tabMode ? (sc.form.fields || []).filter(f => !f.t || f.t === sc.form.tab) : (sc.form.fields || []);
+          walk(vis);
+          const rest = {};
+          for (const k in sc.form) if (k !== 'fields') rest[k] = sc.form[k];
+          walk(rest);
+          /* номера на вкладках диалога: tabMark/tabMarkN и tabMarks{вкладка:номер} */
+          if (sc.form.tabMark) nums.push(Number(sc.form.tabMarkN || 1));
+          if (sc.form.tabMarks) Object.keys(sc.form.tabMarks).forEach(k => nums.push(Number(sc.form.tabMarks[k])));
+        }
+        const n = (sc.notes || []).length;
+        for (let k = 1; k <= n; k++) {
+          if (nums.indexOf(k) < 0) errors.push(`${a.id}: шаг ${i + 1} — номер ${k} без цели на окне`);
+        }
+        return;
+      }
       if (st.s == null) return;
       mapped++;
       const sc = (a.scenes || [])[st.s];

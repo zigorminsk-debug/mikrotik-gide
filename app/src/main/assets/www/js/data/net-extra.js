@@ -86,54 +86,364 @@ window.DATA.push({
       check: [{ d: 'терминал', c: '/interface pppoe-server server print\n/ppp active print\n/log print where topics~"pppoe"' }]
     },
     {
-      id: 'ppp-l2tp-server', t: 'PPP → L2TP Server (+IPsec)', lvl: 3,
-      path: 'PPP → L2TP Server', tags: ['l2tp', 'vpn', 'ipsec'],
-      purpose: 'L2TP-сервер принимает VPN-подключения от сотрудников и филиалов. В связке с IPsec (L2TP/IPsec) трафик шифруется, а авторизация идёт по PPP-логину.',
+      id: 'ppp-l2tp-server', t: 'L2TP/IPsec: VPN-сервер для сотрудников — пошагово', lvl: 3,
+      path: 'PPP → L2TP Server · PPP → Secrets · PPP → Profiles · IP → Pool · IP → Firewall',
+      tags: ['l2tp', 'ipsec', 'vpn', 'сервер', 'сотрудники', 'psk'],
+      purpose: 'Роутер принимает VPN-подключения от сотрудников по L2TP, а трафик внутри туннеля ' +
+        'шифруется IPsec. Логин и пароль — обычные PPP-секреты, шифрование — общий ключ IPsec (PSK), ' +
+        'никаких сертификатов. Windows, Android и iPhone умеют этот тип VPN из коробки, ' +
+        'поэтому ставить клиентам ничего не нужно.',
       usage: [
-        'Удалённые сотрудники подключаются к офисной сети с ноутбука.',
-        'Резервный канал до филиала через интернет.',
-        'Доступ к внутренним сервисам без публикации портов.'
+        'Сотрудник с ноутбука подключается к офисной сети из дома или из кафе.',
+        'Доступ к 1С, файлам и камерам без публикации портов наружу.',
+        'Резервный путь в офис, когда основной канал лёг.',
+        'Простой VPN для небольшой команды: один логин на человека.'
       ],
+      pros: [
+        'Клиент уже встроен в Windows, Android и iOS — ставить ничего не нужно.',
+        'Нет сертификатов: только логин, пароль и общий ключ IPsec.',
+        'Доступ отзывается удалением одного PPP-секрета.',
+        'Работает за NAT: IPsec сам переходит на udp 4500 (NAT-T).'
+      ],
+      cons: [
+        'Без IPsec трафик не шифруется вообще: L2TP сам по себе — только туннель.',
+        'Общий ключ IPsec знают все клиенты — при утечке его меняют всем сразу.',
+        'Некоторые провайдеры и гостиничные сети блокируют IPsec.',
+        'Нет «родного» клиента для Linux — нужен NetworkManager-l2tp.'
+      ],
+      warn: 'L2TP без IPsec — это туннель без шифрования: логин и пароль уходят открытым текстом. ' +
+        'Обязательно включайте Use IPsec и задавайте длинный IPsec Secret. И не ставьте ' +
+        'Use IPsec = yes «наполовину»: в RouterOS 7 нужен режим required, иначе клиент может ' +
+        'подключиться без шифрования.',
       steps: [
-        { t: 'Создайте профиль и секрет', d: 'PPP → Profiles: `vpn-staff` (Local Address=10.99.0.1, Remote Address=pool-vpn, DNS=10.10.10.10). PPP → Secrets: логины сотрудников, Service=l2tp.' },
-        { t: 'Включите сервер', d: 'PPP → L2TP Server → кнопка L2TP Server: Enabled=yes, Default Profile=`vpn-staff`, Use IPsec=yes, IPsec Secret=`длинный_ключ`, Authentication=mschap2.' },
-        { t: 'Разрешите порты', d: 'Firewall input: udp 500, udp 4500 и (если без NAT-T) esp — от адресов клиентов.' },
-        { t: 'Проверьте IPsec', d: 'IP → IPsec → Active Peers: должны появиться пиры; PPP → Active Connections — сессии.' },
-        { t: 'Маршруты', d: 'Клиентам нужен маршрут в LAN: либо push через профиль (Remote Address в той же подсети), либо NAT для VPN-пула.' },
-        { t: 'NAT для VPN', d: 'Если VPN-клиенты должны выходить в интернет через офис: masquerade out-interface=WAN, in-interface=<l2tp-интерфейс/пул>.' }
-      ],
-      scenes: [
         {
-          path: 'PPP → L2TP Server', win: 'L2TP Server', noTools: true,
-          form: {
-            title: 'L2TP Server', buttons: ['Apply', 'Cancel'],
-            fields: [
-              { l: 'Enabled', v: 'yes', type: 'select', m: 1 },
-              { l: 'Default Profile', v: 'vpn-staff', type: 'select', m: 2 },
-              { l: 'Use IPsec', v: 'yes', type: 'select', m: 3 },
-              { l: 'IPsec Secret', v: '••••••••••••', m: 4 },
-              { l: 'Authentication', v: 'mschap2', type: 'select' },
-              { l: 'Keepalive Timeout', v: '30' },
-              { l: 'Max MTU', v: '1450' },
-              { l: 'Max MRU', v: '1450' }
-            ]
-          },
-          notes: ['Включение L2TP-сервера', 'Профиль, который получают подключившиеся', 'Шифрование через IPsec', 'Общий ключ IPsec — сообщается клиентам отдельно от пароля']
+          t: 'Как это устроено',
+          d: 'Клиент подключается к роутеру по L2TP (это туннель PPP поверх IP), а IPsec шифрует ' +
+            'весь этот туннель общим ключом. Внутри PPP клиент проходит проверку по логину и паролю ' +
+            'из **PPP → Secrets** и получает адрес из пула — как будто он в офисе. ' +
+            'Нужны четыре вещи: пул адресов, профиль, логины и включённый L2TP-сервер, плюс два ' +
+            'правила firewall для IPsec (udp 500 и udp 4500).',
+          noScene: true
         },
         {
-          path: 'IP → IPsec → Active Peers', win: 'IPsec Active Peers', tools: [{ t: '−', id: 'kill', m: 1 }],
-          cols: [{ t: 'Remote Address', w: 140 }, { t: 'State', w: 92 }, { t: 'Uptime', w: 100 }, { t: 'Side', w: 70 }, { t: 'Enc. Algorithm', w: 150 }],
-          rows: [[{ v: '203.0.113.77', m: 2 }, { v: 'established', c: 'ok' }, '01:22:14', 'responder', 'aes-256-cbc/sha256']],
-          sel: 0,
-          notes: ['Кнопка разрыва сессии (полезно при зависшем подключении)', 'Адрес клиента']
+          t: 'Создайте пул адресов для клиентов',
+          d: '1 — в дереве меню откройте **IP**, 2 — пункт **Pool**. ' +
+            '3 — нажмите **+**. 4 — Name = `vpn-pool`. ' +
+            '5 — Addresses = `10.99.0.100-10.99.0.199` (сто адресов — с запасом). ' +
+            '6 — OK. Эти адреса клиенты получат внутри офисной сети; они не должны пересекаться ' +
+            'с вашей LAN (обычно 192.168.88.0/24).',
+          sc: {
+            marks: 1,
+            cap: 'IP → Pool: адреса для VPN-клиентов',
+            path: 'IP → Pool', menu: { grp: 1, sub: 2 },
+            win: 'IP Pool',
+            cols: [{ t: 'Name', w: 150 }, { t: 'Addresses', w: 260 }, { t: 'Used', w: 90 }, { t: 'Comment', w: 180 }],
+            rows: [[{ v: 'vpn-pool' }, { v: '10.99.0.100-10.99.0.199' }, { v: '0' }, 'адреса для L2TP/OVPN']],
+            sel: 0,
+            tools: [{ t: '+', id: 'add', m: 3 }],
+            form: {
+              title: 'New IP Pool',
+              fields: [
+                { l: 'Name', v: 'vpn-pool', m: 4 },
+                { l: 'Addresses', v: '10.99.0.100-10.99.0.199', m: 5 }
+              ],
+              buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 6 }]
+            },
+            notes: [
+              '1 — группа IP в дереве меню',
+              '2 — пункт Pool',
+              '3 — «+»: новый пул',
+              '4 — Name: vpn-pool',
+              '5 — Addresses: 10.99.0.100-10.99.0.199',
+              '6 — OK'
+            ]
+          }
+        },
+        {
+          t: 'Профиль: адрес шлюза и DNS для клиентов',
+          d: 'Профиль описывает, что клиент получит после входа. ' +
+            '1 — откройте **PPP**, 2 — пункт **Profiles**, 3 — нажмите **+**. ' +
+            '4 — Name = `vpn-staff`. ' +
+            '5 — Local Address = `10.99.0.1` (адрес роутера внутри VPN-сети). ' +
+            '6 — Remote Address = `vpn-pool` (пул из прошлого шага). ' +
+            '7 — DNS Server = `192.168.88.1` (адрес роутера в LAN, чтобы работали внутренние имена). ' +
+            '8 — OK.',
+          sc: {
+            marks: 1,
+            cap: 'PPP → Profiles: что получает клиент после входа',
+            path: 'PPP → Profiles', menu: { grp: 1, sub: 2 },
+            win: 'PPP',
+            tabs: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'],
+            tab: 'Profiles',
+            cols: [{ t: 'Name', w: 130 }, { t: 'Local Address', w: 116 }, { t: 'Remote Address', w: 120 }, { t: 'DNS Server', w: 120 }],
+            rows: [[{ v: 'vpn-staff' }, { v: '10.99.0.1' }, { v: 'vpn-pool' }, { v: '192.168.88.1' }]],
+            sel: 0,
+            tools: [{ t: '+', id: 'add', m: 3 }],
+            form: {
+              title: 'New PPP Profile',
+              fields: [
+                { l: 'Name', v: 'vpn-staff', m: 4 },
+                { l: 'Local Address', v: '10.99.0.1', m: 5 },
+                { l: 'Remote Address', v: 'vpn-pool', m: 6 },
+                { l: 'DNS Server', v: '192.168.88.1', m: 7 }
+              ],
+              buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 8 }]
+            },
+            notes: [
+              '1 — группа PPP',
+              '2 — пункт Profiles',
+              '3 — «+»: новый профиль',
+              '4 — Name: vpn-staff',
+              '5 — Local Address: адрес роутера в VPN',
+              '6 — Remote Address: пул для клиентов',
+              '7 — DNS Server: адрес роутера в LAN',
+              '8 — OK'
+            ]
+          }
+        },
+        {
+          t: 'Логин и пароль сотрудника',
+          d: '1 — вкладка **Secrets**, 2 — нажмите **+**. ' +
+            '3 — Name = `ivanov` (логин). 4 — Password: сложный пароль, запишите. ' +
+            '5 — Service = **l2tp** (этим вы разрешаете вход только по L2TP). ' +
+            '6 — Profile = `vpn-staff`. 7 — OK. ' +
+            'На каждого сотрудника — свой секрет: так доступ отзывается удалением одной строки.',
+          sc: {
+            marks: 1,
+            cap: 'PPP → Secrets: логин и пароль для входа',
+            path: 'PPP → Secrets',
+            win: 'PPP',
+            tabs: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'],
+            tab: 'Secrets', tabMark: 'Secrets', tabMarkN: 1,
+            cols: [{ t: 'Name', w: 110 }, { t: 'Service', w: 90 }, { t: 'Profile', w: 110 }, { t: 'Remote Address', w: 130 }, { t: 'Comment', w: 150 }],
+            rows: [[{ v: 'ivanov' }, { v: 'l2tp' }, { v: 'vpn-staff' }, { v: 'vpn-pool' }, 'бухгалтер']],
+            sel: 0,
+            tools: [{ t: '+', id: 'add', m: 2 }],
+            form: {
+              title: 'New PPP Secret',
+              fields: [
+                { l: 'Name', v: 'ivanov', m: 3 },
+                { l: 'Password', v: 'S3cret-2026', m: 4 },
+                { l: 'Service', v: 'l2tp', type: 'select', m: 5 },
+                { l: 'Profile', v: 'vpn-staff', type: 'select', m: 6 }
+              ],
+              buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 7 }]
+            },
+            notes: [
+              '1 — вкладка Secrets',
+              '2 — «+»: новый логин',
+              '3 — Name: логин сотрудника',
+              '4 — Password: пароль для входа',
+              '5 — Service: l2tp',
+              '6 — Profile: vpn-staff',
+              '7 — OK'
+            ]
+          }
+        },
+        {
+          t: 'Включите L2TP-сервер и IPsec',
+          d: '1 — в дереве откройте **PPP**, 2 — пункт **L2TP Server**. ' +
+            '3 — в панели окна нажмите кнопку **L2TP Server** — откроется диалог настроек. ' +
+            '4 — Enabled = **yes**. ' +
+            '5 — Use IPsec = **required** (именно required: с `no` туннель будет без шифрования). ' +
+            '6 — IPsec Secret = длинный ключ, например `d83n2-officE-vpn`. Его вы введёте на каждом ' +
+            'клиенте — это общий ключ, а не пароль сотрудника. ' +
+            '7 — Default Profile = `vpn-staff`. ' +
+            '8 — Apply. Сервер готов принимать подключения.',
+          sc: {
+            marks: 1,
+            cap: 'PPP → L2TP Server: включаем сервер и шифрование',
+            path: 'PPP → L2TP Server', menu: { grp: 1, sub: 2 },
+            win: 'PPP',
+            tabs: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'],
+            tab: 'L2TP Server',
+            cols: [{ t: 'Name', w: 130 }, { t: 'Service', w: 110 }, { t: 'Local Address', w: 120 }],
+            rows: [['main', 'l2tp', '10.99.0.1']],
+            sel: 0,
+            tools: [{ t: 'L2TP Server', id: 'srv', m: 3 }],
+            form: {
+              title: 'L2TP Server', buttons: [{ t: 'Cancel' }, { t: 'Apply', m: 8 }],
+              fields: [
+                { l: 'Enabled', v: 'yes', m: 4 },
+                { l: 'Use IPsec', v: 'required', type: 'select', m: 5 },
+                { l: 'IPsec Secret', v: 'd83n2-officE-vpn', m: 6 },
+                { l: 'Default Profile', v: 'vpn-staff', type: 'select', m: 7 }
+              ]
+            },
+            notes: [
+              '1 — группа PPP',
+              '2 — пункт L2TP Server',
+              '3 — кнопка L2TP Server: настройки сервера',
+              '4 — Enabled: yes',
+              '5 — Use IPsec: required',
+              '6 — IPsec Secret: общий ключ IPsec',
+              '7 — Default Profile: vpn-staff',
+              '8 — Apply'
+            ]
+          }
+        },
+        {
+          t: 'Firewall: пропустите IPsec',
+          d: 'Без этих правил клиент «висит на подключении». 1 — откройте IP → Firewall → ' +
+            'вкладку **Filter Rules** и нажмите **+**. ' +
+            '2 — первое правило: Chain=**input**, Protocol=**udp**, Dst. Port=**500**, Action=**accept**. ' +
+            '3 — второе такое же, но Dst. Port=**4500** (это NAT-T: им пользуется почти всё, ' +
+            'что стоит за домашним роутером). ' +
+            '4 — третье: Chain=input, Protocol=**esp**, Action=accept (нужно, если NAT-T не используется). ' +
+            'Все три должны стоять выше общего запрета в цепочке input.',
+          sc: {
+            marks: 1,
+            cap: 'Filter Rules: три правила для IPsec',
+            path: 'IP → Firewall → Filter Rules',
+            win: 'IP Firewall',
+            tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
+            tab: 'Filter Rules',
+            cols: [{ t: '#', w: 26 }, { t: 'Chain', w: 66 }, { t: 'Protocol', w: 80 }, { t: 'Dst. Port', w: 76 },
+              { t: 'Action', w: 86 }, { t: 'Comment', w: 190 }],
+            rows: [
+              [{ v: '0' }, { v: 'input' }, { v: 'udp' }, { v: '500', m: 2 }, { v: 'accept', c: 'ok' }, 'ipsec ike'],
+              [{ v: '1' }, { v: 'input' }, { v: 'udp' }, { v: '4500', m: 3 }, { v: 'accept', c: 'ok' }, 'ipsec nat-t'],
+              [{ v: '2' }, { v: 'input' }, { v: 'esp' }, { v: '', m: 4 }, { v: 'accept', c: 'ok' }, 'ipsec esp']
+            ],
+            sel: 0,
+            tools: [{ t: '+', id: 'add', m: 1 }],
+            notes: [
+              '1 — «+»: новое правило (Action=accept на вкладке Action)',
+              '2 — udp 500: согласование IPsec (IKE)',
+              '3 — udp 4500: NAT-T, нужен почти всегда',
+              '4 — esp: сам шифрованный трафик'
+            ]
+          }
+        },
+        {
+          t: 'NAT: клиенты выходят в интернет через офис',
+          d: 'Если сотруднику нужен не только доступ в LAN, но и интернет через офисный канал: ' +
+            '1 — откройте IP → Firewall → вкладку **NAT**, нажмите **+**. ' +
+            '2 — Chain = **srcnat**. ' +
+            '3 — Src. Address = `10.99.0.0/24` (адреса VPN-клиентов). ' +
+            '4 — Out. Interface List = `WAN`. ' +
+            '5 — вкладка **Action**: Action = **masquerade**. ' +
+            '6 — OK. Правило «маскирует» VPN-адреса под адрес роутера — так же, как обычную LAN.',
+          sc: {
+            marks: 1,
+            cap: 'IP → Firewall → NAT: маскарад для VPN-клиентов',
+            path: 'IP → Firewall → NAT',
+            win: 'IP Firewall',
+            tabs: ['Filter Rules', 'NAT', 'Mangle', 'RAW', 'Service Ports', 'Connections', 'Address Lists', 'Layer7'],
+            tab: 'NAT',
+            cols: [{ t: 'Chain', w: 76 }, { t: 'Src. Address', w: 130 }, { t: 'Out. Interface List', w: 150 },
+              { t: 'Action', w: 110 }, { t: 'Comment', w: 170 }],
+            rows: [
+              [{ v: 'srcnat' }, { v: '' }, { v: 'WAN' }, { v: 'masquerade', c: 'ok' }, 'интернет для LAN'],
+              [{ v: 'srcnat' }, { v: '10.99.0.0/24' }, { v: 'WAN' }, { v: 'masquerade', c: 'ok' }, 'интернет для VPN']
+            ],
+            sel: 1,
+            tools: [{ t: '+', id: 'add', m: 1 }],
+            form: {
+              title: 'New NAT Rule', tab: 'General', tabMark: 'Action', tabMarkN: 5,
+              fields: [
+                { l: 'Chain', v: 'srcnat', type: 'select', t: 'General', m: 2 },
+                { l: 'Src. Address', v: '10.99.0.0/24', t: 'General', m: 3 },
+                { l: 'Out. Interface List', v: 'WAN', type: 'select', t: 'General', m: 4 }
+              ],
+              buttons: [{ t: 'Cancel' }, { t: 'Apply' }, { t: 'OK', m: 6 }]
+            },
+            notes: [
+              '1 — «+»: новое правило NAT',
+              '2 — Chain: srcnat',
+              '3 — Src. Address: адреса VPN-клиентов',
+              '4 — Out. Interface List: WAN',
+              '5 — вкладка Action: там Action = masquerade',
+              '6 — OK'
+            ]
+          }
+        },
+        {
+          t: 'Клиент Windows: встроенный VPN',
+          d: 'Ставить ничего не нужно. **Параметры → Сеть и Интернет → VPN → Добавить подключение → ' +
+            'VPN (Windows)**. Провайдер = Windows (встроенный), Имя = офис. ' +
+            'Далее: **Тип VPN = L2TP/IPsec со стандартным ключом**, ключ = тот самый IPsec Secret ' +
+            '(`d83n2-officE-vpn`), имя сервера = публичный адрес роутера (или DDNS-имя), ' +
+            'Тип входа = **имя пользователя и пароль** (логин `ivanov` из PPP → Secrets). ' +
+            'После сохранения — «Подключиться». За роутером с NAT Windows иногда требует правку ' +
+            'реестра (AssumeUDPEncapsulationContextOnSendRule=2) — в современных сборках обычно не нужно.',
+          noScene: true
+        },
+        {
+          t: 'Клиент Android и iPhone',
+          d: '**Android**: Настройки → Сеть и интернет → VPN → Добавить VPN → тип **L2TP/IPSec PSK**. ' +
+            'Сервер: публичный адрес роутера; IPsec pre-shared key: IPsec Secret; логин и пароль — ' +
+            'из PPP → Secrets. **iPhone**: Настройки → Основные → VPN и управление устройством → VPN → ' +
+            'Добавить конфигурацию → L2TP, туда же сервер, ключ, логин и пароль. ' +
+            'Роутер отдаёт адрес из пула, DNS — из профиля, поэтому внутренние имена работают сразу.',
+          noScene: true
+        },
+        {
+          t: 'Проверка: кто подключён',
+          d: '1 — в окне PPP перейдите на вкладку **Active Connections**: там видно логин, службу l2tp, ' +
+            'выданный адрес и время сессии. ' +
+            '2 — первая строка — ваш вход, у неё растёт Uptime. ' +
+            '3 — там же видно, с какого адреса пришёл клиент — удобно, если подключается не тот, кто должен. ' +
+            'Если строки нет — вкладка IP → IPsec → **Active Peers** покажет, дошло ли дело до шифрования: ' +
+            'без пира IPsec дальше не пойдёт.',
+          sc: {
+            marks: 1,
+            cap: 'PPP → Active Connections: сессии VPN',
+            path: 'PPP → Active Connections',
+            win: 'PPP',
+            tabs: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'],
+            tab: 'Active Connections', tabMark: 'Active Connections', tabMarkN: 1,
+            cols: [{ t: 'Name', w: 100 }, { t: 'Service', w: 90 }, { t: 'Address', w: 120 }, { t: 'Uptime', w: 100 }, { t: 'Caller ID', w: 150 }],
+            rows: [
+              [{ v: 'ivanov', m: 2 }, { v: 'l2tp' }, { v: '10.99.0.100' }, { v: '00:12:44', m: 3 }, { v: '203.0.113.77', m: 4 }],
+              [{ v: 'petrova' }, { v: 'l2tp' }, { v: '10.99.0.101' }, { v: '00:02:10' }, { v: '198.51.100.9' }]
+            ],
+            sel: 0,
+            notes: [
+              '1 — вкладка Active Connections',
+              '2 — логин сотрудника',
+              '3 — время сессии: растёт, значит связь есть',
+              '4 — с какого адреса пришёл клиент'
+            ]
+          }
+        },
+        {
+          t: 'Если не подключается',
+          d: '**«Ошибка 789» в Windows** — IPsec не проходит: проверьте правила udp 500/4500 в цепочке ' +
+            'input и что Use IPsec = required, а ключ на клиенте совпадает с IPsec Secret. ' +
+            '**Ошибка 691** — неверный логин или пароль, либо в секрете Service не `l2tp`. ' +
+            '**Подключается, но нет доступа в LAN** — клиентам нужны маршруты: проще всего поставить ' +
+            'masquerade для `10.99.0.0/24` (шаг 7) либо разрешить forward между VPN-пулом и LAN. ' +
+            '**Работает дома, не работает в мобильной сети** — оператор блокирует IPsec: попробуйте ' +
+            'другую сеть, это ограничение провайдера, а не настройки.',
+          noScene: true
         }
       ],
-      check: [{
-        d: 'терминал',
-        c: '/interface l2tp-server server print\n/ppp active print\n/ip ipsec active-peers print\n/log print where topics~"ipsec,l2tp"'
-      }],
-      warn: 'Ключ IPsec — не пароль пользователя: он одинаков для всех и передаётся клиенту отдельно. Слабый ключ = уязвимость.'
-    }
+      scenes: [],
+      check: [
+        {
+          d: 'сервер, второй пир IPsec и сессии',
+          c: '/ppp l2tp-server print detail\n/ip ipsec active-peers print\n/ppp active print'
+        },
+        {
+          d: 'правила firewall и секреты',
+          c: '/ip firewall filter print where comment~"ipsec"\n/ppp secret print'
+        },
+        {
+          d: 'что пишет лог при подключении',
+          c: '/log print where topics~"l2tp,ipsec,ppp"'
+        }
+      ],
+      mistakes: [
+        'Use IPsec = no — туннель поднимается, но трафик не шифруется.',
+        'Нет правила udp 4500 — за домашним NAT клиент не подключается (ошибка 789).',
+        'В PPP-секрете Service = any вместо l2tp — вход открыт и по другим службам.',
+        'Один логин на всех сотрудников — невозможно понять, кто подключён, и отозвать доступ одному.',
+        'Пул VPN пересекается с LAN — маршруты «путаются», часть сети становится недоступной.',
+        'IPsec Secret короткий или совпадает с паролем сотрудника — ключ видят все клиенты.'
+      ],
+      next: ['ppp-ovpn-server', 'wg-server', 'task-wan-failover', 'vpn-ipsec-ikev2']
+    },
   ]
 });
 

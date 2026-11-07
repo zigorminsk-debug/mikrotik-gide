@@ -28,7 +28,7 @@
     { g: 'Interfaces', ic: 'port', items: ['Interface', 'Ethernet', 'VLAN', 'Bonding', 'Bridge', 'WireGuard', 'VXLAN', 'Lists', 'Detect Internet', 'LTE'] },
     { g: 'WireGuard', ic: 'shield', items: ['WireGuard', 'Peers'] },
     { g: 'Bridge', ic: 'bridge', items: ['Bridge', 'Ports', 'VLANs', 'Hosts', 'Filters', 'MSTP', 'NAT'] },
-    { g: 'PPP', ic: 'ppp', items: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'] },
+    { g: 'PPP', ic: 'ppp', items: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'OVPN Server', 'Active Connections'] },
     { g: 'Switch', ic: 'switch', items: ['Switch', 'Ports', 'VLANs', 'Rules'] },
     { g: 'Mesh', ic: 'mesh' },
     { g: 'IP', ic: 'ip', items: ['Address', 'ARP', 'Cloud', 'DHCP Client', 'DHCP Server', 'DNS', 'Firewall', 'Hotspot',
@@ -245,6 +245,42 @@
         { l: 'New Connection Mark', k: 'select' },
         { l: 'New Packet Mark', k: 'select' },
         { l: 'Comment', k: 'text' }
+      ]
+    },
+    'ppp profile': {
+      title: 'PPP Profile',
+      tabs: ['General', 'Protocols', 'Limits', 'Queue', 'Scripts'],
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Local Address', k: 'text', core: 1 },
+        { l: 'Remote Address', k: 'text', core: 1 },
+        { l: 'DNS Server', k: 'text' },
+        { l: 'Rate Limit', k: 'text' },
+        { l: 'Session Timeout', k: 'text' },
+        { l: 'Idle Timeout', k: 'text' },
+        { l: 'Change TCP MSS', k: 'check' }
+      ]
+    },
+    'certificate': {
+      title: 'Certificate',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Common Name', k: 'text', core: 1 },
+        { l: 'Subject Alt. Name', k: 'text' },
+        { l: 'Key Size', k: 'text' },
+        { l: 'Key Usage', k: 'text' },
+        { l: 'Days Valid', k: 'text' },
+        { l: 'Trusted', k: 'check' },
+        { l: 'Copy From', k: 'select' }
+      ]
+    },
+    'sign': {
+      title: 'Sign',
+      fields: [
+        { l: 'CA', k: 'select', core: 1 },
+        { l: 'Name', k: 'text' },
+        { l: 'Days Valid', k: 'text' },
+        { l: 'Certificate Template', k: 'select' }
       ]
     },
     'client config': {
