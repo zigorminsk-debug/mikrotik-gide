@@ -551,7 +551,7 @@ func verifyApplyState(c *rosConn) (results []rosApplyResult, wireless, wifi []ma
 		}
 		for _, row := range rows {
 			if len(out) >= maxRows {
-				return out
+				return out, wireless, wifi
 			}
 			parts := make([]string, 0, len(ch.fields))
 			for _, f := range ch.fields {
