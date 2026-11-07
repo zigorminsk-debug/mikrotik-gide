@@ -1,16 +1,105 @@
-RouterOS слушает 8291 на 20c
-BIN=./WinBox
+t=20c serial: 
+t=40c serial: 
+t=60c serial: 
+t=80c serial: 
+t=100c serial: 
+t=120c serial: 
+t=140c serial: 
+t=160c serial: 
+консоль RouterOS в serial.log на 180c
+ready=1
+BIN=/tmp/wb/winbox/WinBox
+Winbox запущен (попытка 1)
+runner      4042  0.3  0.4 222268 75884 ?        S    21:40   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4054  1.6  0.5 925136 90508 ?        Rl   21:40   0:00 /tmp/wb/winbox/WinBox
+  [connect] окно=WinBox 4.4 1200x700+200+200
+  [connect] отличие от экрана входа: 830529 пикселей
+  подключение есть, окно=admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox
+  probe-interfaces: сняты click/arrow/hover/row
+  probe-ip: сняты click/arrow/hover/row
+  probe-system: сняты click/arrow/hover/row
+  probe-tools: сняты click/arrow/hover/row
+  probe-search: сняты typed/enter
+=== готово, кадров: 1 ===
+=== окна X ===
+Qt Selection Owner for WinBox
+WinBox
+admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
+APP,INFO: font from settings: "Inter"
+APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+JGCACHE,INFO: checking cache cleanup dir: "/home/runner/.cache/MikroTik/WinBox/guifiles"
+JGCACHE,INFO: cleanup skipped: no cache dir
+APP,UPDATE: version fetched: "4.5"
+APP,UPDATE: new version available, fetching changelog
+WBOXCONN status change "Looking up host..."
+WBOXCONN status change "Connecting..."
+WBOXCONN status change "Authenticating..."
+WBOXCONN status change "Auth OK."
+boardName=<CHR>
+boardArch=<i386>
+boardFamily=<x86>
+license=<6>
+skin=<default>
+displayName=<CHR QEMU Standard PC (i440FX + PIIX, 1996)>
+vers=<7.24.6 (long-term)>
+WBOXCONN,ERR: getting skin file fd
+--- nv::message --------
+ u32 [SYS_ERRNO]=ERROR_FAILED
+ u32 [SYS_TYPE]=TYPE_REPLY
+ u32 [SYS_STATUS]=STATUS_ERROR
+ u32 [SYS_REQID]=4 0x4 4.0.0.0
+ string [SYS_ERRSTR]=cannot open source file
+ u32[2] [SYS_TO]=0, 1, 
+ u32[2] [SYS_FROM]=2, 2, 
+ string[1] [SYS_TRACE]=msg-proxy-7.24.6, 
+DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
+WBOXCONN,INFO: all index files downlaoded
+TUPLE,DBG: adding missing seps
+!!! TODO u32_array "Pairwise Ciphers" "WiFi"
+!!! TODO u32_array "RSN AKMS" "WiFi"
+TUPLE,DBG: adding missing seps
+WBOXSESS,INFO: upgrade check use subscribe
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/workspaces/__127.0.0.1.cfg.viw2"
+   versFile: NEWESTa7.stable status:"" STATE:0 fin:1 latestVersStr:
+WBOXSESS,INFO: newer version available for RouterOS:7.25.1
+WBOXSESS,INFO: first clock synced
 === время ===
-Sat Nov  7 21:27:10 UTC 2026
+Sat Nov  7 21:42:24 UTC 2026
 === процессы ===
-runner      3651  194  0.6 3100544 113776 ?      Sl   21:26   1:33 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      3672  1.3  0.4 211452 70260 ?        S    21:27   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3873  114  2.0 3153524 336696 ?      Sl   21:37   5:47 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4042  0.2  0.4 224432 77756 ?        S    21:40   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4054  0.7  0.6 884768 111400 ?       Sl   21:40   0:00 /tmp/wb/winbox/WinBox
 === файлы ===
 docs/shots:
-total 12
--rw-r--r-- 1 runner runner 3655 Nov  7 21:25 README.md
-drwxr-xr-x 2 runner runner 4096 Nov  7 21:26 jpg
--rw-r--r-- 1 runner runner  624 Nov  7 21:27 report.txt
+total 912
+-rw-r--r-- 1 runner runner 71590 Nov  7 21:41 00-check.png
+-rw-r--r-- 1 runner runner 64525 Nov  7 21:41 00-login.png
+-rw-r--r-- 1 runner runner 67645 Nov  7 21:41 03-desktop.png
+-rw-r--r-- 1 runner runner  3655 Nov  7 21:36 README.md
+drwxr-xr-x 2 runner runner  4096 Nov  7 21:41 jpg
+-rw-r--r-- 1 runner runner   122 Nov  7 21:41 manifest.txt
+-rw-r--r-- 1 runner runner 31067 Nov  7 21:41 probe-interfaces-1-click.jpg
+-rw-r--r-- 1 runner runner 48750 Nov  7 21:41 probe-interfaces-2-arrow.jpg
+-rw-r--r-- 1 runner runner 48768 Nov  7 21:41 probe-interfaces-3-hover.jpg
+-rw-r--r-- 1 runner runner 48806 Nov  7 21:41 probe-interfaces-4-row.jpg
+-rw-r--r-- 1 runner runner 37741 Nov  7 21:41 probe-ip-1-click.jpg
+-rw-r--r-- 1 runner runner 31181 Nov  7 21:41 probe-ip-2-arrow.jpg
+-rw-r--r-- 1 runner runner 31179 Nov  7 21:41 probe-ip-3-hover.jpg
+-rw-r--r-- 1 runner runner 31067 Nov  7 21:41 probe-ip-4-row.jpg
+-rw-r--r-- 1 runner runner 33013 Nov  7 21:42 probe-search-1-typed.jpg
+-rw-r--r-- 1 runner runner 31256 Nov  7 21:42 probe-search-2-enter.jpg
+-rw-r--r-- 1 runner runner 37709 Nov  7 21:41 probe-system-1-click.jpg
+-rw-r--r-- 1 runner runner 31134 Nov  7 21:41 probe-system-2-arrow.jpg
+-rw-r--r-- 1 runner runner 31129 Nov  7 21:42 probe-system-3-hover.jpg
+-rw-r--r-- 1 runner runner 31078 Nov  7 21:42 probe-system-4-row.jpg
+-rw-r--r-- 1 runner runner 42257 Nov  7 21:42 probe-tools-1-click.jpg
+-rw-r--r-- 1 runner runner 42193 Nov  7 21:42 probe-tools-2-arrow.jpg
+-rw-r--r-- 1 runner runner 42199 Nov  7 21:42 probe-tools-3-hover.jpg
+-rw-r--r-- 1 runner runner 42170 Nov  7 21:42 probe-tools-4-row.jpg
+-rw-r--r-- 1 runner runner  3559 Nov  7 21:42 report.txt
 
 docs/shots/jpg:
-total 0
+total 24
+-rw-r--r-- 1 runner runner 24101 Nov  7 21:41 03-desktop.jpg

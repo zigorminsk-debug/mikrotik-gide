@@ -1,0 +1,1 @@
+03-desktop|1|Qt Selection Owner for WinBox|WinBox|admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox
