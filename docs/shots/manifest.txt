@@ -1,1 +1,22 @@
-03-desktop|1|Qt Selection Owner for WinBox|WinBox|admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox
+03-desktop|1|Qt Selection Owner for WinBox|WinBox|WinBox 4.4
+wifi|1|WiFi
+interfaces|1|Interfaces
+bridge|1|Bridge
+bridge-new|1|Bridge → New
+ppp|1|PPP
+switch|1|Switch
+mesh|1|Mesh
+ip-neighbors|1|IP → Neighbors
+ipv6|1|IPv6
+ipv6-address|1|IPv6 → Address
+mpls|1|MPLS
+routing|1|Routing
+system|1|System
+identity|1|System → Identity
+system-files|1|Files
+queues|1|Queues
+dot1x|1|Dot1X
+log|1|Log
+terminal|1|New Terminal
+radius|1|RADIUS
+tools|1|Tools

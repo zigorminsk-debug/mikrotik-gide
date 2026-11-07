@@ -6,25 +6,55 @@ t=100c serial:
 t=120c serial: 
 t=140c serial: 
 t=160c serial: 
-консоль RouterOS в serial.log на 180c
-ready=1
+t=180c serial: 
+t=200c serial: 
+t=220c serial: 
+t=240c serial: 
+t=260c serial: 
+t=280c serial: 
+t=300c serial: 
+t=320c serial: 
+t=340c serial: 
+t=360c serial: 
+t=380c serial: 
+t=400c serial: 
+t=420c serial: 
+t=440c serial: 
+t=460c serial: 
+t=480c serial: 
+t=500c serial: 
+t=520c serial: 
+t=540c serial: 
+t=560c serial: 
+t=580c serial: 
+t=600c serial: 
+t=620c serial: 
+t=640c serial: 
+t=660c serial: 
+t=680c serial: 
+t=700c serial: 
+t=720c serial: 
+t=740c serial: 
+t=760c serial: 
+t=780c serial: 
+t=800c serial: 
+ready=0
 BIN=/tmp/wb/winbox/WinBox
 Winbox запущен (попытка 1)
-runner      4042  0.3  0.4 222268 75884 ?        S    21:40   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      4054  1.6  0.5 925136 90508 ?        Rl   21:40   0:00 /tmp/wb/winbox/WinBox
+runner      4109  0.3  0.4 222276 78052 ?        S    21:58   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4120  1.7  0.5 925164 90880 ?        Sl   21:58   0:00 /tmp/wb/winbox/WinBox
   [connect] окно=WinBox 4.4 1200x700+200+200
-  [connect] отличие от экрана входа: 830529 пикселей
-  подключение есть, окно=admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox
-  probe-interfaces: сняты click/arrow/hover/row
-  probe-ip: сняты click/arrow/hover/row
-  probe-system: сняты click/arrow/hover/row
-  probe-tools: сняты click/arrow/hover/row
-  probe-search: сняты typed/enter
-=== готово, кадров: 1 ===
+  [connect] отличие от экрана входа: 48533 пикселей
+  подключение есть, окно=WinBox 4.4
+  режим nav: вход выполнен, рабочий стол снят
+=== готово, кадров в jpg: 1 ===
 === окна X ===
 Qt Selection Owner for WinBox
 WinBox
-admin@127.0.0.1 (CHR) CHR QEMU Standard PC (i440FX + PIIX, 1996) WinBox
+WinBox 4.4
+APP,INFO: version: "4.4"
+PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/settings.cfg.viw2"
+APP,INFO: loading addrs db from: "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
 PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/Addresses.cdb"
 APP,INFO: font from settings: "Inter"
 APP,INFO: FONT: QFont(Inter,-1,12,5,400,0,0,0,0,0,0,0,0,0,0,1)
@@ -36,70 +66,228 @@ APP,UPDATE: new version available, fetching changelog
 WBOXCONN status change "Looking up host..."
 WBOXCONN status change "Connecting..."
 WBOXCONN status change "Authenticating..."
-WBOXCONN status change "Auth OK."
-boardName=<CHR>
-boardArch=<i386>
-boardFamily=<x86>
-license=<6>
-skin=<default>
-displayName=<CHR QEMU Standard PC (i440FX + PIIX, 1996)>
-vers=<7.24.6 (long-term)>
-WBOXCONN,ERR: getting skin file fd
---- nv::message --------
- u32 [SYS_ERRNO]=ERROR_FAILED
- u32 [SYS_TYPE]=TYPE_REPLY
- u32 [SYS_STATUS]=STATUS_ERROR
- u32 [SYS_REQID]=4 0x4 4.0.0.0
- string [SYS_ERRSTR]=cannot open source file
- u32[2] [SYS_TO]=0, 1, 
- u32[2] [SYS_FROM]=2, 2, 
- string[1] [SYS_TRACE]=msg-proxy-7.24.6, 
 DISCOVERY,INFO: bcast addrs: 255.255.255.255, ff02::1, 10.1.15.255, 172.17.255.255, 
-WBOXCONN,INFO: all index files downlaoded
-TUPLE,DBG: adding missing seps
-!!! TODO u32_array "Pairwise Ciphers" "WiFi"
-!!! TODO u32_array "RSN AKMS" "WiFi"
-TUPLE,DBG: adding missing seps
-WBOXSESS,INFO: upgrade check use subscribe
-PERS,WARN: read error opening "No such file or directory" "/home/runner/.local/share/MikroTik/WinBox/workspaces/__127.0.0.1.cfg.viw2"
-   versFile: NEWESTa7.stable status:"" STATE:0 fin:1 latestVersStr:
-WBOXSESS,INFO: newer version available for RouterOS:7.25.1
-WBOXSESS,INFO: first clock synced
+  окно 1200x700+200+200
+  задач: 80
+    «WiFi» взял из таблицы высот (y=+87), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Security» (путь: WiFi → Security); OCR: Saved Neighbors RoMON Neighbors Q Find Y O = Actior MAC Address « IP Address Identity Version Board = Refresh Authenticating. nect to 127.0.0.1 admin Login sword remember password ‘space
+    «WiFi» взял из таблицы высот (y=+87), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято wifi: WiFi (sd=93)
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято interfaces: Interfaces (sd=98)
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Ethernet» (путь: Interfaces → Ethernet); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «VLAN» (путь: Interfaces → VLAN); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Bonding» (путь: Interfaces → Bonding); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Interface List» (путь: Interfaces → Interface List); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «PPPoE Client» (путь: Interfaces → PPPoE Client); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «VRRP» (путь: Interfaces → VRRP); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «LTE» (путь: Interfaces → LTE); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «WireGuard» (путь: Interfaces → WireGuard); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «WireGuard» (путь: Interfaces → WireGuard → Peers); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Interfaces» взял из таблицы высот (y=+111), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «WireGuard» (путь: Interfaces → WireGuard → New); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Bridge» взял из таблицы высот (y=+160), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято bridge: Bridge (sd=98)
+    «Bridge» взял из таблицы высот (y=+160), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Ports» (путь: Bridge → Ports); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Bridge» взял из таблицы высот (y=+160), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «VLANs» (путь: Bridge → VLANs); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Bridge» взял из таблицы высот (y=+160), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Hosts» (путь: Bridge → Hosts); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Bridge» взял из таблицы высот (y=+160), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Filters» (путь: Bridge → Filters); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Bridge» взял из таблицы высот (y=+160), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «NAT» (путь: Bridge → NAT); OCR: Saved Neighbors RoMON Neighbc Q Find Y O = MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to | 127.0.0.1] admin
+    «Bridge» взял из таблицы высот (y=+160), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято bridge-new: Bridge → New (sd=96)
+    «PPP» взял из таблицы высот (y=+185), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято ppp: PPP (sd=96)
+    «PPP» взял из таблицы высот (y=+185), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Profiles» (путь: PPP → Profiles); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «PPP» взял из таблицы высот (y=+185), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Secrets» (путь: PPP → Secrets); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «PPP» взял из таблицы высот (y=+185), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Active Connections» (путь: PPP → Active Connections); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «PPP» взял из таблицы высот (y=+185), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «PPPoE Server» (путь: PPP → PPPoE Server); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «PPP» взял из таблицы высот (y=+185), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «L2TP Server» (путь: PPP → L2TP Server); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «PPP» взял из таблицы высот (y=+185), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «OVPN Server» (путь: PPP → OVPN Server); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Switch» взял из таблицы высот (y=+209), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято switch: Switch (sd=96)
+    «Switch» взял из таблицы высот (y=+209), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «VLANs» (путь: Switch → VLANs); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Switch» взял из таблицы высот (y=+209), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Rules» (путь: Switch → Rules); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Mesh» взял из таблицы высот (y=+236), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято mesh: Mesh (sd=96)
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Addresses» (путь: IP → Addresses); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «ARP» (путь: IP → ARP); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «DHCP Client» (путь: IP → DHCP Client); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «DNS» (путь: IP → DNS); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Firewall» (путь: IP → Firewall); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Firewall» (путь: IP → Firewall → NAT); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Firewall» (путь: IP → Firewall → Mangle); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Routes» (путь: IP → Routes); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Pool» (путь: IP → Pool); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Services» (путь: IP → Services); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Cloud» (путь: IP → Cloud); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address « IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «IP» взял из таблицы высот (y=+260), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято ip-neighbors: IP → Neighbors (sd=96)
+    «IPv6» взял из таблицы высот (y=+285), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято ipv6: IPv6 (sd=96)
+    «IPv6» взял из таблицы высот (y=+285), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято ipv6-address: IPv6 → Address (sd=96)
+    «MPLS» взял из таблицы высот (y=+310), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято mpls: MPLS (sd=96)
+    «Routing» взял из таблицы высот (y=+333), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято routing: Routing (sd=96)
+    «Routing» взял из таблицы высот (y=+333), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Table» (путь: Routing → Table); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1 admin
+    «Routing» взял из таблицы высот (y=+333), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Rules» (путь: Routing → Rules); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1 admin
+    «Routing» взял из таблицы высот (y=+333), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «OSPF» (путь: Routing → OSPF); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1 admin
+    «Routing» взял из таблицы высот (y=+333), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «BGP» (путь: Routing → BGP); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1 admin
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято system: System (sd=96)
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято identity: System → Identity (sd=96)
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Clock» (путь: System → Clock); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Users» (путь: System → Users); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Certificates» (путь: System → Certificates); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Logging» (путь: System → Logging); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Packages» (путь: System → Packages); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «RouterBOOT» (путь: System → RouterBOOT); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Scheduler» (путь: System → Scheduler); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Scripts» (путь: System → Scripts); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Resources» (путь: System → Resources); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «System» взял из таблицы высот (y=+358), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Reset Configuration» (путь: System → Reset Configuration); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Files» взял из таблицы высот (y=+432), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято system-files: Files (sd=96)
+    «Files» взял из таблицы высот (y=+432), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Backup» (путь: Files → Backup); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Queues» взял из таблицы высот (y=+383), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято queues: Queues (sd=96)
+    «Queues» взял из таблицы высот (y=+383), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Simple Queues» (путь: Queues → Simple Queues); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Queues» взял из таблицы высот (y=+383), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Queue Tree» (путь: Queues → Queue Tree); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Queues» взял из таблицы высот (y=+383), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Queue Types» (путь: Queues → Queue Types); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Dot1X» взял из таблицы высот (y=+407), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято dot1x: Dot1X (sd=96)
+  снято log: Log (sd=96)
+    «New Terminal» взял из таблицы высот (y=+483), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято terminal: New Terminal (sd=96)
+    «RADIUS» взял из таблицы высот (y=+508), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято radius: RADIUS (sd=96)
+    «Tools» взял из таблицы высот (y=+531), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  снято tools: Tools (sd=96)
+    «Tools» взял из таблицы высот (y=+531), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Ping» (путь: Tools → Ping); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Tools» взял из таблицы высот (y=+531), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Torch» (путь: Tools → Torch); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Tools» взял из таблицы высот (y=+531), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Netwatch» (путь: Tools → Netwatch); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+    «Tools» взял из таблицы высот (y=+531), OCR дерева: Connect to Login Password Workspace RoMON Agent Group Comment
+  !! не нашёл «Sniffer» (путь: Tools → Sniffer); OCR: Saved Neighbors RoMON Neighbors Q Find Y O — = Actior MAC Address IP Address Identity « Version Board = Refresh 52:54:00:12:34:56 127.0.0.1 CHR 7.24.6 (lo... CHR nect to 127.0.0.1
+  итого: снято 21, не вышло 59: wifi-security, eth, vlan, bonding, iflist, pppoe-client, vrrp, lte, wireguard, wg-peers, wg-new, bridge-ports, bridge-vlans, bridge-hosts, bridge-filters, bridge-nat, ppp-profiles, ppp-secrets, ppp-active, pppoe-server, l2tp-server, ovpn-server, switch-vlans, switch-rules, ip-address, ip-arp, ip-dhcp-client, ip-dhcp-server, ip-dns, ip-firewall, ip-filter, ip-nat, ip-mangle, ip-routes, ip-pool, ip-services, ip-cloud, routing-table, routing-rules, routing-ospf, routing-bgp, clock, users, certs, logging, packages, routerboot, scheduler, scripts, resources, reset, backup, simple-queues, queue-tree, queue-types, tool-ping, tool-torch, tool-netwatch, tool-sniffer
 === время ===
-Sat Nov  7 21:42:24 UTC 2026
+Sat Nov  7 22:05:07 UTC 2026
 === процессы ===
-runner      3873  114  2.0 3153524 336696 ?      Sl   21:37   5:47 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      4042  0.2  0.4 224432 77756 ?        S    21:40   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      4054  0.7  0.6 884768 111400 ?       Sl   21:40   0:00 /tmp/wb/winbox/WinBox
+runner      3645  144  1.9 3182308 326548 ?      Sl   21:44  29:35 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4109  0.2  0.4 224408 79576 ?        S    21:58   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4120  0.1  0.5 859636 91460 ?        Sl   21:58   0:00 /tmp/wb/winbox/WinBox
 === файлы ===
 docs/shots:
-total 912
--rw-r--r-- 1 runner runner 71590 Nov  7 21:41 00-check.png
--rw-r--r-- 1 runner runner 64525 Nov  7 21:41 00-login.png
--rw-r--r-- 1 runner runner 67645 Nov  7 21:41 03-desktop.png
--rw-r--r-- 1 runner runner  3655 Nov  7 21:36 README.md
-drwxr-xr-x 2 runner runner  4096 Nov  7 21:41 jpg
--rw-r--r-- 1 runner runner   122 Nov  7 21:41 manifest.txt
--rw-r--r-- 1 runner runner 31067 Nov  7 21:41 probe-interfaces-1-click.jpg
--rw-r--r-- 1 runner runner 48750 Nov  7 21:41 probe-interfaces-2-arrow.jpg
--rw-r--r-- 1 runner runner 48768 Nov  7 21:41 probe-interfaces-3-hover.jpg
--rw-r--r-- 1 runner runner 48806 Nov  7 21:41 probe-interfaces-4-row.jpg
--rw-r--r-- 1 runner runner 37741 Nov  7 21:41 probe-ip-1-click.jpg
--rw-r--r-- 1 runner runner 31181 Nov  7 21:41 probe-ip-2-arrow.jpg
--rw-r--r-- 1 runner runner 31179 Nov  7 21:41 probe-ip-3-hover.jpg
--rw-r--r-- 1 runner runner 31067 Nov  7 21:41 probe-ip-4-row.jpg
--rw-r--r-- 1 runner runner 33013 Nov  7 21:42 probe-search-1-typed.jpg
--rw-r--r-- 1 runner runner 31256 Nov  7 21:42 probe-search-2-enter.jpg
--rw-r--r-- 1 runner runner 37709 Nov  7 21:41 probe-system-1-click.jpg
--rw-r--r-- 1 runner runner 31134 Nov  7 21:41 probe-system-2-arrow.jpg
--rw-r--r-- 1 runner runner 31129 Nov  7 21:42 probe-system-3-hover.jpg
--rw-r--r-- 1 runner runner 31078 Nov  7 21:42 probe-system-4-row.jpg
--rw-r--r-- 1 runner runner 42257 Nov  7 21:42 probe-tools-1-click.jpg
--rw-r--r-- 1 runner runner 42193 Nov  7 21:42 probe-tools-2-arrow.jpg
--rw-r--r-- 1 runner runner 42199 Nov  7 21:42 probe-tools-3-hover.jpg
--rw-r--r-- 1 runner runner 42170 Nov  7 21:42 probe-tools-4-row.jpg
--rw-r--r-- 1 runner runner  3559 Nov  7 21:42 report.txt
+total 1484
+-rw-r--r-- 1 runner runner 60569 Nov  7 21:59 00-check.png
+-rw-r--r-- 1 runner runner 61208 Nov  7 21:58 00-login.png
+-rw-r--r-- 1 runner runner 56592 Nov  7 21:59 03-desktop.png
+-rw-r--r-- 1 runner runner  3655 Nov  7 21:43 README.md
+-rw-r--r-- 1 runner runner 61317 Nov  7 22:00 bridge-new.png
+-rw-r--r-- 1 runner runner 61270 Nov  7 22:00 bridge.png
+-rw-r--r-- 1 runner runner 61322 Nov  7 22:04 dot1x.png
+-rw-r--r-- 1 runner runner 61322 Nov  7 22:03 identity.png
+-rw-r--r-- 1 runner runner 61270 Nov  7 21:59 interfaces.png
+-rw-r--r-- 1 runner runner 61317 Nov  7 22:02 ip-neighbors.png
+-rw-r--r-- 1 runner runner 61338 Nov  7 22:02 ipv6-address.png
+-rw-r--r-- 1 runner runner 61317 Nov  7 22:02 ipv6.png
+drwxr-xr-x 2 runner runner  4096 Nov  7 22:04 jpg
+-rw-r--r-- 1 runner runner 61322 Nov  7 22:04 log.png
+-rw-r--r-- 1 runner runner   447 Nov  7 22:04 manifest.txt
+-rw-r--r-- 1 runner runner 61317 Nov  7 22:01 mesh.png
+-rw-r--r-- 1 runner runner 61338 Nov  7 22:02 mpls.png
+-rw-r--r-- 1 runner runner 61317 Nov  7 22:00 ppp.png
+-rw-r--r-- 1 runner runner 61322 Nov  7 22:04 queues.png
+-rw-r--r-- 1 runner runner 61322 Nov  7 22:04 radius.png
+-rw-r--r-- 1 runner runner 30916 Nov  7 22:05 report.txt
+-rw-r--r-- 1 runner runner 61338 Nov  7 22:02 routing.png
+-rw-r--r-- 1 runner runner 61317 Nov  7 22:01 switch.png
+-rw-r--r-- 1 runner runner 61322 Nov  7 22:04 system-files.png
+-rw-r--r-- 1 runner runner 61338 Nov  7 22:03 system.png
+-rw-r--r-- 1 runner runner 61322 Nov  7 22:04 terminal.png
+-rw-r--r-- 1 runner runner 61322 Nov  7 22:04 tools.png
+-rw-r--r-- 1 runner runner 57961 Nov  7 21:59 wifi.png
 
 docs/shots/jpg:
-total 24
--rw-r--r-- 1 runner runner 24101 Nov  7 21:41 03-desktop.jpg
+total 696
+-rw-r--r-- 1 runner runner 26267 Nov  7 21:59 03-desktop.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:00 bridge-new.jpg
+-rw-r--r-- 1 runner runner 29572 Nov  7 22:00 bridge.jpg
+-rw-r--r-- 1 runner runner 29044 Nov  7 22:04 dot1x.jpg
+-rw-r--r-- 1 runner runner 29044 Nov  7 22:03 identity.jpg
+-rw-r--r-- 1 runner runner 29572 Nov  7 21:59 interfaces.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:02 ip-neighbors.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:02 ipv6-address.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:02 ipv6.jpg
+-rw-r--r-- 1 runner runner 29044 Nov  7 22:04 log.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:01 mesh.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:02 mpls.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:00 ppp.jpg
+-rw-r--r-- 1 runner runner 29044 Nov  7 22:04 queues.jpg
+-rw-r--r-- 1 runner runner 29044 Nov  7 22:04 radius.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:02 routing.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:01 switch.jpg
+-rw-r--r-- 1 runner runner 29044 Nov  7 22:04 system-files.jpg
+-rw-r--r-- 1 runner runner 29082 Nov  7 22:03 system.jpg
+-rw-r--r-- 1 runner runner 29044 Nov  7 22:04 terminal.jpg
+-rw-r--r-- 1 runner runner 29044 Nov  7 22:04 tools.jpg
+-rw-r--r-- 1 runner runner 27421 Nov  7 21:59 wifi.jpg
