@@ -188,6 +188,33 @@ RouterOS отвечает `invalid user name or password` **и при отсут
 6. **Собственный конфиг «защиты»** из мастера выключает `api` и `www-ssl` —
    после его применения опрос не работает, пока сервисы не включат снова.
 
+### Пакет Wi-Fi: wireless против wifi
+
+Два разных меню, и перепутать их легко:
+
+| | пакет `wireless` | пакет `wifi` |
+| --- | --- | --- |
+| интерфейсы | `wlan1`, `wlan2` | `wifi1`, `wifi2` |
+| где SSID и пароль | на самом интерфейсе: `/interface wireless set wlan1 ssid=… security-profile=…` | в профилях: `/interface wifi security` + `/interface wifi configuration` (у интерфейса полей `ssid`/`country` нет) |
+| типичные модели | hAP ac², hAP ac³, cAP ac, wAP ac, RB951G | hAP ax², hAP ax³, cAP ax, hAP ax lite, L009 |
+
+Правила, которые уже оплачены опытом:
+
+* `modelFor()` в `rosprobe.js` сравнивает **нормализованную** плату: `hAP ac³`,
+  `hAP ac^3` и `hAP ac 3` — одно и то же, плюс коды `RBD53iG`, `C53UiG`,
+  `cAPGi-5HaxD` и т. п. Без нормализации модель не определялась, и мастер
+  собирал команды чужого пакета.
+* В `wizard.js` `wifiKind` по умолчанию `legacy` (пакет wireless). Молчаливый
+  `wifi` — это ровно та ошибка, из-за которой на hAP ac³ оставался заводской SSID.
+* Обе ветки генерации печатают в конфиг проверку меню:
+  `:if ([:len [/interface wifi print]] = 0) do={:put "ВНИМАНИЕ: …"}`, чтобы
+  несовпадение было видно в терминале, а не только в отчёте.
+* `wifiProblems()` в `rosapply.go` сравнивает требования конфига
+  (`wifiWantFrom` смотрит и строки-скрипты с `[find where name="wifi1"]`) с
+  фактом из `/interface wireless|wifi print` и добавляет в отчёт строку
+  `error` вида «раздел Wi-Fi не выполнен: конфиг собран для пакета wifi, а на
+  роутере пакет wireless (wlan1, wlan2)».
+
 ### Применение конфига (`windows/rosapply.go`)
 
 Четыре правила, каждое появилось из реальной жалобы «применил, а ничего не

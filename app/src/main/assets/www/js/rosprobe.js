@@ -177,7 +177,31 @@
   /* -------------------------------------------------- подстройка под роутер */
 
   /* Плата RouterOS → id модели в мастере. Порядок важен: сначала точные. */
+  /* Приведение строки платы к сравнимому виду. RouterOS пишет модель
+     по-разному: «hAP ac³» (надстрочный символ), «hAP ac^3» в выгрузках и
+     заголовках, «hAP ac 3» в переписке, а в /system routerboard — код
+     RBD53iG-5HacD2HnD. Без нормализации мастер не узнавал модель и собирал
+     конфиг для чужого Wi-Fi-пакета. */
+  function normBoard(s) {
+    return String(s || '')
+      .replace(/[³]/g, '3').replace(/[²]/g, '2')
+      .replace(/\^3/g, '3').replace(/\^2/g, '2')
+      .replace(/\s+/g, ' ')
+      .toLowerCase()
+      .trim();
+  }
+
   const BOARD = [
+    // коды плат (то, что реально отвечает /system routerboard)
+    [/rbd53ig/, 'hap_ac3'],
+    [/rbd52g/, 'hap_ac2'],
+    [/c53uig|c53ig/, 'hap_ax3'],
+    [/c52ig/, 'hap_ax2'],
+    [/capgi-5haxd/, 'cap_ax'],
+    [/rbcapgi-5acd2nd|rbcapgi-2nd5acd/, 'cap_ac'],
+    [/rbwapg-5hacd2hnd|rbwapg-2hnd/, 'wap_ac'],
+    [/l41g-2axd/, 'hap_ax_lite'],
+    [/rb941/, 'hap_lite'],
     [/rb951/i, 'rb951'],
     [/rb760|hex\s*s/i, 'hexs'],
     [/rb960|hex\s*poe/i, 'hexpoe'],
@@ -200,7 +224,7 @@
 
   function modelFor(info) {
     if (!info) return '';
-    const hay = [info.board, info.model, info.identity].filter(Boolean).join(' ');
+    const hay = normBoard([info.board, info.model, info.identity].filter(Boolean).join(' '));
     for (let i = 0; i < BOARD.length; i++) {
       if (BOARD[i][0].test(hay)) return BOARD[i][1];
     }

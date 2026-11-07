@@ -25,8 +25,12 @@
     bridge: 'bridge-lan',
     dhcp: true, dns: '1.1.1.1,8.8.8.8',
     guest: true, guestPort: 'ether5', guestIp: '192.168.20.1', guestPrefix: 24,
-    wifi: false, wifiKind: 'wifi', wifiRadio: 'wifi1', wifiRadio5: 'wifi2', wifi5: true,
-    // wifiKind: wifi = пакет wifi (ax и wifi-qcom-ac), legacy = пакет wireless (802.11n/ac)
+    wifi: false, wifiKind: 'legacy', wifiRadio: 'wlan1', wifiRadio5: 'wlan2', wifi5: true,
+    // wifiKind: wifi = пакет wifi (ax и wifi-qcom-ac), legacy = пакет wireless (802.11n/ac).
+    // По умолчанию legacy: у большинства роутеров в руках (hAP ac²/ac³, cAP ac,
+    // wAP ac, RB951) Wi-Fi живёт в пакете wireless. Пакет wifi узнаётся опросом
+    // (/interface wifi) или выбором модели — молча ставить «wifi» нельзя,
+    // иначе на wireless-роутере команды уходят в несуществующее меню.
     wifiSsid: 'Office', wifiPass: 'WiFi-Pass-2026', wifiGuestSsid: 'Office-Guest',
     wifiGuestPass: 'Guest-Pass-2026',
     ipv6: 'off',            // off | pd | static
@@ -873,7 +877,11 @@
         /* ---------- пакет wireless: RB951G-2HnD, 802.11n, ОДИН диапазон 2.4 ГГц ---------- */
         sec('Wi-Fi (пакет wireless: RB951G-2HnD и другие 802.11n)');
         push('# У 802.11n-моделей SSID и страна задаются прямо на интерфейсе ' + radio + ', а не в профиле configuration.',
-          '# Проверить имя радиоинтерфейса: /interface wireless print (обычно ' + radio + ')');
+          '# Проверить имя радиоинтерфейса: /interface wireless print (обычно ' + radio + ')',
+          // Если пакета wireless на роутере нет, ни одна команда ниже не выполнится —
+          // говорим об этом сразу и внятно, а не молча оставляем заводской SSID.
+          ':if ([:len [/interface wireless print]] = 0) do={:put "ВНИМАНИЕ: на роутере нет пакета wireless — раздел Wi-Fi пропущен. Выберите модель с пакетом wifi (hAP ax2/ax3) и соберите конфиг заново."}',
+          ':if ([:len [/interface wireless find where name="' + radio + '"]] = 0) do={:put "ВНИМАНИЕ: нет радиоинтерфейса ' + radio + ' — проверьте /interface wireless print и имя радио в мастере."}');
         if (dsOn) {
           const dsSs = [
             { iface: 'wlan-pc', ssid: dsSsid.pc, sec: 'sec-lan', vlan: dsVl.wifi },
@@ -920,7 +928,8 @@
         sec('Wi-Fi (пакет wifi: RouterOS 7.13+ — hAP ax2/ax3, cAP ax, wAP ax)');
         push('# В пакете wifi у интерфейса НЕТ полей ssid и country — они живут в профиле configuration.',
           '# Имена радиоинтерфейсов проверьте так: /interface wifi print (обычно ' + radio + (has5 ? ', ' + radio5 : '') + ')',
-          '# Если у вас старый пакет wireless (802.11n, RB951) — выберите модель RB951G-2HnD в мастере.');
+          '# Если у вас старый пакет wireless (802.11n/ac, wlan1/wlan2) — соберите конфиг с моделью hAP ac³ или RB951G-2HnD.',
+          ':if ([:len [/interface wifi print]] = 0) do={:put "ВНИМАНИЕ: на роутере нет пакета wifi (интерфейсов ' + radio + ') — раздел Wi-Fi пропущен. Нужен пакет wifi или конфиг для пакета wireless."}');
         if (dsOn) {
           const dsSs = [
             { iface: 'wifi-pc', ssid: dsSsid.pc, sec: 'sec-lan', vlan: dsVl.wifi },
