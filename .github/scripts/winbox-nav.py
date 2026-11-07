@@ -83,8 +83,13 @@ def activate():
         if d and int(d['WIDTH']) * int(d['HEIGHT']) > area:
             best, area = wid, int(d['WIDTH']) * int(d['HEIGHT'])
     if best:
-        run(['xdotool', 'windowactivate', '--sync', best])
+        # В Xvfb нет оконного менеджера: windowactivate падает, а windowfocus
+        # работает и без него, иначе набранный адрес уходит «в никуда».
+        if run(['xdotool', 'windowactivate', '--sync', best]).returncode != 0:
+            run(['xdotool', 'windowfocus', '--sync', best])
+        run(['xdotool', 'windowfocus', '--sync', best])
         time.sleep(0.6)
+        log('  фокус: %s' % run(['xdotool', 'getwindowfocus']).stdout.strip())
     return best
 
 
@@ -159,6 +164,36 @@ def logged_in(X, Y, H):
     return find(tree_words(X, Y, H), 'Quick Set') is not None
 
 
+def field_text(X, Y):
+    """Что реально в поле Connect to (по OCR)."""
+    words = ocr(X + 150, Y + 276, 300, 28, 'field')
+    return ' '.join(w[0] for w in words)
+
+
+def fill_address(X, Y, wid):
+    """Ввести 127.0.0.1 в поле Connect to, проверяя результат по картинке."""
+    click(X + 300, Y + 290)
+    run(['xdotool', 'key', '--clearmodifiers', 'ctrl+a'])
+    methods = (
+        ['xdotool', 'type', '--delay', '90', '127.0.0.1'],
+        ['xdotool', 'type', '--window', wid, '--delay', '90', '127.0.0.1'],
+        ['xdotool', 'key', '--window', wid] + ['1', '2', '7', 'period', '0', '0', '1'],
+    )
+    for i, cmd in enumerate(methods):
+        run(cmd)
+        time.sleep(0.8)
+        txt = field_text(X, Y)
+        log('  ввод #%d: в поле %r' % (i + 1, txt))
+        if '127' in txt or '0.0' in txt or any(c.isdigit() for c in txt):
+            return True
+        activate()
+        click(X + 300, Y + 290)
+        run(['xdotool', 'key', '--clearmodifiers', 'ctrl+a'])
+    # не получилось — оставляем кадр для разбора
+    run(['import', '-window', 'root', os.path.join(OUT, 'debug-field.png')])
+    return False
+
+
 def connect(X, Y, W, H, tries=20):
     """Заполняем Connect to и жмём Connect — до получаса, пока не появится дерево.
 
@@ -169,21 +204,16 @@ def connect(X, Y, W, H, tries=20):
         if logged_in(X, Y, H):
             log('вход выполнен (попытка %d)' % attempt)
             return True
-        activate()
+        wid = activate()
         escape(1)
-        click(X + 320, Y + 288)          # поле Connect to
-        run(['xdotool', 'key', '--clearmodifiers', 'ctrl+a'])
-        run(['xdotool', 'type', '--delay', '80', '127.0.0.1'])
-        time.sleep(0.6)
-        field = ocr(X + 120, Y + 265, 420, 55, 'field')
-        log('  попытка %d: в поле — %r' % (attempt, ' '.join(w[0] for w in field)))
+        fill_address(X, Y, wid)
         run(['xdotool', 'key', 'Return'])
-        time.sleep(8)
+        time.sleep(9)
         if logged_in(X, Y, H):
             log('вход выполнен по Enter (попытка %d)' % attempt)
             return True
         click(X + 248, Y + 379)          # кнопка Connect
-        time.sleep(8)
+        time.sleep(9)
         if logged_in(X, Y, H):
             log('вход выполнен по кнопке Connect (попытка %d)' % attempt)
             return True
