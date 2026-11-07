@@ -35,7 +35,17 @@
     wifiGuestPass: 'Guest-Pass-2026',
     ipv6: 'off',            // off | pd | static
     ipv6Prefix: '2001:db8:1::/64',
-    wg: true, wgIp: '10.10.10.1', wgPort: 13231,
+    /* VPN. wgMode = server — роутер принимает клиентов (телефон, ноутбук),
+       wgMode = client — наоборот, роутер сам подключается к чужому серверу
+       (филиал к офису). Остальные VPN — L2TP/IPsec, OpenVPN и SSTP. */
+    wg: true, wgMode: 'server', wgIp: '10.10.10.1', wgPort: 13231,
+    wgEndpoint: '',          // адрес:порт чужого сервера — нужен клиенту
+    wgServerPub: '',         // публичный ключ сервера — нужен клиенту
+    wgAllowed: '0.0.0.0/0',  // что забирать через туннель (клиент)
+    wgKeepalive: 25,         // секунды persistent-keepalive (клиент)
+    ovpn: false, ovpnPort: 1194, ovpnCn: 'vpn.example.com',
+    ovpnServerDays: 825, ovpnClientDays: 365, ovpnUser: 'vpn1', ovpnPass: 'ChangeMe-2026',
+    sstp: false, sstpPort: 443, sstpUser: 'vpn1', sstpPass: 'ChangeMe-2026',
     l2tp: false, l2tpPsk: 'IPsec-PSK-2026', l2tpPool: '10.20.20.10-10.20.20.99',
     pppoeServer: false, pppoeServerPort: 'ether5', pppoePool: '10.30.30.10-10.30.30.99',
     pppoeServerUser: '', pppoeServerPass: '',
@@ -49,7 +59,7 @@
        тип подключения (dhcp | pppoe | lte | static), интерфейс и адрес,
        который пингуется ИМЕННО через этот канал. Переключение — по пингу,
        возврат — только после устойчивых ответов (wanUpSecs). */
-    wan1Kind: '', wan2Kind: '',           // пусто = взять из wan / dhcp для второго
+    wan1Kind: '', wan2Kind: 'lte',        // основной тип берётся из wan, резерв по умолчанию LTE
     wan1Port: '', wan2Port: 'lte1',
     wan1Probe: '1.1.1.1', wan2Check: '8.8.8.8',
     wan2PppoeUser: 'login2', wan2PppoePass: 'password2',
@@ -164,6 +174,17 @@
   }
 
   function q(v) { return '"' + clean(v) + '"'; }
+
+  /* Имя интерфейса по типу подключения — без ручного ввода:
+     LTE-модем всегда lte1, кабель и PPPoE — физический порт
+     (ether1 у основного канала, ether5 у резервного по умолчанию).
+     Раньше в мастере можно было получить «LTE на ether1» и «кабель на lte1». */
+  function wanIfFor(kind, which) {
+    const k = String(kind || '').toLowerCase();
+    if (k === 'lte') return 'lte1';
+    if (k === 'pppoe') return which === 'main' ? 'ether1' : 'ether5';
+    return which === 'main' ? 'ether1' : 'ether5';
+  }
 
   function ipOk(s) { return C ? C.ipToInt(s) != null : /\d+\.\d+\.\d+\.\d+/.test(String(s)); }
 
@@ -365,17 +386,48 @@
       err('ipv6Prefix', 'Префикс IPv6 в формате 2001:db8:1::/64');
     }
 
+    const wgClient = clean(opt(o, 'wgMode')) === 'client';
     if (opt(o, 'wg')) {
-      if (!ipOk(opt(o, 'wgIp'))) err('wgIp', 'Некорректный адрес WireGuard');
-      const p = +opt(o, 'wgPort');
-      if (!(p >= 1 && p <= 65535)) err('wgPort', 'Порт WireGuard от 1 до 65535');
-      if (opt(o, 'l2tp') && +opt(o, 'wgPort') === 500) warn('wgPort', 'Порт 500 занят IPsec');
+      if (!ipOk(String(opt(o, 'wgIp')).split('/')[0])) err('wgIp', 'Некорректный адрес WireGuard');
+      if (wgClient) {
+        /* клиенту нужен адрес сервера и его ключ, а порт прослушивания не нужен */
+        if (!clean(opt(o, 'wgEndpoint'))) err('wgEndpoint', 'Укажите адрес:порт сервера, к которому подключаемся');
+        else if (!/^[^\s:]+:\d+$/.test(clean(opt(o, 'wgEndpoint')))) err('wgEndpoint', 'Формат: 203.0.113.20:13231');
+        if (String(opt(o, 'wgServerPub')).length < 40) err('wgServerPub', 'Публичный ключ сервера — 44 символа (Base64)');
+        if (!cidrOk(clean(opt(o, 'wgAllowed'))) && !/,/.test(clean(opt(o, 'wgAllowed')))) {
+          err('wgAllowed', 'Что забирать через туннель: 0.0.0.0/0 или подсеть');
+        }
+        const ka = +opt(o, 'wgKeepalive');
+        if (ka && (ka < 5 || ka > 120)) warn('wgKeepalive', 'Keepalive обычно 15–25 с; больше — реже, но медленнее поднимается');
+      } else {
+        const p = +opt(o, 'wgPort');
+        if (!(p >= 1 && p <= 65535)) err('wgPort', 'Порт WireGuard от 1 до 65535');
+        if (opt(o, 'l2tp') && +opt(o, 'wgPort') === 500) warn('wgPort', 'Порт 500 занят IPsec');
+      }
+    }
+    if (opt(o, 'ovpn')) {
+      const p = +opt(o, 'ovpnPort');
+      if (!(p >= 1 && p <= 65535)) err('ovpnPort', 'Порт OpenVPN от 1 до 65535');
+      if (!clean(opt(o, 'ovpnCn'))) err('ovpnCn', 'Укажите имя сервера (Common Name) — адрес, по которому подключаются');
+      if (+opt(o, 'ovpnServerDays') < 30) warn('ovpnServerDays', 'Серверный сертификат лучше выпускать на 365–825 дней');
+    }
+    if (opt(o, 'sstp')) {
+      const p = +opt(o, 'sstpPort');
+      if (!(p >= 1 && p <= 65535)) err('sstpPort', 'Порт SSTP от 1 до 65535');
     }
 
     if (opt(o, 'l2tp') && String(opt(o, 'l2tpPsk')).length < 8) {
       err('l2tpPsk', 'IPsec PSK — минимум 8 символов');
     }
-    const wanPortV = clean(opt(o, 'wanPort')) || 'ether1';
+    const wanKindV = clean(opt(o, 'wan1Kind')) || opt(o, 'wan');
+    const wanPortV = clean(o.wanPort) || clean(opt(o, 'wanPort')) || wanIfFor(wanKindV, 'main');
+    /* Порт, не соответствующий типу канала, — самая частая ошибка ручного ввода. */
+    if (wanKindV === 'lte' && wanPortV !== 'lte1') {
+      warn('wanPort', 'Для LTE-модема интерфейс называется lte1 — мастер подставит его сам');
+    }
+    if (wanKindV !== 'lte' && wanPortV === 'lte1') {
+      warn('wanPort', 'lte1 — это модем; для кабеля нужен ether-порт (обычно ether1)');
+    }
 
     if (opt(o, 'wifi')) {
       const ch24 = parseInt(opt(o, 'wifiCh24'), 10);
@@ -550,7 +602,15 @@
     const rosKnown = !!(vp && vp.known);
     const rosV7 = !rosKnown || vp.v7;
     const wanMode = opt(o, 'wan');
-    const wanPort = clean(opt(o, 'wanPort')) || 'ether1';
+    /* Интерфейс основного канала выбирается по типу подключения, а не руками:
+       LTE-модем → lte1, кабель/PPPoE → ether1. Если тип не указан — берём порт из паспорта модели. */
+    const wanKindEff = clean(opt(o, 'wan1Kind')) || wanMode;
+    /* Имя интерфейса подчиняется типу канала: у LTE-модема это всегда lte1,
+       у кабеля — ether-порт (по умолчанию ether1). Ручное «LTE на ether1»
+       и «кабель на lte1» из старых сохранённых опций исправляется здесь. */
+    const wanPortPicked = clean(o.wanPort) || clean(opt(o, 'wanPort'));
+    const wanPort = wanKindEff === 'lte' ? 'lte1'
+      : (wanPortPicked && wanPortPicked !== 'lte1' ? wanPortPicked : wanIfFor(wanKindEff, 'main'));
     const bridge = clean(opt(o, 'bridge')) || 'bridge-lan';
     const lanIp = clean(opt(o, 'lanIp'));
     const lanPrefix = +opt(o, 'lanPrefix');
@@ -559,6 +619,11 @@
     const guestIface = 'vlan-guest';
     const wifiOn = !!opt(o, 'wifi');
     const wgOn = !!opt(o, 'wg') && rosV7;   // WireGuard есть только в RouterOS 7
+    const wgMode = clean(opt(o, 'wgMode')) === 'client' ? 'client' : 'server';
+    const wgIf = wgMode === 'client' ? 'wg-client' : 'wg0';
+    const ovpnOn = !!opt(o, 'ovpn');
+    const sstpOn = !!opt(o, 'sstp');
+    const certsOn = ovpnOn || sstpOn;       // OpenVPN и SSTP работают на сертификатах
     const l2tpOn = !!opt(o, 'l2tp');
     const pppoeSrv = !!opt(o, 'pppoeServer');
     const ipv6Mode = opt(o, 'ipv6');
@@ -569,7 +634,10 @@
     const qosOn = !!opt(o, 'qos');
     const snmpOn = !!opt(o, 'snmp');
     const syslogOn = !!opt(o, 'syslog');
-    const wan2Port = clean(opt(o, 'wan2Port')) || 'lte1';
+    const wan2KindEff = clean(opt(o, 'wan2Kind')) || 'lte';
+    const wan2Picked = clean(o.wan2Port) || clean(opt(o, 'wan2Port'));
+    const wan2Port = wan2KindEff === 'lte' ? 'lte1'
+      : (wan2Picked && wan2Picked !== 'lte1' ? wan2Picked : wanIfFor(wan2KindEff, 'backup'));
     const routes = (o.routes || []).filter(function (r) {
       return r && cidrOk(r.dst) && ipOk(clean(r.gw));
     }).map(function (r) {
@@ -707,7 +775,13 @@
     }
 
     sec('WAN');
-    if (wanMode === 'static') {
+    if (wanMode === 'lte') {
+      push('# LTE: модем в USB или mini-PCIe поднимает интерфейс lte1, адрес и шлюз выдаются по DHCP.',
+        '/interface lte set [find] disabled=no',
+        '# при необходимости укажите APN оператора: /interface lte set [find] apn-profiles=default',
+        '/ip dhcp-client add interface=' + wanPort + ' add-default-route=yes use-peer-dns=yes disabled=no comment="lte-internet"',
+        '# проверка: /interface lte info [find] once — уровень сигнала и регистрация в сети');
+    } else if (wanMode === 'static') {
       push('/ip address add address=' + hostCidr(opt(o, 'wanIp'), opt(o, 'wanPrefix')) + ' interface=' + wanPort,
         '/ip route add gateway=' + clean(opt(o, 'wanGw')));
     } else if (wanMode === 'pppoe') {
@@ -716,7 +790,8 @@
         ' add-default-route=yes use-peer-dns=yes disabled=no',
         '/interface list member add interface=wan-pppoe list=WAN');
     } else {
-      push('/ip dhcp-client add interface=' + wanPort + ' add-default-route=yes use-peer-dns=yes disabled=no');
+      push('/ip dhcp-client add interface=' + wanPort + ' add-default-route=yes use-peer-dns=yes disabled=no' +
+        (wanMode === 'lte' ? ' comment="lte-internet"' : ''));
     }
 
     if (failoverOn) {
@@ -1213,7 +1288,8 @@
         '/ip firewall filter add chain=input in-interface-list=WAN action=drop comment="drop wan input"',
         '/ip firewall filter add chain=forward connection-state=established,related action=accept comment="fwd established"',
         '/ip firewall filter add chain=forward connection-state=invalid action=drop');
-      if (wgOn) push('/ip firewall filter add chain=forward in-interface=wg0 action=accept comment="wg forward"');
+      if (wgOn) push('/ip firewall filter add chain=forward in-interface=' + wgIf +
+        ' action=accept comment="' + (wgMode === 'client' ? 'wg client' : 'wg forward') + '"');
       if (l2tpOn) push('# L2TP: при необходимости разрешите forward для PPP-интерфейсов (in-interface=all-ppp)');
       push('/ip firewall filter add chain=forward in-interface-list=LAN out-interface-list=WAN action=accept comment="lan to wan"');
       if (guestOn) {
@@ -1225,23 +1301,88 @@
       push('# firewall не включён — не оставляйте роутер без правил в интернете');
     }
 
-    if (wgOn || l2tpOn) {
+    if (wgOn || l2tpOn || certsOn) {
       sec('VPN');
-      if (wgOn) {
+      const dns1 = clean(opt(o, 'dns')).split(',')[0];
+      if (certsOn) {
+        push('# Сертификаты. Сначала центр сертификации (CA) — он подписывает сервер и клиентов,',
+          '# поэтому один CA подходит и для OpenVPN, и для SSTP.',
+          '/certificate add name=vpn-ca common-name=vpn-ca key-usage=key-cert-sign,crl-sign days-valid=3650 trusted',
+          ':do {/certificate sign vpn-ca ca=vpn-ca} on-error={}',
+          '/certificate add name=vpn-server common-name=' + q(opt(o, 'ovpnCn')) +
+          ' key-usage=tls-server days-valid=' + (+opt(o, 'ovpnServerDays') || 825),
+          ':do {/certificate sign vpn-server ca=vpn-ca} on-error={}');
+        if (ovpnOn) {
+          push('/certificate add name=cli-1 common-name=cli-1 key-usage=tls-client days-valid=' +
+            (+opt(o, 'ovpnClientDays') || 365),
+            ':do {/certificate sign cli-1 ca=vpn-ca} on-error={}',
+            '# Отдайте клиенту три файла: /certificate export-certificate vpn-ca file-name=vpn-ca',
+            '#                           /certificate export-certificate cli-1 file-name=cli-1',
+            '# файлы появятся в Files (Winbox) — перенесите их на телефон/ноутбук.');
+        }
+      }
+      if (wgOn && wgMode === 'client') {
+        const endpoint = clean(opt(o, 'wgEndpoint'));
+        const host = endpoint.replace(/:\d+$/, '');
+        const port = (endpoint.match(/:(\d+)$/) || [])[1] || '13231';
+        const allowed = clean(opt(o, 'wgAllowed')) || '0.0.0.0/0';
+        push('# WireGuard-клиент: роутер подключается к чужому серверу (филиал → офис).',
+          '# Приватный ключ RouterOS создаёт сам при добавлении интерфейса.',
+          '/interface wireguard add name=wg-client',
+          '# Публичный ключ роутера: /interface wireguard print detail where name=wg-client —',
+          '# строку public-key передайте администратору сервера, иначе пир не пустит.',
+          '/interface wireguard peers add interface=wg-client public-key=' + q(opt(o, 'wgServerPub')) +
+          ' endpoint-address=' + q(host) + ' endpoint-port=' + port +
+          ' allowed-address=' + allowed +
+          ' persistent-keepalive=' + ((+opt(o, 'wgKeepalive') || 25) + 's'),
+          '/ip address add address=' + hostCidr(clean(opt(o, 'wgIp')), 32) + ' interface=wg-client',
+          '/ip route add dst-address=' + (allowed.split(',')[0] || '0.0.0.0/0') +
+          ' gateway=wg-client distance=10 comment="vpn-tunnel"',
+          '/ip firewall nat add chain=srcnat out-interface=wg-client action=masquerade comment="wg client nat"',
+          '# Проверка: /interface wireguard peers print detail — handshake не «never»,',
+          '# затем /ping 10.10.10.1 count=4 (адрес сервера внутри туннеля).');
+      } else if (wgOn) {
         push('/interface wireguard add name=wg0 listen-port=' + (+opt(o, 'wgPort') || 13231),
           '/ip address add address=' + hostCidr(clean(opt(o, 'wgIp')), 24) + ' interface=wg0',
           '/ip firewall filter add chain=input protocol=udp dst-port=' + (+opt(o, 'wgPort') || 13231) +
           ' action=accept comment="wireguard" place-before=[/ip/firewall/filter find where comment="drop wan input"]',
-          '# Пир: /interface wireguard peers add interface=wg0 public-key="…" allowed-address=10.10.10.2/32');
+          '# Пир: /interface wireguard peers add interface=wg0 public-key="…" allowed-address=10.10.10.2/32',
+          '# QR-код для телефона — в разделе приложения «WireGuard: клиент на телефоне».');
       }
       if (l2tpOn) {
         push('/interface l2tp-server server set enabled=yes use-ipsec=yes ipsec-secret=' + q(opt(o, 'l2tpPsk')) +
           ' authentication=mschap2 default-profile=default',
           '/ip pool add name=vpn-pool ranges=' + clean(opt(o, 'l2tpPool')),
-          '/ppp profile add name=vpn-profile local-address=10.20.20.1 remote-address=vpn-pool dns-server=' +
-          clean(opt(o, 'dns')).split(',')[0],
+          '/ppp profile add name=vpn-profile local-address=10.20.20.1 remote-address=vpn-pool dns-server=' + dns1,
           '/ppp secret add name=vpn1 password=' + q('ChangeMe-2026') + ' profile=vpn-profile service=l2tp',
           '/ip firewall filter add chain=input protocol=udp dst-port=500,1701,4500 action=accept comment="l2tp/ipsec" place-before=[/ip/firewall/filter find where comment="drop wan input"]');
+      }
+      if (ovpnOn) {
+        const port = +opt(o, 'ovpnPort') || 1194;
+        const user = clean(opt(o, 'ovpnUser')) || 'vpn1';
+        push('# OpenVPN: сертификаты уже выпущены выше, остаётся сервер и учётная запись.',
+          '/ppp profile add name=vpn-profile-ovpn local-address=10.98.0.1 remote-address=10.98.0.100 dns-server=' + dns1,
+          '/ppp secret add name=' + user + ' password=' + q(opt(o, 'ovpnPass')) +
+          ' profile=vpn-profile-ovpn service=ovpn comment="openvpn client"',
+          '/interface ovpn-server server set enabled=yes port=' + port +
+          ' mode=ip certificate=vpn-server require-client-certificate=yes default-profile=vpn-profile-ovpn',
+          '/ip firewall filter add chain=input protocol=tcp dst-port=' + port +
+          ' action=accept comment="openvpn" place-before=[/ip/firewall/filter find where comment="drop wan input"]',
+          '# Проверка: /interface ovpn-server server print — enabled=yes, port=' + port + ', certificate=vpn-server.');
+      }
+      if (sstpOn) {
+        const port = +opt(o, 'sstpPort') || 443;
+        const user = clean(opt(o, 'sstpUser')) || 'vpn1';
+        push('# SSTP: поднимается по TCP ' + port + ', удобен там, где закрыты UDP-порты L2TP и WireGuard.',
+          '/ppp profile add name=vpn-profile-sstp local-address=10.97.0.1 remote-address=10.97.0.100 dns-server=' + dns1,
+          '/ppp secret add name=' + user + ' password=' + q(opt(o, 'sstpPass')) +
+          ' profile=vpn-profile-sstp service=sstp comment="sstp client"',
+          '/interface sstp-server server set enabled=yes port=' + port +
+          ' certificate=vpn-server authentication=mschap2 default-profile=vpn-profile-sstp',
+          '/ip firewall filter add chain=input protocol=tcp dst-port=' + port +
+          ' action=accept comment="sstp" place-before=[/ip/firewall/filter find where comment="drop wan input"]',
+          '# В Windows: «Добавить VPN» → тип SSTP → адрес ' + clean(opt(o, 'identity')) +
+          '.local или внешний IP, логин ' + user + '.');
       }
     }
 
@@ -1423,7 +1564,7 @@
       lines: L.length,
       counts: {
         forwards: forwards.length,
-        vpn: (wgOn ? 1 : 0) + (l2tpOn ? 1 : 0),
+        vpn: (wgOn ? 1 : 0) + (l2tpOn ? 1 : 0) + (ovpnOn ? 1 : 0) + (sstpOn ? 1 : 0),
         'wifi': wifiOn ? 1 : 0,
         ipv6: ipv6Mode === 'off' ? 0 : 1,
         segments: segs.length,
@@ -1511,6 +1652,7 @@
     applyPreset: applyPreset,
     models: models,
     applyModel: applyModel,
+    wanIfFor: wanIfFor,
     defaults: DEFAULTS,
     expandPorts: expandPorts,
     networkOf: networkOf,
