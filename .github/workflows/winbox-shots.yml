@@ -22,6 +22,7 @@ on:
       - 'ci/winbox-shots.trigger'
       - '.github/workflows/winbox-shots.yml'
       - '.github/scripts/winbox-capture.sh'
+      - '.github/scripts/winbox-nav.py'
       - '.github/scripts/shot-list.txt'
       - '.github/scripts/guest-shot.py'
 
