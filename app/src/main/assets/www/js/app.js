@@ -1628,7 +1628,8 @@
     l2tp: false, l2tpPsk: 'IPsec-PSK-2026', l2tpPool: '10.20.20.10-10.20.20.99',
     pppoeServer: false, pppoeServerPort: 'ether5', pppoePool: '10.30.30.10-10.30.30.99',
     pppoeServerUser: '', pppoeServerPass: '', forwards: [], nat: true, protect: true,
-    autobackup: false, tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org', resetBefore: false
+    autobackup: false, backupMail: true, backupTime: '03:30:00',
+    tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org', resetBefore: false
   };
 
   function wizSaved() {
@@ -1967,15 +1968,21 @@
       wizSwitch('w-harden', 'Базовая защита от взлома', o.harden, 'MAC-сервер, discovery, blacklist, закрыть SIP/PPTP/H.323') +
       '</section>';
 
-    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Уведомления на e-mail</h3>' +
+    const mailAny = !!(o.mail || o.backupMail);
+    html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Бэкап и уведомления на e-mail</h3>' +
+      wizSwitch('w-backupMail', 'Бэкап и конфигурация на почту', o.backupMail,
+        'каждый день: .backup и .rsc уходят письмом — есть из чего восстановить роутер') +
+      '<div class="wz-group' + (o.backupMail ? '' : ' off') + '" data-g="backupMail">' +
+      wizField('w-backupTime', 'Время отправки', o.backupTime, '03:30:00 — когда роутер свободен') +
+      '</div>' +
       wizSwitch('w-mail', 'Письмо при падении канала', o.mail, 'SMTP + netwatch: узнаете о сбое раньше клиента') +
-      '<div class="wz-group' + (o.mail ? '' : ' off') + '" data-g="mail">' +
+      '<div class="wz-group' + (mailAny ? '' : ' off') + '" data-g="mail">' +
       wizField('w-mailServer', 'SMTP-сервер', o.mailServer, 'например smtp.yandex.ru') +
       wizField('w-mailPort', 'Порт', o.mailPort, '587 с TLS') +
       wizField('w-mailFrom', 'От кого', o.mailFrom) +
-      wizField('w-mailTo', 'Кому', o.mailTo) +
+      wizField('w-mailTo', 'Кому', o.mailTo, 'сюда будут приходить копии конфигурации') +
       wizField('w-mailUser', 'Логин SMTP', o.mailUser, 'можно оставить пустым') +
-      wizField('w-mailPass', 'Пароль SMTP', o.mailPass, 'останется в конфиге — отдельный ящик') +
+      wizField('w-mailPass', 'Пароль SMTP', o.mailPass, 'пароль приложения; останется в конфиге — отдельный ящик') +
       '</div></section>';
 
     html += '<section class="card"><h3 class="card-h">' + svg('system', 15) + 'Время и аренда адресов</h3>' +
@@ -1996,7 +2003,7 @@
     html += '<section class="card"><h3 class="card-h">' + svg('svc', 15) + 'Дополнительно</h3>' +
       wizSwitch('w-protect', 'Firewall и защита', o.protect, 'рекомендуется включить') +
       wizSwitch('w-nat', 'NAT (masquerade)', o.nat, 'интернет для LAN') +
-      wizSwitch('w-autobackup', 'Автобэкап конфига', o.autobackup, 'скрипт + планировщик на 03:30') +
+
       '</section>';
 
     html += '<div class="wz-actions"><button class="btn primary" id="wizGo">Собрать конфиг</button>' +
@@ -2788,6 +2795,8 @@
       dsWifiIot: g('w-dsWifiIot', 'Printers'),
       tz: g('w-tz', 'Europe/Minsk'), ntp: g('w-ntp', 'by.pool.ntp.org'),
       leaseTime: g('w-leaseTime', '1d'),
+      backupMail: on('w-backupMail'), backupTime: g('w-backupTime', '03:30:00'),
+      autobackup: on('w-backupMail'),
       mail: on('w-mail'), mailServer: g('w-mailServer', ''), mailPort: g('w-mailPort', 587),
       mailFrom: g('w-mailFrom', ''), mailTo: g('w-mailTo', ''),
       mailUser: g('w-mailUser', ''), mailPass: g('w-mailPass', ''),
@@ -2813,7 +2822,7 @@
       qos: on('w-qos'), wanDown: g('w-wanDown', 100), wanUp: g('w-wanUp', 100),
       snmp: on('w-snmp'), snmpCommunity: g('w-snmpCommunity', 'mon-8f3c1a'), snmpHost: g('w-snmpHost', '192.168.88.0/24'),
       syslog: on('w-syslog'), syslogHost: g('w-syslogHost', '192.168.88.10'),
-      nat: on('w-nat'), protect: on('w-protect'), autobackup: on('w-autobackup'),
+      nat: on('w-nat'), protect: on('w-protect'),
       preset: wizSaved().preset || ''
     };
   }
@@ -2843,7 +2852,8 @@
       ' · резервирований: ' + (c.leases || 0) + ' · маршрутов: ' + (c.routes || 0) +
       (c.devices ? ' · подсетей: ' + c.devices : '') +
       ' · сервисов: ' + (c.services || 0) + ' · VPN: ' + (c.vpn || 0) +
-      (c.notify ? ' · e-mail: вкл' : '') + '</div>';
+      (c.notify ? ' · e-mail: вкл' : '') +
+      (c.backup ? ' · бэкап на e-mail: вкл' : '') + '</div>';
     if (res.errors && res.errors.length) {
       h += '<div class="warn"><span class="wi">' + warnIcon() + '</span><div><b>Есть ошибки в полях:</b><br>' +
         res.errors.map(esc).join('<br>') + '</div></div>';
@@ -3003,7 +3013,8 @@
         if (key === 'qos') show = on('w-qos');
         if (key === 'snmp') show = on('w-snmp');
         if (key === 'syslog') show = on('w-syslog');
-        if (key === 'mail') show = on('w-mail');
+        if (key === 'mail') show = on('w-mail') || on('w-backupMail');
+        if (key === 'backupMail') show = on('w-backupMail');
         g.classList.toggle('off', !show);
       });
     };

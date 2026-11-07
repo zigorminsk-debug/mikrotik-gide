@@ -72,7 +72,10 @@
     syslog: false, syslogHost: '192.168.88.10',
     nat: true, protect: true, resetBefore: false,   // сброс конфигурации перед применением
     rosVersion: '', rosBoard: '', rosFirmware: '',   // паспорт роутера (опрос в Windows-версии)
-    autobackup: false,
+    autobackup: false,        // старый флаг: только локальные копии (оставлен для шаблонов)
+    /* Бэкап и конфигурация на e-mail — включён по умолчанию, поэтому раздел есть
+       в любом собранном конфиге. Время — когда роутер свободен. */
+    backupMail: true, backupTime: '03:30:00',
     tz: 'Europe/Minsk', ntp: 'by.pool.ntp.org',
     author: '',            // объект или автор конфига — попадёт в шапку
     leaseTime: '1d',       // время аренды DHCP
@@ -461,7 +464,8 @@
       }
     });
 
-    if (opt(o, 'mail')) {
+    const backupMailV = !!(opt(o, 'backupMail') || opt(o, 'autobackup'));
+    if (opt(o, 'mail') || backupMailV) {
       const port = parseInt(opt(o, 'mailPort'), 10);
       if (!clean(opt(o, 'mailServer'))) err('mailServer', 'Укажите SMTP-сервер');
       if (!(port >= 1 && port <= 65535)) err('mailPort', 'Порт SMTP должен быть 1–65535');
@@ -469,6 +473,12 @@
       if (!/.+@.+\..+/.test(from)) err('mailFrom', 'Адрес отправителя выглядит некорректно');
       if (!/.+@.+\..+/.test(to)) err('mailTo', 'Адрес получателя выглядит некорректно');
       if (clean(opt(o, 'mailUser')) && !clean(opt(o, 'mailPass'))) warn('mailPass', 'Логин указан без пароля — сервер может отклонить отправку');
+      if (/@example\.(com|org|net)$/i.test(to) || /@example\.(com|org|net)$/i.test(from)) {
+        warn('mailTo', 'Адрес с example.com — замените на свой, иначе письма с бэкапом не уйдут');
+      }
+      if (backupMailV && !/^\d{1,2}:\d{2}(:\d{2})?$/.test(clean(opt(o, 'backupTime')))) {
+        warn('backupTime', 'Время бэкапа в формате 03:30 или 03:30:00');
+      }
     }
 
     const lease = clean(opt(o, 'leaseTime')) || '1d';
@@ -645,6 +655,9 @@
       return { dst: clean(r.dst), gw: clean(r.gw), distance: d >= 1 && d <= 255 ? d : 1 };
     });
     const mailOn = !!opt(o, 'mail');
+    const backupMailOn = !!(opt(o, 'backupMail') || opt(o, 'autobackup'));
+    const backupTime = /^\d{1,2}:\d{2}(:\d{2})?$/.test(clean(opt(o, 'backupTime')))
+      ? clean(opt(o, 'backupTime')) : '03:30:00';
     const mailTo = clean(opt(o, 'mailTo'));
     const authorLine = clean(opt(o, 'author'));
     const leaseTime = clean(opt(o, 'leaseTime')) || '1d';
@@ -1406,21 +1419,6 @@
       push('/ip firewall nat add chain=srcnat out-interface-list=WAN action=masquerade comment="subscribers nat"');
     }
 
-    if (opt(o, 'autobackup')) {
-      sec('Автобэкап конфигурации');
-      push(':if ([:len [/system script find where name="auto-backup"]] = 0) do={',
-        '/system script add name=auto-backup policy=read,write,sensitive source={',
-        '  :local d [/system clock get date]',
-        '  :local tag ("bak-" . $d)',
-        '  /system backup save name=$tag dont-encrypt=yes',
-        '  /export file=($tag . "-cfg")',
-        '  :log info ("auto-backup: " . $tag)',
-        '}}',
-        '/system scheduler add name=daily-backup start-time=03:30:00 interval=1d on-event="/system script run auto-backup"');
-      push('# Копии лежат в Files. Для отправки на сервер добавьте в скрипт:');
-      push('# /tool fetch url="sftp://backup@10.0.0.5/" src-path=($tag . ".backup") upload=yes user=backup password=***');
-    }
-
     if (hotspotOn) {
       sec('Hotspot для гостей');
       if (!guestOn) {
@@ -1477,6 +1475,45 @@
       }
       push('# Проверка отправки:', '# ' + mailSend('RouterOS test', 'Письмо от ' + identity));
       push('# Пароль SMTP останется в конфиге — используйте отдельный ящик только для роутера.');
+    }
+
+    if (backupMailOn) {
+      sec('Бэкап и отправка конфигурации на e-mail');
+      if (!mailOn) {
+        push('/tool e-mail set server=' + q(opt(o, 'mailServer')) + ' port=' + (parseInt(opt(o, 'mailPort'), 10) || 587) +
+          ' from=' + q(opt(o, 'mailFrom')) + ' tls=yes' +
+          (clean(opt(o, 'mailUser')) ? ' user=' + q(opt(o, 'mailUser')) + ' password=' + q(opt(o, 'mailPass')) : ''));
+      }
+      push('# Каждый день роутер сам делает резервную копию (.backup) и текстовый экспорт (.rsc)',
+        '# и отправляет оба файла письмом. Копии прошлых дней с роутера удаляются, чтобы не забивать flash.',
+        ':if ([:len [/system script find where name="backup-mail"]] = 0) do={',
+        '/system script add name=backup-mail policy=read,write,policy,test,sensitive source={',
+        '  :local d [/system clock get date]',
+        '  :local tag ""',
+        '  :for i from=0 to=([:len $d] - 1) do={ :local c [:pick $d $i ($i + 1)]; :if ($c = "/") do={ :set c "-" }; :set tag ($tag . $c) }',
+        '  :set tag ("bak-" . $tag)',
+        '  /file remove [find where name~"^bak-" and name!~$tag]',
+        '  /system backup save name=$tag dont-encrypt=yes',
+        '  /export file=($tag . "-cfg")',
+        '  :do {',
+        '    /tool e-mail send to=' + q(mailTo) + ' subject=("Backup " . $tag) body=' +
+          q('Роутер ' + identity + ': резервная копия во вложении.') + ' file=($tag . ".backup")',
+        '    /tool e-mail send to=' + q(mailTo) + ' subject=("Config " . $tag) body=' +
+          q('Роутер ' + identity + ': текстовый конфиг (.rsc) во вложении.') + ' file=($tag . "-cfg.rsc")',
+        '    :log info ("backup-mail: отправлено " . $tag)',
+        '  } on-error={ :log error ("backup-mail: письмо не ушло, файлы " . $tag . " остались на роутере") }',
+        '}}',
+        '/system scheduler add name=backup-mail start-time=' + backupTime +
+          ' interval=1d on-event=backup-mail policy=read,write,policy,test,sensitive',
+        '# Имя файла собирается из даты, а «/» в нём заменяется на «-» — файл создастся при любом формате даты.',
+        '# Проверить сейчас, не дожидаясь ночи: /system script run backup-mail',
+        '# Что лежит на роутере: /file print where name~"^bak-"',
+        '# Восстановление: Files → bak-<дата>.backup → Restore, либо /system backup load name=bak-<дата>',
+        '# Если письмо не ушло: /log print where topics~"error" — чаще всего нужен «пароль приложения»',
+        '# почтового сервиса, а не обычный пароль ящика (Яндекс, Gmail, Mail.ru требуют именно его).');
+      if (/@example\.(com|org|net)$/i.test(mailTo) || /@example\.(com|org|net)$/i.test(clean(opt(o, 'mailFrom')))) {
+        push('# ВНИМАНИЕ: адреса вида example.com — замените «Кому» и «От кого» на свои, иначе письмо не уйдёт.');
+      }
     }
 
     if (snmpOn || syslogOn) {
@@ -1572,6 +1609,7 @@
         leases: leases.length,
         routes: routes.length,
         notify: mailOn ? 1 : 0,
+        backup: backupMailOn ? 1 : 0,
         services: (failoverOn ? 1 : 0) + (hotspotOn ? 1 : 0) + (qosOn ? 1 : 0) + (snmpOn ? 1 : 0) +
           (syslogOn ? 1 : 0) + (hardenOn ? 1 : 0)
       }
