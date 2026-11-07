@@ -28,7 +28,7 @@
     { g: 'Interfaces', ic: 'port', items: ['Interface', 'Ethernet', 'VLAN', 'Bonding', 'Bridge', 'WireGuard', 'VXLAN', 'Lists', 'Detect Internet', 'LTE'] },
     { g: 'WireGuard', ic: 'shield', items: ['WireGuard', 'Peers'] },
     { g: 'Bridge', ic: 'bridge', items: ['Bridge', 'Ports', 'VLANs', 'Hosts', 'Filters', 'MSTP', 'NAT'] },
-    { g: 'PPP', ic: 'ppp', items: ['Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'] },
+    { g: 'PPP', ic: 'ppp', items: ['Interfaces', 'Secrets', 'Profiles', 'PPPoE Server', 'L2TP Server', 'Active Connections'] },
     { g: 'Switch', ic: 'switch', items: ['Switch', 'Ports', 'VLANs', 'Rules'] },
     { g: 'Mesh', ic: 'mesh' },
     { g: 'IP', ic: 'ip', items: ['Address', 'ARP', 'Cloud', 'DHCP Client', 'DHCP Server', 'DNS', 'Firewall', 'Hotspot',
@@ -114,22 +114,29 @@
   }
 
   /* ---------- боковое меню Winbox (мини-копия) ---------- */
-  function sidebar(path) {
+  /* marks: {grp: 1, sub: 2} — номера на пункте меню, чтобы в статье можно было
+     писать «1 — откройте Routing, 2 — выберите Tables» и видеть это на картинке */
+  function sidebar(path, marks) {
     const parts = String(path || '').split('→').map(function (s) { return s.trim(); }).filter(Boolean);
     const g0 = groupName(parts[0] || '');
     const i0 = (parts[1] || '').toLowerCase();
+    const mk = marks || {};
     const box = el('div', 'wb-side');
     box.appendChild(el('div', 'sb-search', 'Search'));
     MENU.forEach(function (grp) {
       const hl = groupName(grp.g) === g0;
       const open = !!(grp.items && grp.items.length) || hl;
-      box.appendChild(el('div', 'sb-grp' + (hl ? ' hl' : ''),
+      const gEl = el('div', 'sb-grp' + (hl ? ' hl' : ''),
         '<span class="sb-ico">' + ico(grp.ic, 14) + '</span><span>' + esc(grp.g) + '</span>' +
-        (open ? '<span class="car">›</span>' : '')));
+        (open ? '<span class="car">›</span>' : ''));
+      if (hl && mk.grp) { gEl.setAttribute('data-m', mk.grp); gEl.classList.add('wb-target'); }
+      box.appendChild(gEl);
       if (hl && grp.items) {
         grp.items.forEach(function (it) {
           const on = it.toLowerCase() === i0;
-          box.appendChild(el('div', 'sb-sub' + (on ? ' hl' : ''), esc(it)));
+          const sEl = el('div', 'sb-sub' + (on ? ' hl' : ''), esc(it));
+          if (on && mk.sub) { sEl.setAttribute('data-m', mk.sub); sEl.classList.add('wb-target'); }
+          box.appendChild(sEl);
         });
       }
     });
@@ -216,6 +223,69 @@
         { l: 'Private Key', k: 'text', core: 1 },
         { l: 'Public Key', k: 'text', core: 1 },
         { l: 'MTU', k: 'text' }
+      ]
+    },
+    'mangle rule': {
+      title: 'Mangle Rule',
+      tabs: ['General', 'Advanced', 'Extra', 'Action', 'Statistics'],
+      fields: [
+        { l: 'Chain', k: 'select', core: 1 },
+        { l: 'Src. Address', k: 'text' },
+        { l: 'Dst. Address', k: 'text' },
+        { l: 'Protocol', k: 'select' },
+        { l: 'Src. Port', k: 'text' },
+        { l: 'Dst. Port', k: 'text' },
+        { l: 'In. Interface', k: 'select' },
+        { l: 'Out. Interface', k: 'select' },
+        { l: 'In. Interface List', k: 'select' },
+        { l: 'Out. Interface List', k: 'select' },
+        { l: 'Action', k: 'select', core: 1 },
+        { l: 'New Routing Mark', k: 'select' },
+        { l: 'Passthrough', k: 'check' },
+        { l: 'New Connection Mark', k: 'select' },
+        { l: 'New Packet Mark', k: 'select' },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'client config': {
+      title: 'Client Config',
+      fields: [
+        { l: 'Client Address', k: 'text', core: 1 },
+        { l: 'Client DNS', k: 'text', core: 1 },
+        { l: 'Client Endpoint', k: 'text', core: 1 },
+        { l: 'Client Allowed Address', k: 'text', core: 1 },
+        { l: 'Config', k: 'area', core: 1 }
+      ]
+    },
+    'routing table': {
+      title: 'Table',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'FIB', k: 'check', core: 1 },
+        { l: 'Comment', k: 'text' }
+      ]
+    },
+    'script': {
+      title: 'Script',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Owner', k: 'text', core: 1 },
+        { l: 'Policy', k: 'text', core: 1 },
+        { l: "Don't Require Permissions", k: 'check' },
+        { l: 'Source', k: 'area', core: 1 }
+      ]
+    },
+    'scheduler': {
+      title: 'Scheduler',
+      fields: [
+        { l: 'Name', k: 'text', core: 1 },
+        { l: 'Start Date', k: 'text', core: 1 },
+        { l: 'Start Time', k: 'text', core: 1 },
+        { l: 'Interval', k: 'text', core: 1 },
+        { l: 'On Event', k: 'text', core: 1 },
+        { l: 'Policy', k: 'text' },
+        { l: 'Run Count', k: 'text' },
+        { l: 'Comment', k: 'text' }
       ]
     },
     'filter rule': {
@@ -441,6 +511,7 @@
         { l: 'Keepalive Timeout', k: 'text' },
         { l: 'MTU', k: 'text' },
         { l: 'Add Default Route', k: 'check' },
+        { l: 'Default Route Distance', k: 'text' },
         { l: 'Use Peer DNS', k: 'check' },
         { l: 'Disabled', k: 'check' }
       ]
@@ -485,6 +556,7 @@
         { l: 'Use Peer DNS', k: 'check' },
         { l: 'Use Peer NTP', k: 'check' },
         { l: 'Add Default Route', k: 'check' },
+        { l: 'Default Route Distance', k: 'text' },
         { l: 'Disabled', k: 'check' }
       ]
     },
@@ -612,6 +684,18 @@
       if (!src.title) out.title = cat.title;
     }
 
+    /* Поля с вкладкой (t) — как в настоящем Winbox: в General видно только
+       General, в Action — только Action. Если автор разметил вкладки, оставляем
+       лишь те поля, что он перечислил (каталог иначе досыпает пустые). */
+    if (src.tab && fields.some(function (f) { return f.t; })) {
+      const authored = {};
+      (src.fields || []).forEach(function (f) { authored[normLabel(f.l)] = 1; });
+      fields = fields.filter(function (f) {
+        if (!authored[normLabel(f.l)]) return false;
+        return !f.t || f.t === src.tab;
+      });
+    }
+
     /* у полей-списков («+») значение относится к соседнему полю Current … */
     fields.forEach(function (fd) {
       if (fd.type !== 'plus' && !(fd.type === 'check' && fd.plus)) return;
@@ -714,7 +798,9 @@
 
     if (f.buttons !== false) {
       const foot = el('div', 'wb-form-foot');
-      const list = (f.buttons || ['Cancel', 'Apply', 'OK']).slice();
+      const list = (f.buttons || ['Cancel', 'Apply', 'OK']).slice().map(function (b) {
+        return (b && typeof b === 'object') ? b : { t: b };
+      });
       /* Winbox 4 держит внизу справа Cancel / Apply / OK, остальные кнопки — слева.
          В статьях подписи бывают по-русски, поэтому приводим их к стандартным. */
       const SYN = {
@@ -723,26 +809,33 @@
         next: 'Next', 'далее': 'Next'
       };
       const norm = function (b) {
-        const k = String(b).toLowerCase().replace(/[.!…]+$/g, '').trim();
-        return SYN[k] || b;
+        const t = (b && typeof b === 'object') ? b.t : b;
+        const k = String(t).toLowerCase().replace(/[.!…]+$/g, '').trim();
+        return SYN[k] || t;
       };
       const STD = ['Cancel', 'Apply', 'OK'];
       const acts = list.filter(function (b) { return STD.indexOf(norm(b)) < 0; });
-      const std = STD.filter(function (b) { return list.some(function (x) { return norm(x) === b; }); });
-      if (!std.length) std.push('OK');
+      const std = STD.map(function (name) {
+        for (let i = 0; i < list.length; i++) if (norm(list[i]) === name) return list[i];
+        return null;
+      }).filter(Boolean);
+      if (!std.length) std.push({ t: 'OK' });
 
       acts.forEach(function (b) {
-        const btn = el('button', 'wb-btn', '<span class="bi">⋯</span>' + esc(b));
+        const btn = el('button', 'wb-btn', '<span class="bi">⋯</span>' + esc(b.t));
         btn.type = 'button';
-        btn.id = 'btn-' + b.toLowerCase().replace(/[^a-zа-я0-9]/gi, '');
+        btn.id = 'btn-' + String(b.t).toLowerCase().replace(/[^a-zа-я0-9]/gi, '');
         btn.style.marginRight = 'auto';
+        if (b.m) { btn.setAttribute('data-m', b.m); btn.classList.add('wb-target'); }
         foot.appendChild(btn);
       });
       std.forEach(function (b) {
-        const cls = b === 'Cancel' ? ' sec' : ' def';
-        const btn = el('button', 'wb-btn' + cls, esc(b));
+        const name = norm(b);
+        const cls = name === 'Cancel' ? ' sec' : ' def';
+        const btn = el('button', 'wb-btn' + cls, esc(name));
         btn.type = 'button';
-        btn.id = 'btn-' + b.toLowerCase();
+        btn.id = 'btn-' + name.toLowerCase();
+        if (b.m) { btn.setAttribute('data-m', b.m); btn.classList.add('wb-target'); }
         foot.appendChild(btn);
       });
       box.appendChild(foot);
@@ -1003,7 +1096,7 @@
     const scale = el('div', 'scene-scale');
 
     const root = el('div', 'wb');
-    root.appendChild(sidebar(spec.path));
+    root.appendChild(sidebar(spec.path, spec.menu));
 
     const main = el('div', 'wb-main');
 
@@ -1044,8 +1137,13 @@
     if (dlgTabs && dlgTabs.length) {
       const tabs = el('div', 'wb-tabs');
       const onT = pf.tab || dlgTabs[0];
+      const tmarks = (pf && pf.tabMarks) || {};
       dlgTabs.forEach(function (t, i) {
-        tabs.appendChild(el('div', 'wb-tab' + (t === onT ? ' on' : ''), esc(t)));
+        const d = el('div', 'wb-tab' + (t === onT ? ' on' : ''), esc(t));
+        /* номер на вкладке диалога: «5 — перейдите на вкладку Dial Out» */
+        const mk = tmarks[t] || ((pf && pf.tabMark === t) ? (pf.tabMarkN || 1) : 0);
+        if (mk) { d.setAttribute('data-m', mk); d.classList.add('wb-target'); }
+        tabs.appendChild(d);
       });
       main.appendChild(tabs);
     }
@@ -1104,8 +1202,10 @@
     if (spec.rightTools !== false) {
       const right = el('div', 'wb-right');
       (spec.rightTools || [{ t: 'Copy', i: '⧉' }, { t: 'Find', i: '⌕' }]).forEach(function (r, i) {
-        right.appendChild(el('div', 'rt' + (i === 0 ? ' on' : ''),
-          '<span class="ri">' + esc(r.i || '⧉') + '</span><span>' + esc(r.t) + '</span>'));
+        const d = el('div', 'rt' + (i === 0 ? ' on' : ''),
+          '<span class="ri">' + esc(r.i || '⧉') + '</span><span>' + esc(r.t) + '</span>');
+        if (r.m) { d.setAttribute('data-m', r.m); d.classList.add('wb-target'); }
+        right.appendChild(d);
       });
       work.appendChild(right);
     }
@@ -1122,6 +1222,7 @@
     scale.appendChild(root);
     host.appendChild(scale);
     block.appendChild(host);
+    if (spec.marks) block.classList.add('guide');
     block._compact = !!spec.compact;
     if (!spec.compact) block.appendChild(el('div', 'scene-hint', '⇄ Окно шире экрана — прокрутите вбок или нажмите «⤢ крупнее»'));
     addZoom(block, host, spec);
@@ -1147,7 +1248,7 @@
     const host = el('div', 'scene-host');
     const scale = el('div', 'scene-scale');
     const root = el('div', 'wb wb-navwin');
-    root.appendChild(sidebar(spec.path));
+    root.appendChild(sidebar(spec.path, spec.menu));
 
     const main = el('div', 'wb-main');
     const tb = el('div', 'wb-tb');
@@ -1175,11 +1276,12 @@
     const target = subs.length ? subs[subs.length - 1] : (grps.length ? grps[0] : null);
     let notes = [];
     if (target) {
+      const n = (spec.menu && (spec.menu.sub || spec.menu.grp)) || 1;
       target.id = 'navtarget';
-      target.setAttribute('data-m', '1');
+      target.setAttribute('data-m', n);
       target.classList.add('wb-target');
       target.classList.add('foc');
-      notes = ['Откройте в меню: ' + (spec.path || '')];
+      notes = spec.notes || ['Откройте в меню: ' + (spec.path || '')];
     }
     addZoom(block, host, spec);
     if (notes.length) {

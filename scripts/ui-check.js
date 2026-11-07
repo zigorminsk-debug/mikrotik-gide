@@ -376,7 +376,8 @@ async function checkWanFailover() {
   ok('статья о резервном интернете есть', !!art);
   if (art) {
     ok('шагов не меньше десяти', (art.steps || []).length >= 10, 'шагов: ' + (art.steps || []).length);
-    ok('схем окон не меньше четырёх', (art.scenes || []).length >= 4);
+    const shots = (art.steps || []).filter(s => s && s.sc);
+    ok('у большинства шагов своя картинка', shots.length >= 10, 'с картинкой: ' + shots.length);
     const body = Array.isArray(art.config) ? art.config.join('\n') : String(art.config || '');
     ok('есть тело скрипта для копирования',
       /:local ups 6/.test(body) && /:local fails 2/.test(body));
@@ -392,7 +393,7 @@ async function checkWanFailover() {
     ok('в теле скрипта нет комментариев после команды',
       !/^[^#\n]+#/m.test(body));
     ok('есть испытание с выдёргиванием кабеля',
-      (art.steps || []).some(s => /Выдерните кабель/.test(s.d || '')));
+      (art.steps || []).some(s => /выдерните кабель/i.test(s.d || '')));
     ok('есть ошибка про одинаковые адреса проверки',
       (art.mistakes || []).some(m => /одним адресом/.test(m)));
   }
@@ -457,9 +458,154 @@ async function checkWanFailover() {
   await new Promise(r => setTimeout(r, 60));
   const page = text(q(win, '#content'));
   ok('статья открывается по адресу', /Резервный интернет/.test(page));
-  ok('на странице есть шаги', /Поймите схему на пальцах/.test(page));
+  ok('на странице есть шаги', /Как это работает/.test(page));
   ok('на странице есть тело скрипта', /wan-failover/.test(page) && /:local ups 6/.test(page));
-  ok('на странице есть испытание кабелем', /Выдерните кабель/.test(page));
+  ok('на странице есть испытание кабелем', /выдерните кабель/i.test(page));
+  ok('под шагами стоят окна с номерами', win.document.querySelectorAll('.step-shot .wb-num').length > 0);
+  ok('под окнами есть расшифровка номеров', /1 — /.test(page) || /1 —/.test(page));
+}
+
+/* Раздел «Резервный интернет и VPN» и пошаговые картинки.
+
+   Главная претензия к прошлой версии: на схеме стоял один номер без подписи,
+   и по картинке нельзя было повторить настройку. Поэтому проверяем главное:
+   у каждого шага-инструкции (scene.marks) есть список подписей, и КАЖДЫЙ номер
+   из этого списка стоит на каком-то элементе окна — иначе номер повиснет
+   в воздухе, а читатель не поймёт, куда нажимать. */
+function sceneMarks(sc) {
+  const out = [];
+  const walk = function (o) {
+    if (!o || typeof o !== 'object') return;
+    if (Array.isArray(o)) { o.forEach(walk); return; }
+    if (o.m) out.push(Number(o.m));
+    for (const k in o) if (k !== 'm' && typeof o[k] === 'object') walk(o[k]);
+  };
+  walk(sc.rows); walk(sc.tools); walk(sc.rightTools);
+  /* поля диалога: при разметке вкладок (поле t) renderer показывает только
+     поля активной вкладки — иначе номер висел бы на невидимом поле */
+  if (sc.form) {
+    const tabMode = (sc.form.fields || []).some(f => f && f.t);
+    const vis = tabMode ? (sc.form.fields || []).filter(f => !f.t || f.t === sc.form.tab) : (sc.form.fields || []);
+    walk(vis);
+    const rest = {};
+    for (const k in sc.form) if (k !== 'fields') rest[k] = sc.form[k];
+    walk(rest);
+  }
+  if (sc.menu) { if (sc.menu.grp) out.push(Number(sc.menu.grp)); if (sc.menu.sub) out.push(Number(sc.menu.sub)); }
+  if (sc.tabMark) out.push(Number(sc.tabMarkN || 1));
+  if (sc.form && sc.form.tabMark) out.push(Number(sc.form.tabMarkN || 1));
+  if (sc.form && sc.form.tabMarks) Object.keys(sc.form.tabMarks).forEach(k => out.push(Number(sc.form.tabMarks[k])));
+  return out;
+}
+
+function guideProblems(art) {
+  const bad = [];
+  (art.steps || []).forEach(function (st, i) {
+    if (!st || !st.sc) return;
+    const sc = st.sc;
+    const n = (sc.notes || []).length;
+    if (!sc.marks) { bad.push('шаг ' + (i + 1) + ': нет marks — картинка не в режиме инструкции'); return; }
+    if (!n) { bad.push('шаг ' + (i + 1) + ': нет подписей под окном'); return; }
+    const have = sceneMarks(sc);
+    const miss = [];
+    for (let k = 1; k <= n; k++) if (have.indexOf(k) < 0) miss.push(k);
+    if (miss.length) bad.push('шаг ' + (i + 1) + ': номера без цели на окне — ' + miss.join(', '));
+    const wrong = (sc.notes || []).filter(function (t, j) { return String(t).indexOf(String(j + 1) + ' —') !== 0; });
+    if (wrong.length) bad.push('шаг ' + (i + 1) + ': подпись начинается не со своего номера — «' + wrong[0] + '»');
+  });
+  return bad;
+}
+
+async function checkNetVpn() {
+  console.log('\nРаздел «Резервный интернет и VPN»: статьи и пошаговые картинки');
+  const win = boot('windows');
+  const info = win.eval(`(function(){
+    const D = window.DATA || [];
+    const g = D.filter(function (x) { return x.id === 'netvpn'; })[0] || null;
+    const ids = [];
+    D.forEach(function (x) { (x.items || []).forEach(function (a) { ids.push(a.id); }); });
+    return {
+      first: D[0] ? D[0].id : '',
+      group: g ? g.items.map(function (a) { return a.id; }) : [],
+      ids: ids,
+      tasks: (D.filter(function (x) { return x.id === 'task'; })[0] || { items: [] }).items
+        .map(function (a) { return a.id; })
+    };
+  })()`);
+
+  ok('первым в учебнике идёт раздел про резерв и VPN', info.first === 'netvpn', 'первый: ' + info.first);
+  ok('раздел содержит статью о резервном интернете', info.group.indexOf('task-wan-failover') >= 0);
+  ok('в разделе три статьи WireGuard',
+    ['wg-server', 'wg-client-config', 'wg-site'].every(id => info.group.indexOf(id) >= 0));
+  ok('статьи не дублируются в «Задачах»', info.tasks.indexOf('task-wan-failover') < 0);
+  ok('идентификаторы статей уникальны',
+    info.ids.length === new Set(info.ids).size,
+    'всего ' + info.ids.length + ', уникальных ' + new Set(info.ids).size);
+
+  const arts = win.eval(`(function(){
+    const out = {};
+    const D = window.DATA || [];
+    for (let i = 0; i < D.length; i++) {
+      const its = D[i].items || [];
+      for (let j = 0; j < its.length; j++) {
+        const a = its[j];
+        if (a.id === 'wg-server' || a.id === 'wg-client-config' || a.id === 'wg-site') out[a.id] = a;
+      }
+    }
+    return out;
+  })()`);
+
+  const want = {
+    'wg-server': [/Listen Port/, /13231/, /Client Config|QR/, /Allowed Address/],
+    'wg-client-config': [/QR/, /handshake/i],
+    'wg-site': [/Endpoint/, /Allowed Address/, /Keepalive/i]
+  };
+  Object.keys(want).forEach(function (id) {
+    const a = arts[id];
+    ok('статья ' + id + ' есть', !!a);
+    if (!a) return;
+    ok(id + ': шагов не меньше шести', (a.steps || []).length >= 6, 'шагов: ' + (a.steps || []).length);
+    const body = JSON.stringify({ steps: a.steps, purpose: a.purpose, usage: a.usage,
+      mistakes: a.mistakes, warn: a.warn, check: a.check });
+    ok(id + ': в тексте есть ключевые понятия',
+      want[id].every(re => re.test(body)));
+    const probs = guideProblems(a);
+    ok(id + ': номера на картинках совпадают с подписями', probs.length === 0, probs.slice(0, 3).join('; '));
+    ok(id + ': есть проверка результата', (a.check || []).length > 0);
+  });
+
+  // та же проверка для статьи о резервном интернете
+  const fo = win.eval(`(function(){
+    const D = window.DATA || [];
+    for (let i = 0; i < D.length; i++) {
+      const its = D[i].items || [];
+      for (let j = 0; j < its.length; j++) if (its[j].id === 'task-wan-failover') return its[j];
+    }
+    return null;
+  })()`);
+  const foProbs = fo ? guideProblems(fo) : ['статьи нет'];
+  ok('task-wan-failover: номера на картинках совпадают с подписями',
+    foProbs.length === 0, foProbs.slice(0, 3).join('; '));
+
+  // страница: под шагами должны быть и окна с номерами, и подписи к ним
+  win.location.hash = '#/wg-server';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(r => setTimeout(r, 80));
+  const doc = win.document;
+  ok('страница wg-server рисуется', /WireGuard/.test(text(q(win, '#content'))));
+  ok('под шагами стоят окна с номерами', doc.querySelectorAll('.step-shot .wb-num').length > 0,
+    'номеров: ' + doc.querySelectorAll('.step-shot .wb-num').length);
+  ok('под окнами видна расшифровка шагов',
+    doc.querySelectorAll('.step-shot .scene-block.guide .notes li').length > 0,
+    'подписей: ' + doc.querySelectorAll('.step-shot .scene-block.guide .notes li').length);
+
+  const home = (function () {
+    win.location.hash = '#/';
+    win.dispatchEvent(new win.Event('hashchange'));
+    return text(q(win, '#content'));
+  })();
+  ok('на главной есть карточка «Резервный интернет»', /Резервный интернет/.test(home));
+  ok('на главной есть карточка WireGuard', /WireGuard/.test(home));
 }
 
 /* Все экраны инструментов должны рисоваться без исключений.
@@ -516,6 +662,7 @@ async function checkAllRoutes() {
     await checkPortCheckRestOnly();
     await checkWizardLan();
     await checkWanFailover();
+    await checkNetVpn();
     await checkWifiPackage();
     await checkAllRoutes();
   } catch (e) {
