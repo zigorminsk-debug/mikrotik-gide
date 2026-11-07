@@ -135,6 +135,42 @@ case "$MODE" in
       sleep 1
     done
     ;;
+  probe)
+    # Разведка: выясняем, как Winbox 4 открывает ПОДМЕНЮ и есть ли поиск по меню.
+    # По этим кадрам задаются точные координаты для capture.
+    first=1
+    while IFS='|' read -r name y suby new; do
+      case "$name" in ''|\#*) continue;; esac
+      [ "$first" = 1 ] && { first=0; } 
+      geom
+      xdotool windowactivate --sync "$WID" 2>/dev/null || true
+      # 1) клик по пункту: какое окно открывается
+      xdotool mousemove $((X + 60)) $((Y + y)) click 1; sleep 2
+      shot "probe-$name-a"
+      log "  probe-$name-a (y=+$y)"
+      # 2) клик по стрелке справа от пункта: появляется ли подменю
+      xdotool mousemove $((X + 127)) $((Y + y)) click 1; sleep 2
+      shot "probe-$name-b"
+      log "  probe-$name-b (стрелка)"
+      # 3) клик по первой строке подменю правее пункта
+      xdotool mousemove $((X + 180)) $((Y + y + 23)) click 1; sleep 2
+      shot "probe-$name-c"
+      log "  probe-$name-c (первая строка подменю)"
+      xdotool key Escape 2>/dev/null || true; sleep 0.5
+      xdotool key Escape 2>/dev/null || true; sleep 1
+    done < "$LIST"
+
+    # 4) есть ли поиск по меню: жмём лупу в шапке и печатаем запрос
+    geom
+    xdotool mousemove $((X + 287)) $((Y + 16)) click 1; sleep 1
+    xdotool type --delay 60 'filter'; sleep 2
+    shot "probe-search-1"
+    log "  probe-search-1 (лупа + 'filter')"
+    xdotool key Return; sleep 3
+    shot "probe-search-2"
+    log "  probe-search-2 (Return)"
+    ;;
+
   capture)
     n=0
     while IFS='|' read -r name y suby new; do

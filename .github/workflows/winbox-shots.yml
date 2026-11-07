@@ -18,6 +18,7 @@ on:
         default: 'capture'
   push:
     paths:
+      - 'ci/shots-mode.txt'
       - 'ci/winbox-shots.trigger'
       - '.github/workflows/winbox-shots.yml'
       - '.github/scripts/winbox-capture.sh'
@@ -36,12 +37,22 @@ jobs:
       DISPLAY: ':99'
       CHR_VER: '7.24.6'
       WINBOX_URL: 'https://download.mikrotik.com/routeros/winbox/4.4/WinBox_Linux.zip'
-      MODE: ${{ github.event.inputs.mode || 'capture' }}
 
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
+      - name: Режим съёмки
+        id: mode
+        run: |
+          if [ -n "${{ github.event.inputs.mode }}" ]; then
+            echo "mode=${{ github.event.inputs.mode }}" >> "$GITHUB_OUTPUT"
+          elif [ -f ci/shots-mode.txt ]; then
+            echo "mode=$(head -1 ci/shots-mode.txt | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
+          else
+            echo "mode=capture" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Зависимости (QEMU, Xvfb, Qt, xdotool, ImageMagick)
         run: |
@@ -86,15 +97,16 @@ jobs:
           set -x
           cd "$GITHUB_WORKSPACE"
           ready=0
-          for i in $(seq 1 26); do
-            sleep 30
-            t=$((i*30))
-            # признак готовности: служба Winbox отвечает первым пакетом
-            head_bytes=$(timeout 5 bash -c 'exec 3<>/dev/tcp/127.0.0.1/8291; dd bs=1 count=4 <&3 2>/dev/null | od -An -tx1' 2>/dev/null || true)
-            echo "t=${t}c  winbox-head=[${head_bytes}]" >> docs/shots/report.txt
-            if [ -n "$head_bytes" ]; then ready=1; echo "RouterOS готов на ${t}c" >> docs/shots/report.txt; break; fi
+          for i in $(seq 1 30); do
+            sleep 20
+            t=$((i*20))
+            if nc -z -w 3 127.0.0.1 8291 2>/dev/null; then
+              ready=1; echo "RouterOS слушает 8291 на ${t}c" >> docs/shots/report.txt; break
+            fi
+            echo "t=${t}c  8291 закрыт" >> docs/shots/report.txt
           done
-          [ "$ready" = 1 ] || { echo "RouterOS не ответил за 13 минут" >> docs/shots/report.txt; sleep 30; }
+          [ "$ready" = 1 ] || echo "RouterOS не ответил за 10 минут" >> docs/shots/report.txt
+          sleep 20
 
       - name: Запустить Xvfb и Winbox 4
         run: |
@@ -114,7 +126,7 @@ jobs:
       - name: Снять окна (настоящий Winbox 4)
         run: |
           cd "$GITHUB_WORKSPACE"
-          bash .github/scripts/winbox-capture.sh "$MODE" || true
+          bash .github/scripts/winbox-capture.sh "${{ steps.mode.outputs.mode }}" || true
           echo "=== окна X ===" >> docs/shots/report.txt
           for w in $(xdotool search --name '.' 2>/dev/null); do
             xdotool getwindowname "$w" 2>/dev/null || true
