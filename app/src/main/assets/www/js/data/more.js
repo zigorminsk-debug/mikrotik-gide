@@ -66,7 +66,7 @@
       'Гостевые сети с общим доступом.'
     ],
     steps: [
-      { t: 'Зафиксируйте шлюз в ARP', d: 'Interface → Interface → bridge-lan: ARP=reply-only. Тогда роутер отвечает только на записи из DHCP/статики.' },
+      { t: 'Зафиксируйте шлюз в ARP', d: 'Interfaces → Interfaces → bridge-lan: ARP=reply-only. Тогда роутер отвечает только на записи из DHCP/статики.' },
       { t: 'DHCP add-arp', d: 'IP → DHCP Server: Add ARP=yes — каждый выданный адрес автоматически становится статической ARP-записью.' },
       { t: 'Критичные устройства', d: 'IP → ARP: статические записи для серверов и шлюза (Address + MAC + Interface), чтобы их нельзя было подменить.' },
       { t: 'Фильтр DHCP на мосте', d: 'Bridge → Filters → `+`: chain=forward, ip-protocol=udp, src-port=67, in-bridge-port=<недоверенные порты>, action=drop — блокирует ответы чужих DHCP-серверов.' },

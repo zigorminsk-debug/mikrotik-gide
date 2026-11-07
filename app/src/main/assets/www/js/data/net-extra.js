@@ -60,7 +60,7 @@ window.DATA.push({
     },
     {
       id: 'ppp-pppoe-server', t: 'PPP → PPPoE Server', lvl: 2,
-      path: 'PPP → PPPoE Server (Interface → PPPoE Server)', tags: ['pppoe', 'сервер', 'провайдер'],
+      path: 'PPP → PPPoE Server (Interfaces → PPPoE Server)', tags: ['pppoe', 'сервер', 'провайдер'],
       purpose: 'PPPoE-сервер принимает подключения клиентов по PPPoE. Используется для организации доступа в интернет в локальной сети (микро-провайдер, общежитие, офисный центр).',
       usage: [
         'Раздача интернета абонентам по логину/паролю.',
@@ -452,7 +452,7 @@ window.DATA.push({
   items: [
     {
       id: 'vpn-wireguard', t: 'WireGuard — современный VPN', lvl: 2,
-      path: 'Interface → WireGuard · IP → Address', tags: ['wireguard', 'vpn', 'site-to-site'],
+      path: 'Interfaces → WireGuard · IP → Address', tags: ['wireguard', 'vpn', 'site-to-site'],
       purpose: 'WireGuard — быстрый и простой VPN на UDP. В RouterOS 7 он встроен: создаётся интерфейс с приватным ключом, пиры обмениваются публичными ключами и allowed-address.',
       usage: [
         'Site-to-site между офисом и филиалом (роутер ↔ роутер).',
@@ -460,7 +460,7 @@ window.DATA.push({
         'Резервный канал через LTE для основного линка.'
       ],
       steps: [
-        { t: 'Создайте интерфейс', d: 'Interface → WireGuard → `+`: Name=`wg0`, Listen Port=13231. Приватный ключ сгенерируется автоматически — скопируйте публичный.' },
+        { t: 'Создайте интерфейс', d: 'Interfaces → WireGuard → `+`: Name=`wg0`, Listen Port=13231. Приватный ключ сгенерируется автоматически — скопируйте публичный.' },
         { t: 'Назначьте адрес', d: 'IP → Address → `+`: `10.10.10.1/24`, Interface=wg0.' },
         { t: 'Добавьте пир', d: 'WireGuard → вкладка Peers → `+`: Interface=wg0, Public Key=<ключ клиента>, Allowed Address=`10.10.10.2/32`, Endpoint=`203.0.113.77:13231`, Persistent Keepalive=25s.' },
         { t: 'Откройте порт', d: 'Firewall input: accept udp dst-port=13231 (лучше — только с известных адресов).' },
@@ -470,7 +470,7 @@ window.DATA.push({
       ],
       scenes: [
         {
-          path: 'Interface → WireGuard', win: 'WireGuard', tabs: ['WireGuard', 'Peers', 'Private Keys'],
+          path: 'Interfaces → WireGuard', win: 'WireGuard', tabs: ['WireGuard', 'Peers', 'Private Keys'],
           tools: [{ t: '+', id: 'add', m: 1 }, { t: '−' }, { t: '✓' }, { t: '✕' }],
           cols: [{ t: 'Name', w: 90 }, { t: 'Listen Port', w: 88 }, { t: 'Public Key', w: 260 }, { t: 'MTU', w: 60 }],
           rows: [[{ v: 'wg0', m: 2 }, { v: '13231', m: 3 }, 'q3Jd…8vTk=', '1420']],
@@ -478,7 +478,7 @@ window.DATA.push({
           notes: ['Кнопка создания WireGuard-интерфейса', 'Имя интерфейса для адресов и маршрутов', 'UDP-порт, который должен быть открыт в firewall']
         },
         {
-          path: 'Interface → WireGuard → Peers', win: 'WireGuard Peers', tools: [{ t: '+', id: 'add', m: 1 }],
+          path: 'Interfaces → WireGuard → Peers', win: 'WireGuard Peers', tools: [{ t: '+', id: 'add', m: 1 }],
           cols: [{ t: 'Interface', w: 84 }, { t: 'Public Key', w: 220 }, { t: 'Allowed Address', w: 150 }, { t: 'Endpoint', w: 150 }, { t: 'Handshake', w: 84 }],
           rows: [[{ v: 'wg0' }, { v: 'x7Lm…2QpE=', m: 2 }, { v: '10.10.10.2/32', m: 3 }, '203.0.113.77:13231', { v: '12s ago', c: 'ok' }]],
           sel: 0,
@@ -526,7 +526,7 @@ window.DATA.push({
     },
     {
       id: 'vpn-tunnels', t: 'EoIP, GRE и IPIP — L2/L3-туннели', lvl: 3,
-      path: 'Interface → EoIP / GRE Tunnel / IPIP Tunnel', tags: ['eoip', 'gre', 'туннель'],
+      path: 'Interfaces → EoIP / GRE Tunnel / IPIP Tunnel', tags: ['eoip', 'gre', 'туннель'],
       purpose: 'Туннели инкапсулируют трафик между двумя точками. EoIP передаёт Ethernet-кадры (L2 — можно bridgевать два офиса), GRE/IPIP — IP-пакеты (L3). Шифрования нет, только инкапсуляция.',
       usage: [
         'Объединение двух офисов в один L2-сегмент (EoIP + bridge).',
@@ -535,14 +535,14 @@ window.DATA.push({
       ],
       steps: [
         { t: 'Подготовьте транспорт', d: 'Между точками должен быть IP-маршрут (интернет, VPN). Для EoIP нужны публичные/маршрутизируемые адреса или WireGuard под ним.' },
-        { t: 'Создайте туннель', d: 'Interface → EoIP → `+`: Name=`eoip-branch`, Remote Address=`203.0.113.20`, Tunnel ID=1, Local Address=`203.0.113.10`.' },
+        { t: 'Создайте туннель', d: 'Interfaces → EoIP → `+`: Name=`eoip-branch`, Remote Address=`203.0.113.20`, Tunnel ID=1, Local Address=`203.0.113.10`.' },
         { t: 'MTU', d: 'MTU=1400 (или ниже), Clamp TCP MSS=yes — иначе часть сайтов и сервисов не откроется.' },
         { t: 'Bridge (для EoIP)', d: 'Bridge → Ports: добавьте eoip-branch в bridge-lan — две площадки станут одной сетью. Осторожно: возможен broadcast-шторм.' },
         { t: 'Firewall', d: 'Разрешите протокол 47 (GRE) и IP-протокол 97 (EoIP) только с адреса второй площадки.' },
         { t: 'Безопасность', d: 'Туннели без шифрования — стройте их поверх WireGuard/IPsec.' }
       ],
       scenes: [{
-        path: 'Interface → EoIP Tunnel', win: 'EoIP Tunnel', tools: [{ t: '+', id: 'add', m: 1 }],
+        path: 'Interfaces → EoIP Tunnel', win: 'EoIP Tunnel', tools: [{ t: '+', id: 'add', m: 1 }],
         cols: [{ t: 'Name', w: 110 }, { t: 'Remote Address', w: 140 }, { t: 'Tunnel ID', w: 80 }, { t: 'Local Address', w: 140 }, { t: 'MTU', w: 60 }, { t: 'Keepalive', w: 80 }],
         rows: [[{ v: 'eoip-branch', m: 2 }, { v: '203.0.113.20', m: 3 }, { v: '1', m: 4 }, '203.0.113.10', '1400', '10s']],
         sel: 0,

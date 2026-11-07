@@ -133,7 +133,7 @@
 
   add('start-base-setup', [
     {
-      path: 'Interface → Interface', win: 'Interface List', tabs: ['Interface', 'Ethernet', 'VLAN', 'Bridge'],
+      path: 'Interfaces → Interface', win: 'Interface List', tabs: ['Interface', 'Ethernet', 'VLAN', 'Bridge'],
       tab: 'Interface', noTools: true,
       cols: [{ t: 'Name', w: 90 }, { t: 'Type', w: 90 }, { t: 'L2 MTU', w: 70 }, { t: 'RX', w: 70 }, { t: 'TX', w: 70 }],
       rows: [
@@ -366,7 +366,7 @@
 
   add('vpn-wireguard', [
     {
-      path: 'Interface → WireGuard → Peers → New', win: 'New WireGuard Peer', noTools: true,
+      path: 'Interfaces → WireGuard → Peers → New', win: 'New WireGuard Peer', noTools: true,
       form: {
         title: 'New WireGuard Peer', buttons: ['OK', 'Cancel', 'Apply'],
         fields: [
@@ -382,7 +382,7 @@
 
   add('task-office-from-scratch', [
     {
-      term: true, win: 'New Terminal', path: 'RouterOS 7 · office-gw',
+      term: true, win: 'New Terminal', path: 'New Terminal',
       lines: [
         { k: 'pr', t: '[admin@office-gw] > /ip address print' },
         { k: 'out', t: 'Flags: D - DYNAMIC; I - INVALID' },

@@ -105,7 +105,7 @@ window.DATA.push({
         'Изоляция устройств IoT от рабочей сети.'
       ],
       steps: [
-        { t: 'Создайте VLAN', d: 'Interface → VLAN `+`: name=vlan20-guest, VLAN ID=20, interface=bridge-lan. IP → Address `+`: 10.20.0.1/24.' },
+        { t: 'Создайте VLAN', d: 'Interfaces → VLAN `+`: name=vlan20-guest, VLAN ID=20, interface=bridge-lan. IP → Address `+`: 10.20.0.1/24.' },
         { t: 'DHCP для гостей', d: 'IP → Pool `+` pool-guest 10.20.0.10–10.20.0.100 → DHCP Server `+` interface=vlan20-guest, network=10.20.0.0/24, gateway=10.20.0.1, DNS=10.20.0.1.' },
         { t: 'SSID', d: 'WiFi → Security `+` sec-guest (wpa2-psk, пароль) → WiFi → WiFi `+`: master=radio1, SSID=`Office-Guest`, security=sec-guest, datapath: VLAN ID=20 (или бридж через vlan20).' },
         { t: 'Изоляция клиентов', d: 'В конфигурации/datapath включите Client Isolation (или default-forwarding=no), чтобы гости не видели друг друга.' },
@@ -145,7 +145,7 @@ window.DATA.push({
     },
     {
       id: 'task-vlan-office', t: 'VLAN-сегментация офиса (10/20/30/100)', lvl: 3,
-      path: 'Bridge → VLANs · Interface → VLAN · Firewall', tags: ['vlan', 'сегментация', 'офис'],
+      path: 'Bridge → VLANs · Interfaces → VLAN · Firewall', tags: ['vlan', 'сегментация', 'офис'],
       purpose: 'Разделение офиса на изолированные сегменты: сотрудники, гости, камеры/IoT, управление. Каждый сегмент — своя подсеть, свой DHCP, свои правила доступа. Работает на одном коммутаторе и одной точке доступа.',
       usage: [
         'Офис, где гости не должны видеть серверы, а камеры — рабочие станции.',
@@ -155,7 +155,7 @@ window.DATA.push({
       steps: [
         { t: 'План VLAN', d: '10 — сотрудники 10.10.10.0/24; 20 — гости 10.20.0.0/24; 30 — камеры 10.30.0.0/24; 100 — управление 10.100.0.0/24.' },
         { t: 'Bridge VLAN Filtering', d: 'Bridge → Ports: access-порты получают PVID 10/20/30; транк к коммутатору — PVID 1. Bridge → VLANs: записи 10/20/30/100 с tagged=bridge-lan для маршрутизации роутером.' },
-        { t: 'VLAN-интерфейсы', d: 'Interface → VLAN `+` для каждой VLAN поверх bridge-lan → IP → Address `+` .1/24.' },
+        { t: 'VLAN-интерфейсы', d: 'Interfaces → VLAN `+` для каждой VLAN поверх bridge-lan → IP → Address `+` .1/24.' },
         { t: 'DHCP для каждой VLAN', d: 'IP → DHCP Server `+` по серверу на VLAN, свой пул и DNS.' },
         { t: 'Wi-Fi', d: 'Отдельные SSID с datapath VLAN ID (10 для сотрудников, 20 для гостей).' },
         { t: 'Правила forward', d: 'Разрешите: сотрудники → все сегменты (кроме управления); гости → WAN; камеры → только регистратор; управление → только админская подсеть.' },
@@ -191,7 +191,7 @@ window.DATA.push({
       ],
       steps: [
         { t: 'Настройте оба WAN', d: 'WAN1 — ether1 (DHCP/PPPoE), WAN2 — ether2 или lte1. Убедитесь, что у каждого свой DHCP-клиент/адрес.' },
-        { t: 'Списки интерфейсов', d: 'Interface → Interface List: WAN = ether1, lte1. Так правила будут едиными.' },
+        { t: 'Списки интерфейсов', d: 'Interfaces → Interface List: WAN = ether1, lte1. Так правила будут едиными.' },
         { t: 'Маршруты', d: 'IP → Routes: 0.0.0.0/0 gateway=WAN1 distance=1 check-gateway=ping; второй 0.0.0.0/0 gateway=WAN2 distance=10 check-gateway=ping.' },
         { t: 'NAT на оба', d: 'Firewall → NAT: srcnat out-interface-list=WAN masquerade (одно правило на оба канала).' },
         { t: 'Netwatch для уведомлений', d: 'Tools → Netwatch host=8.8.8.8: on-down → `/tool e-mail send ...` и запись в лог. Переключение маршрутов произойдёт само.' },
@@ -295,7 +295,7 @@ window.DATA.push({
       ],
       steps: [
         { t: 'Адресация туннеля', d: 'Выберите подсеть туннеля, например 10.10.10.0/30: офис .1, филиал .2.' },
-        { t: 'Офис: интерфейс', d: 'Interface → WireGuard `+`: name=wg-branch, listen-port=13231. Скопируйте публичный ключ (вкладка Private Keys).' },
+        { t: 'Офис: интерфейс', d: 'Interfaces → WireGuard `+`: name=wg-branch, listen-port=13231. Скопируйте публичный ключ (вкладка Private Keys).' },
         { t: 'Офис: адрес и пир', d: 'IP → Address `+` 10.10.10.1/30 на wg-branch. Peers `+`: public-key=<ключ филиала>, allowed-address=`10.10.10.2/32, 192.168.50.0/24`, endpoint=..., persistent-keepalive=25s.' },
         { t: 'Филиал: зеркально', d: 'Свой wg-office, адрес 10.10.10.2/30, пир с ключом офиса, allowed-address=`10.10.10.1/32, 192.168.88.0/24`.' },
         { t: 'Firewall', d: 'На обоих: input accept udp 13231 (лучше — только с адреса пира), forward accept между LAN и wg-интерфейсом.' },
@@ -305,7 +305,7 @@ window.DATA.push({
       ],
       scenes: [
         {
-          path: 'Interface → WireGuard → Peers', win: 'WireGuard Peers', tools: [{ t: '+', id: 'add', m: 1 }],
+          path: 'Interfaces → WireGuard → Peers', win: 'WireGuard Peers', tools: [{ t: '+', id: 'add', m: 1 }],
           cols: [{ t: 'Interface', w: 86 }, { t: 'Public Key', w: 190 }, { t: 'Allowed Address', w: 210 }, { t: 'Endpoint', w: 150 }, { t: 'Keepalive', w: 84 }],
           rows: [[{ v: 'wg-branch' }, { v: 'x7Lm…2QpE=', m: 2 }, { v: '10.10.10.2/32, 192.168.50.0/24', m: 3 }, '203.0.113.77:13231', { v: '25s', m: 4 }]],
           sel: 0,
@@ -462,7 +462,7 @@ window.DATA.push({
     },
     {
       id: 'task-lte-backup', t: 'LTE-резерв с автопереключением', lvl: 2,
-      path: 'Interface → LTE · Routes · Netwatch', tags: ['lte', 'резерв', 'модем'],
+      path: 'Interfaces → LTE · Routes · Netwatch', tags: ['lte', 'резерв', 'модем'],
       purpose: 'Резервный интернет через LTE-модем: работает автоматически при аварии основного канала, не требует участия администратора.',
       usage: [
         'Магазины и склады без второго проводного провайдера.',
@@ -470,8 +470,8 @@ window.DATA.push({
         'Резерв для кассового оборудования.'
       ],
       steps: [
-        { t: 'Установите модем', d: 'USB-модем из списка совместимых MikroTik → появится интерфейс `lte1`. Проверьте Interface → LTE: Registration=registered, Signal.' },
-        { t: 'Профиль APN', d: 'Interface → LTE → вкладка APN Profiles: APN оператора, User/Password (если нужны), IP Type=ipv4.' },
+        { t: 'Установите модем', d: 'USB-модем из списка совместимых MikroTik → появится интерфейс `lte1`. Проверьте Interfaces → LTE: Registration=registered, Signal.' },
+        { t: 'Профиль APN', d: 'Interfaces → LTE → вкладка APN Profiles: APN оператора, User/Password (если нужны), IP Type=ipv4.' },
         { t: 'Адрес и NAT', d: 'Обычно LTE получает адрес по DHCP автоматически. Добавьте lte1 в список WAN и убедитесь, что NAT покрывает out-interface-list=WAN.' },
         { t: 'Маршруты', d: 'Основной: distance=1 check-gateway=ping. LTE: distance=10 check-gateway=ping. При падении основного трафик уйдёт на LTE.' },
         { t: 'Проверка канала', d: 'Tools → Netwatch на 8.8.8.8 с уведомлением (email/Telegram) при down/up.' },
@@ -479,7 +479,7 @@ window.DATA.push({
         { t: 'Проверка', d: 'Отключите основной WAN: интернет продолжает работать через lte1 (проверьте по IP → Cloud → Public Address).' }
       ],
       scenes: [{
-        path: 'Interface → LTE', win: 'LTE', tabs: ['General', 'APN Profiles', 'Status'], noTools: true,
+        path: 'Interfaces → LTE', win: 'LTE', tabs: ['General', 'APN Profiles', 'Status'], noTools: true,
         form: {
           title: 'LTE <lte1>', buttons: ['Apply', 'Cancel'],
           fields: [
@@ -545,7 +545,7 @@ window.DATA.push({
       ],
       steps: [
         { t: 'Нумерация', d: 'Арендатор N: VLAN 100+N, подсеть 10.N.0.0/24, шлюз 10.N.0.1. Ведите таблицу — это ваша документация.' },
-        { t: 'VLAN и адрес', d: 'Interface → VLAN `+` vlan-N (interface=bridge-lan) → IP → Address 10.N.0.1/24.' },
+        { t: 'VLAN и адрес', d: 'Interfaces → VLAN `+` vlan-N (interface=bridge-lan) → IP → Address 10.N.0.1/24.' },
         { t: 'DHCP и DNS', d: 'DHCP Server `+` на vlan-N: пул 10.N.0.10–10.N.0.200, шлюз и DNS = 10.N.0.1.' },
         { t: 'Изоляция', d: 'Firewall forward: drop между vlan-N и другими vlan, accept vlan-N → WAN. Одно правило на интерфейс или address-list «тенанты».' },
         { t: 'Лимит скорости', d: 'Queues → Simple Queues `+`: target=10.N.0.0/24, max-limit по тарифу. Или PPPoE-профиль с rate-limit.' },
@@ -706,12 +706,12 @@ window.DATA.push({
         'Приставки за роутером не показывают каналы.'
       ],
       steps: [
-        { t: 'VLAN провайдера', d: 'Interface → VLAN `+`: IPTV VLAN ID (уточните у провайдера), interface=WAN. Отдельный порт/мост под приставку.' },
+        { t: 'VLAN провайдера', d: 'Interfaces → VLAN `+`: IPTV VLAN ID (уточните у провайдера), interface=WAN. Отдельный порт/мост под приставку.' },
         { t: 'IGMP Proxy', d: 'Routing → IGMP Proxy → `+`: Interface=IPTV-VLAN (upstream), Interface=bridge-iptv (downstream).' },
         { t: 'Мультикаст-маршруты', d: 'IP → Routes: 224.0.0.0/4 → интерфейс приставки (если требуется).' },
         { t: 'IGMP Snooping', d: 'Bridge → Bridge: IGMP Snooping=yes — коммутатор не будет флудить multicast во все порты.' },
         { t: 'Firewall', d: 'input accept igmp (protocol=igmp) с WAN-интерфейса IPTV; forward accept multicast в порт приставки.' },
-        { t: 'Проверка', d: 'Приставка получает каналы; в Interface → Traffic виден multicast-поток только на порту приставки.' }
+        { t: 'Проверка', d: 'Приставка получает каналы; в Interfaces → Traffic виден multicast-поток только на порту приставки.' }
       ],
       scenes: [{
         path: 'Routing → IGMP Proxy', win: 'IGMP Proxy', tools: [{ t: '+', id: 'add', m: 1 }],

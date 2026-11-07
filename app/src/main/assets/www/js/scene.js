@@ -42,10 +42,14 @@
       'Health', 'Watchdog', 'Auto Upgrade', 'Note'] },
     { g: 'Queues', ic: 'queue', items: ['Simple Queues', 'Queue Tree', 'Queue Types', 'Interface Queues'] },
     { g: 'Dot1X', ic: 'key' },
-    { g: 'Tools', ic: 'tool', items: ['Ping', 'Traceroute', 'Torch', 'Profiler', 'Sniffer', 'Netwatch', 'Graphing',
-      'Bandwidth Test', 'Traffic Generator', 'Email', 'Wake on LAN', 'RoMON', 'Fetch', 'Speed Test'] },
+    /* Ниже — порядок ровно как в левом дереве Winbox 4 (сверено по снимкам
+       из CI): Files, Log, New Terminal, RADIUS, Tools, Make Supout.rif. */
     { g: 'Files', ic: 'file' },
-    { g: 'Log', ic: 'log' }
+    { g: 'Log', ic: 'log' },
+    { g: 'New Terminal', ic: 'term' },
+    { g: 'RADIUS', ic: 'key' },
+    { g: 'Tools', ic: 'tool', items: ['Ping', 'Traceroute', 'Torch', 'Profiler', 'Sniffer', 'Netwatch', 'Graphing',
+      'Bandwidth Test', 'Traffic Generator', 'Email', 'Wake on LAN', 'RoMON', 'Fetch', 'Speed Test'] }
   ];
 
   /* Линейные иконки разделов — те же по смыслу, что у Winbox 4. */
@@ -68,6 +72,7 @@
     tool: 'M20 5.5a4 4 0 0 1-5.2 4.9L7 18.2 5.8 17l7.8-7.8A4 4 0 0 1 18.5 5z',
     file: 'M4 6h5l2 2h9v10H4z',
     log: 'M5 6h14M5 11h14M5 16h9',
+    term: 'M4 5h16v14H4zM7 10l2.5 2.5L7 15M12 15h5',
     win: 'M3 5h18v14H3zM3 9h18'
   };
 
@@ -1656,5 +1661,5 @@
   }
 
   window.Scene = { render: render, renderTerminal: renderTerminal, renderNav: renderNav, mount: mount, fit: fit,
-    _prepareForm: prepareForm, _dialogName: dialogName, _win4: WIN4 };
+    _prepareForm: prepareForm, _dialogName: dialogName, _win4: WIN4, _menu: MENU };
 })();

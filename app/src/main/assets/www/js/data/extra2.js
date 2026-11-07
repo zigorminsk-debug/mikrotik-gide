@@ -455,7 +455,7 @@
       { t: 'Мониторинг', d: 'Netwatch по адресу хаба в каждом филиале; в хабе — Last Handshake по каждому пиру + уведомление.' }
     ],
     scenes: [{
-      path: 'Interface → WireGuard → Peers', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'Peers',
+      path: 'Interfaces → WireGuard → Peers', win: 'WireGuard', tabs: ['WireGuard', 'Peers'], tab: 'Peers',
       tools: [{ t: '+', id: 'add', m: 1 }],
       cols: [{ t: 'Public Key', w: 150 }, { t: 'Allowed Address', w: 210 }, { t: 'Endpoint', w: 150 }, { t: 'Keepalive', w: 80 }],
       rows: [

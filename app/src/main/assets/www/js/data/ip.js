@@ -218,7 +218,7 @@ window.DATA.push({
         { t: 'Откройте ARP', d: 'IP → ARP: список IP ↔ MAC ↔ interface, флаг D — динамическая запись.' },
         { t: 'Найдите конфликт', d: 'Отсортируйте по Address: два одинаковых IP с разными MAC — конфликт адресов.' },
         { t: 'Статическая запись', d: '`+`: Address=192.168.88.10, MAC Address=... (флаг C — complete), Interface=bridge-lan.' },
-        { t: 'Режим интерфейса', d: 'Interface → Interface → двойной клик → ARP = reply-only (для клиентских сетей), proxy-arp (для схем без маршрутов).' },
+        { t: 'Режим интерфейса', d: 'Interfaces → Interfaces → двойной клик → ARP = reply-only (для клиентских сетей), proxy-arp (для схем без маршрутов).' },
         { t: 'Очистка', d: 'Кнопка Remove all динамических записей — помогает после замены оборудования.' }
       ],
       scenes: [{
@@ -622,7 +622,7 @@ window.DATA.push({
       steps: [
         { t: 'Откройте Neighbor Discovery', d: 'IP → Neighbor Discovery: Discovery Protocols, Discover Interval, Interface Lists.' },
         { t: 'Только LAN', d: 'Discovery Interface List = LAN, Discovery Protocols = MNDP,CDP,LLDP.' },
-        { t: 'WAN выключить', d: 'На интерфейсе WAN в Interface → Interface: Discover = no (или не включайте WAN в список).' },
+        { t: 'WAN выключить', d: 'На интерфейсе WAN в Interfaces → Interface: Discover = no (или не включайте WAN в список).' },
         { t: 'Neighbor Viewer', d: 'Tools → Neighbor Viewer показывает сосеей с их адресами и идентификаторами.' },
         { t: 'Проверка', d: 'Winbox → Neighbors: устройство должно появиться в списке по MAC.' }
       ],

@@ -83,7 +83,7 @@
       'Пользователь VPN получает доступ ко всей сети, если не ограничить firewall.'
     ],
     steps: [
-      { t: 'Поднимите WireGuard', d: 'Interface → WireGuard → `+` (порт 13231), адрес 10.99.0.1/24, пир для своего устройства.' },
+      { t: 'Поднимите WireGuard', d: 'Interfaces → WireGuard → `+` (порт 13231), адрес 10.99.0.1/24, пир для своего устройства.' },
       { t: 'Ограничьте сервисы LAN', d: 'IP → Services: winbox/ssh Available From=`192.168.10.0/24,10.99.0.0/24`.' },
       { t: 'Закройте порты', d: 'IP → Firewall → Filter: в конце input — drop для всего, кроме установленных соединений и VPN-порта.' },
       { t: 'Временный доступ', d: 'Если VPN невозможен: создайте address-list `admin-temp` с адресом подрядчика и правило accept tcp/8291 только для него, с таймаутом в комментарии и датой отключения.' },
@@ -116,7 +116,7 @@
   /* ---------------- Интерфейсы ---------------- */
   iface.items.push({
     id: 'if-lte', t: 'LTE-интерфейс: резервный канал и внешний IP', lvl: 2,
-    path: 'Interface → LTE', tags: ['lte', 'резерв', 'wan', 'модем', 'apn'],
+    path: 'Interfaces → LTE', tags: ['lte', 'резерв', 'wan', 'модем', 'apn'],
     purpose: 'LTE-интерфейс RouterOS поднимает модем (встроенный или USB) и даёт резервный канал. Часто это единственный способ быстро восстановить связь, когда проводной провайдер недоступен.',
     usage: [
       'Резервный WAN с автоматическим переключением при падении основного.',
@@ -134,14 +134,14 @@
       'Задержки и потери выше, чем у провода.'
     ],
     steps: [
-      { t: 'Вставьте модем', d: 'Interface → LTE: интерфейс `lte1` появляется автоматически (для USB-модема нужен System → Ports/реестр или PPP-клиент).' },
-      { t: 'Профиль APN', d: 'Interface → LTE → вкладка LTE: APN по данным оператора (например `internet`), PIN при необходимости, Network Mode=auto.' },
+      { t: 'Вставьте модем', d: 'Interfaces → LTE: интерфейс `lte1` появляется автоматически (для USB-модема нужен System → Ports/реестр или PPP-клиент).' },
+      { t: 'Профиль APN', d: 'Interfaces → LTE → вкладка LTE: APN по данным оператора (например `internet`), PIN при необходимости, Network Mode=auto.' },
       { t: 'Маршрут', d: 'IP → Routes: `0.0.0.0/0` через `lte1` с Distance=20 (основной — 1). Add Default Route в LTE-интерфейсе лучше выключить, чтобы не перебивать основной.' },
       { t: 'Watchdog', d: 'Вкладка LTE/Apartment: включите проверку соединения (Ping/APN), чтобы модем переподнимался при зависании.' },
       { t: 'NAT и firewall', d: 'NAT: masquerade for out-interface=lte1. Firewall: разрешите forward только нужным адресам (админ, касса), остальное — drop, чтобы не жечь трафик.' }
     ],
     scenes: [{
-      path: 'Interface → LTE', win: 'LTE', tabs: ['General', 'LTE', 'Traffic'], tab: 'General', noTools: true,
+      path: 'Interfaces → LTE', win: 'LTE', tabs: ['General', 'LTE', 'Traffic'], tab: 'General', noTools: true,
       cols: [{ t: 'Name', w: 90 }, { t: 'MTU', w: 80 }, { t: 'APN', w: 130 }, { t: 'Status', w: 120 }, { t: 'Disabled', w: 80 }],
       rows: [
         [{ v: 'lte1', m: 1 }, { v: '1500' }, { v: 'internet', m: 2 }, { v: 'connected', m: 3 }, 'false']
@@ -165,7 +165,7 @@
 
   iface.items.push({
     id: 'if-lists', t: 'Interface Lists — порядок в правилах firewall', lvl: 1,
-    path: 'Interface → Interface List', tags: ['interface-list', 'firewall', 'lan', 'wan'],
+    path: 'Interfaces → Interface List', tags: ['interface-list', 'firewall', 'lan', 'wan'],
     purpose: 'Interface List группирует порты по роли (LAN, WAN, VPN). Правила пишутся по списку, а не по каждому порту — при замене или добавлении интерфейса достаточно поправить один список.',
     usage: [
       'Разделение LAN/WAN для правил firewall и NAT.',
@@ -183,13 +183,13 @@
       'Динамические интерфейсы (PPP) требуют отдельного внимания.'
     ],
     steps: [
-      { t: 'Создайте списки', d: 'Interface → Interface List → `+`: List=`LAN`, Interface=`bridge-lan`; второй: List=`WAN`, Interface=`ether1-wan`.' },
+      { t: 'Создайте списки', d: 'Interfaces → Interface List → `+`: List=`LAN`, Interface=`bridge-lan`; второй: List=`WAN`, Interface=`ether1-wan`.' },
       { t: 'Добавьте VPN', d: 'Отдельно: List=`VPN`, Interface=`wg-vpn` (и другие туннели).' },
       { t: 'Используйте в правилах', d: 'IP → Firewall: in-interface-list=`WAN` для защиты, out-interface-list=`WAN` для NAT, in-interface-list=`LAN` для разрешений.' },
       { t: 'Проверка', d: '`/interface list print`, `/interface list member print`. Правила со списками должны увеличивать счётчики.' }
     ],
     scenes: [{
-      path: 'Interface → Interface List', win: 'Interface List', tabs: ['Interface List', 'Members'], tab: 'Members', noTools: true,
+      path: 'Interfaces → Interface List', win: 'Interface List', tabs: ['Interface List', 'Members'], tab: 'Members', noTools: true,
       cols: [{ t: 'List', w: 100 }, { t: 'Interface', w: 160 }, { t: 'Dynamic', w: 90 }, { t: 'Disabled', w: 90 }],
       rows: [
         [{ v: 'LAN', m: 1 }, { v: 'bridge-lan', m: 2 }, 'false', 'false'],
@@ -336,7 +336,7 @@
     steps: [
       { t: 'Проверьте таблицу', d: 'IP → ARP: флаги D (dynamic), C (complete). Ищите дубли адресов.' },
       { t: 'Статическая запись шлюза', d: 'IP → ARP → `+`: Address=`192.168.10.1`, MAC Address=фактический MAC роутера, Interface=bridge-lan.' },
-      { t: 'Режим интерфейса', d: 'Interface → выбрать интерфейс → вкладка ARP: для сегмента с DHCP-сервером удобно reply-only (клиентам нужна запись из DHCP).' },
+      { t: 'Режим интерфейса', d: 'Interfaces → выбрать интерфейс → вкладка ARP: для сегмента с DHCP-сервером удобно reply-only (клиентам нужна запись из DHCP).' },
       { t: 'pppoe', d: 'Для PPPoE-сервера на интерфейсе включите ARP=reply-only, чтобы клиенты не назначали адреса сами.' },
       { t: 'Проверка', d: '`/ip arp print`, `/interface print where arp!="enabled"`.' }
     ],

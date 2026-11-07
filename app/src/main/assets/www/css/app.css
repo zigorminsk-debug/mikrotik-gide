@@ -1308,3 +1308,16 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 .poe-sum .ps-s{font-size:calc(11.5px * var(--fsm, 1));color:var(--txt-mute)}
 .poe-sum .ok b{color:var(--green)}
 .poe-sum .bad b{color:var(--red)}
+
+/* Пример из жизни: ситуация → что сделали → что получилось */
+.case-card{border-color:rgba(47,129,247,.28);background:linear-gradient(180deg,rgba(47,129,247,.05),transparent 60%)}
+.case-card .card-h{color:var(--accent)}
+.case-s{font-size:calc(15px * var(--fsm,1));line-height:1.5;margin:0 0 8px;color:var(--txt)}
+.case-card p{margin:7px 0}
+
+/* Настоящий снимок Winbox 4 под шагом и метка «схема» у векторных окон */
+.w4-step{margin:10px 0 2px;border:1px solid var(--line-soft);border-radius:12px;overflow:hidden;background:var(--panel-2)}
+.w4-step img{display:block;width:100%;height:auto}
+.w4-step figcaption{padding:7px 10px;font-size:calc(12px * var(--fsm,1));color:var(--mute)}
+.w4-step figcaption a{color:var(--accent)}
+.shot-tag{font-size:calc(11px * var(--fsm,1));text-transform:uppercase;letter-spacing:.04em;color:var(--mute);opacity:.8;margin:8px 0 2px}

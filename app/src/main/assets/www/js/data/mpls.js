@@ -27,8 +27,8 @@
           'Не нужно в обычном офисе — это инструмент для сетей с L2-связностью.'
         ],
         steps: [
-          { t: 'Транспортный адрес', d: 'Создайте loopback: Interface → `+` → Bridge (или VRF) как loopback — проще всего IP → Address на отдельном bridge без портов, например `10.255.255.1/32`.' },
-          { t: 'Включите MPLS', d: 'MPLS → MPLS → вкладка Interface → `+`: Interface=`ether1-transit`, Input=yes (для интерфейсов магистрали).' },
+          { t: 'Транспортный адрес', d: 'Создайте loopback: Interfaces → `+` → Bridge (или VRF) как loopback — проще всего IP → Address на отдельном bridge без портов, например `10.255.255.1/32`.' },
+          { t: 'Включите MPLS', d: 'MPLS → MPLS → вкладка Interfaces → `+`: Interface=`ether1-transit`, Input=yes (для интерфейсов магистрали).' },
           { t: 'LDP на адрес', d: 'MPLS → LDP: Enabled=yes, LSR ID=`10.255.255.1`, Transport Address=`10.255.255.1`.' },
           { t: 'Проверка', d: 'MPLS → Forwarding: появились записи (динамические — полученные от соседей).' }
         ],

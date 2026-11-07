@@ -5,7 +5,7 @@ window.DATA.push({
   items: [
     {
       id: 'if-list', t: 'Interface — список интерфейсов', lvl: 1,
-      path: 'Interface → Interface', tags: ['интерфейсы', 'статус'],
+      path: 'Interfaces → Interface', tags: ['интерфейсы', 'статус'],
       purpose: 'Главный список всех логических и физических интерфейсов: порты, мосты, VLAN, туннели, PPPoE. Отсюда видно, что включено, какой MAC, MTU, скорость и текущий трафик.',
       usage: [
         'Проверка, поднят ли линк на порту (флаг R — running, X — disabled).',
@@ -13,14 +13,14 @@ window.DATA.push({
         'Быстрое отключение порта (Disable) при инциденте и включение обратно.'
       ],
       steps: [
-        { t: 'Откройте список', d: 'Interface → Interface. Колонки R (running), Name, Type, Actual MTU, L2 MTU, MAC, Tx/Rx.' },
+        { t: 'Откройте список', d: 'Interfaces → Interface. Колонки R (running), Name, Type, Actual MTU, L2 MTU, MAC, Tx/Rx.' },
         { t: 'Отсортируйте по имени', d: 'Клик по заголовку Name. Для удобства переименуйте порты: двойной клик → Name = `WAN`, `LAN1`.' },
         { t: 'Раскраска статусов', d: 'Красный/серый — disabled, чёрный — активен. Вкладка Traffic показывает график по выбранному интерфейсу.' },
         { t: 'Счётчики', d: 'Двойной клик → вкладка Traffic: Rx/Tx packets, drops, errors. Рост errors говорит о кабеле или скорости.' },
         { t: 'Комментарии', d: 'Поле Comment — пометьте назначение порта: «uplink провайдер», «камера 3» и т. п.' }
       ],
       scenes: [{
-        path: 'Interface → Interface', win: 'Interface List', tabs: ['Interface', 'Ethernet', 'VLAN', 'Bridge', 'WireGuard'],
+        path: 'Interfaces → Interface', win: 'Interface List', tabs: ['Interface', 'Ethernet', 'VLAN', 'Bridge', 'WireGuard'],
         cols: [{ t: 'R', w: 26 }, { t: 'Name', w: 116 }, { t: 'Type', w: 82 }, { t: 'Actual MTU', w: 78 },
           { t: 'L2 MTU', w: 64 }, { t: 'Tx', w: 74 }, { t: 'Rx', w: 74 }, { t: 'Comment', w: 170 }],
         rows: [
@@ -37,7 +37,7 @@ window.DATA.push({
     },
     {
       id: 'if-ethernet', t: 'Ethernet — физические порты', lvl: 1,
-      path: 'Interface → Ethernet', tags: ['скорость', 'дуплекс', 'poe'],
+      path: 'Interfaces → Ethernet', tags: ['скорость', 'дуплекс', 'poe'],
       purpose: 'Настройки физического уровня: скорость и дуплекс, автосогласование, flow control, состояние SFP-модулей, PoE и кабельная диагностика.',
       usage: [
         'Проблемы со скоростью: линк поднялся на 100 Мбит вместо 1 Гбит.',
@@ -45,14 +45,14 @@ window.DATA.push({
         'Ограничение порта до 100 Мбит для старых устройств, включение PoE на порту.'
       ],
       steps: [
-        { t: 'Откройте вкладку Ethernet', d: 'Interface → вкладка Ethernet. Колонки: Name, Speed, Full Duplex, Auto Negotiation, Tx/Rx Flow Control.' },
+        { t: 'Откройте вкладку Ethernet', d: 'Interfaces → вкладка Ethernet. Колонки: Name, Speed, Full Duplex, Auto Negotiation, Tx/Rx Flow Control.' },
         { t: 'Двойной клик по порту', d: 'Вкладка General — общие параметры, вкладка SFP — диагностика модуля, PoE — питание.' },
         { t: 'Задайте скорость вручную', d: 'Auto Negotiation = no, Speed = 1Gbps, Full Duplex = yes. Обе стороны линка должны иметь одинаковые настройки.' },
         { t: 'Проверьте модуль', d: 'Вкладка SFP: vendor, temperature, Tx/Rx power. Нулевой Rx power = нет сигнала по волокну.' },
         { t: 'PoE', d: 'Вкладка PoE: PoE Out = auto-on / forced-on, Voltage = auto. Питание только на портах, поддерживающих PoE-out.' }
       ],
       scenes: [{
-        path: 'Interface → Ethernet', win: 'Ethernet', tabs: ['Ethernet', 'SFP', 'PoE'],
+        path: 'Interfaces → Ethernet', win: 'Ethernet', tabs: ['Ethernet', 'SFP', 'PoE'],
         cols: [{ t: 'Name', w: 104 }, { t: 'Speed', w: 90 }, { t: 'Full Duplex', w: 86 }, { t: 'Auto Negotiation', w: 110 },
           { t: 'Tx Flow Control', w: 96 }, { t: 'Rx Flow Control', w: 96 }],
         rows: [
@@ -70,7 +70,7 @@ window.DATA.push({
     },
     {
       id: 'if-vlan', t: 'VLAN — виртуальные сети', lvl: 2,
-      path: 'Interface → VLAN', tags: ['vlan', '802.1q', 'сегментация'],
+      path: 'Interfaces → VLAN', tags: ['vlan', '802.1q', 'сегментация'],
       purpose: 'VLAN-интерфейс добавляет тег 802.1Q к трафику и позволяет держать несколько независимых сетей на одном физическом линке. В RouterOS VLAN создаётся «поверх» физического порта или моста.',
       usage: [
         'Разделение офиса: гостевая сеть, сеть камер, сеть 1С — без отдельного кабеля.',
@@ -78,14 +78,14 @@ window.DATA.push({
         'Терминация VLAN провайдера (IPTV, интернет, телефония) на одном WAN-порту.'
       ],
       steps: [
-        { t: 'Создайте VLAN', d: 'Interface → VLAN → `+`: Name=`vlan10-office`, VLAN ID=10, Interface=bridge-lan (или ether1), MTU=1500.' },
+        { t: 'Создайте VLAN', d: 'Interfaces → VLAN → `+`: Name=`vlan10-office`, VLAN ID=10, Interface=bridge-lan (или ether1), MTU=1500.' },
         { t: 'Назначьте адрес', d: 'IP → Address → `+`: Address=10.10.10.1/24, Interface=vlan10-office.' },
         { t: 'Поднимите сервисы', d: 'DHCP Server и DNS-пул для этой VLAN настраиваются так же, как для обычной сети.' },
         { t: 'Пропустите VLAN через мост', d: 'Если VLAN нужен на нескольких портах — включите Bridge → VLANs и VLAN filtering, иначе VLAN «живёт» только на одном интерфейсе.' },
-        { t: 'Проверьте теги', d: 'Interface → VLAN: колонка Current Tagged/Untagged показывает, где тег снимается.' }
+        { t: 'Проверьте теги', d: 'Interfaces → VLAN: колонка Current Tagged/Untagged показывает, где тег снимается.' }
       ],
       scenes: [{
-        path: 'Interface → VLAN', win: 'VLAN', tabs: ['VLAN', 'Interface'],
+        path: 'Interfaces → VLAN', win: 'VLAN', tabs: ['VLAN', 'Interface'],
         cols: [{ t: 'Name', w: 130 }, { t: 'VLAN ID', w: 66 }, { t: 'Interface', w: 116 }, { t: 'MTU', w: 60 },
           { t: 'Current Tagged', w: 110 }, { t: 'Current Untagged', w: 120 }],
         rows: [
@@ -115,7 +115,7 @@ window.DATA.push({
     },
     {
       id: 'if-bonding', t: 'Bonding — агрегация каналов', lvl: 3,
-      path: 'Interface → Bonding', tags: ['lacp', 'агрегация', 'отказоустойчивость'],
+      path: 'Interfaces → Bonding', tags: ['lacp', 'агрегация', 'отказоустойчивость'],
       purpose: 'Bonding объединяет несколько физических портов в один логический канал: увеличивает пропускную способность (LACP) или обеспечивает резервирование (active-backup).',
       usage: [
         'Подключение к коммутатору провайдера/ЦОД с агрегацией 2×1G или 4×10G.',
@@ -123,14 +123,14 @@ window.DATA.push({
         'Подключение сервера с двумя сетевыми картами.'
       ],
       steps: [
-        { t: 'Создайте bonding', d: 'Interface → Bonding → `+`: Name=`bond-wan`, Mode=802.3ad (LACP) или active-backup, Transmit Hash Policy=layer-2-and-3.' },
+        { t: 'Создайте bonding', d: 'Interfaces → Bonding → `+`: Name=`bond-wan`, Mode=802.3ad (LACP) или active-backup, Transmit Hash Policy=layer-2-and-3.' },
         { t: 'Добавьте порты', d: 'Вкладка Slaves → `+`: выберите ether1 и ether2. Оба порта должны быть свободны (не в мосту и без адресов).' },
         { t: 'Настройте мониторинг', d: 'Вкладка General: MII Monitoring=yes, MII Interval=100ms — порт с потерянным линком выводится из работы.' },
         { t: 'Настройте коммутатор', d: 'На стороне коммутатора создайте LAG/Port-Channel с тем же режимом LACP и теми же портами.' },
         { t: 'Используйте bonding', d: 'IP → Address или Bridge → Ports указывайте интерфейс `bond-wan`, а не отдельные ether1/ether2.' }
       ],
       scenes: [{
-        path: 'Interface → Bonding', win: 'Bonding', tabs: ['General', 'Slaves', 'Status'],
+        path: 'Interfaces → Bonding', win: 'Bonding', tabs: ['General', 'Slaves', 'Status'],
         cols: [{ t: 'Name', w: 120 }, { t: 'Mode', w: 120 }, { t: 'Slaves', w: 140 }, { t: 'LACP Rate', w: 92 }, { t: 'MII', w: 70 }],
         rows: [[{ v: 'bond-wan', m: 1 }, { v: '802.3ad', m: 2 }, 'ether1,ether2', '1sec', 'yes']],
         sel: 0,
@@ -154,7 +154,7 @@ window.DATA.push({
     },
     {
       id: 'if-bridge', t: 'Bridge — мост (основа LAN)', lvl: 1,
-      path: 'Interface → Bridge', tags: ['bridge', 'lan', 'коммутация'],
+      path: 'Interfaces → Bridge', tags: ['bridge', 'lan', 'коммутация'],
       purpose: 'Мост объединяет порты в один L2-сегмент: все LAN-порты и Wi-Fi получают один адрес шлюза, единый DHCP, общий broadcast-домен. Это стандартная схема «роутер + коммутатор» в одном устройстве.',
       usage: [
         'Классическая схема: ether2–ether5 и Wi-Fi в bridge-lan, шлюз 192.168.88.1.',
@@ -248,7 +248,7 @@ window.DATA.push({
         { t: 'Подготовьте мост', d: 'Bridge → Bridge: включите VLAN Filtering=yes (пока только после настройки таблицы!), Protocol Mode=rstp.' },
         { t: 'Создайте записи VLAN', d: 'Bridge → VLANs → `+`: VLAN IDs=10, Tagged=bridge-lan (если роутер сам маршрутизирует), Untagged=ether2,ether3 (access-порты).' },
         { t: 'Задайте PVID портам', d: 'Bridge → Ports: для access-портов PVID=10, для транка PVID=1 и tagged в таблице VLAN.' },
-        { t: 'Создайте VLAN-интерфейсы', d: 'Interface → VLAN поверх `bridge-lan` для каждой VLAN, где нужен шлюз, и назначьте IP → Address.' },
+        { t: 'Создайте VLAN-интерфейсы', d: 'Interfaces → VLAN поверх `bridge-lan` для каждой VLAN, где нужен шлюз, и назначьте IP → Address.' },
         { t: 'Проверьте себя', d: 'Включайте VLAN Filtering в Safe Mode: если что-то не так — доступ восстановится автоматически.' },
         { t: 'Firewall', d: 'Маршрутизацию между VLAN разрешайте/запрещайте правилами forward с in-interface/out-interface.' }
       ],
@@ -323,7 +323,7 @@ window.DATA.push({
     },
     {
       id: 'if-pppoe-client', t: 'PPPoE Client — подключение к провайдеру', lvl: 2,
-      path: 'Interface → PPPoE Client', tags: ['pppoe', 'провайдер', 'wan'],
+      path: 'Interfaces → PPPoE Client', tags: ['pppoe', 'провайдер', 'wan'],
       purpose: 'Клиент PPPoE поднимает сессию с провайдером (или с вышестоящим роутером), получает IP, шлюз и DNS по протоколу PPP. Стандарт для домашних и офисных подключений в СНГ.',
       usage: [
         'Подключение к провайдеру по логину/паролю (PPPoE).',
@@ -331,15 +331,15 @@ window.DATA.push({
         'Терминация PPPoE от вышестоящего роутера в схеме «доступ по логину».'
       ],
       steps: [
-        { t: 'Освободите порт', d: 'Убедитесь, что WAN-порт не в мосту и без адреса: Interface → Interface, а также Bridge → Ports.' },
-        { t: 'Создайте клиента', d: 'Interface → PPPoE Client → `+`: Name=`pppoe-out1`, Interface=WAN, User и Password от провайдера.' },
+        { t: 'Освободите порт', d: 'Убедитесь, что WAN-порт не в мосту и без адреса: Interfaces → Interface, а также Bridge → Ports.' },
+        { t: 'Создайте клиента', d: 'Interfaces → PPPoE Client → `+`: Name=`pppoe-out1`, Interface=WAN, User и Password от провайдера.' },
         { t: 'Маршрут и DNS', d: 'Add Default Route=yes, Use Peer DNS=yes, Dial On Demand=no.' },
         { t: 'MTU/MRU', d: 'По умолчанию 1480/1480. Если сайты открываются частично — снизьте до 1472 и проверьте.' },
         { t: 'NAT', d: 'IP → Firewall → NAT: out-interface=`pppoe-out1`, action=masquerade (или out-interface-list=WAN).' },
-        { t: 'Проверьте статус', d: 'Interface → Interface: у pppoe-out1 флаг R, в IP → Address — динамический адрес.' }
+        { t: 'Проверьте статус', d: 'Interfaces → Interface: у pppoe-out1 флаг R, в IP → Address — динамический адрес.' }
       ],
       scenes: [{
-        path: 'Interface → PPPoE Client', win: 'PPPoE Client', tabs: ['General', 'Dial Out', 'Status'],
+        path: 'Interfaces → PPPoE Client', win: 'PPPoE Client', tabs: ['General', 'Dial Out', 'Status'],
         cols: [{ t: 'Name', w: 110 }, { t: 'Interface', w: 92 }, { t: 'User', w: 130 }, { t: 'Add Default Route', w: 110 }, { t: 'Running', w: 66 }],
         rows: [[{ v: 'pppoe-out1', m: 1 }, 'WAN', 'office@provider.by', 'yes', { v: 'true', c: 'ok' }]],
         sel: 0,
@@ -364,7 +364,7 @@ window.DATA.push({
     },
     {
       id: 'if-vrrp', t: 'VRRP — резервирование шлюза', lvl: 3,
-      path: 'Interface → VRRP', tags: ['vrrp', 'отказоустойчивость', 'шлюз'],
+      path: 'Interfaces → VRRP', tags: ['vrrp', 'отказоустойчивость', 'шлюз'],
       purpose: 'VRRP создаёт виртуальный шлюз с общим IP на двух роутерах: если основной выходит из строя, адрес и MAC переезжают на резервный, клиенты этого не замечают.',
       usage: [
         'Отказоустойчивый шлюз офиса на двух роутерах.',
@@ -372,14 +372,14 @@ window.DATA.push({
         'Пара «активный/пассивный» для сегментов VLAN.'
       ],
       steps: [
-        { t: 'Создайте VRRP', d: 'Interface → VRRP → `+`: Name=`vrrp-lan`, Interface=bridge-lan, VRID=1 (одинаковый на обоих), Priority=200 (больше = активный), Version=3.' },
+        { t: 'Создайте VRRP', d: 'Interfaces → VRRP → `+`: Name=`vrrp-lan`, Interface=bridge-lan, VRID=1 (одинаковый на обоих), Priority=200 (больше = активный), Version=3.' },
         { t: 'Назначьте виртуальный IP', d: 'IP → Address → `+`: 192.168.88.1/24, interface=vrrp-lan. Именно этот адрес указывают клиенты как шлюз.' },
         { t: 'Реальный адрес роутера', d: 'На каждом роутере оставьте себе уникальный IP на bridge-lan, например .252 и .253.' },
         { t: 'Синхронизируйте параметры', d: 'VRID, версия, интервал (1s) и аутентификация должны совпадать. Разные VRID = два независимых VRRP.' },
         { t: 'Проверка переключения', d: 'Отключите линк на активном — резервный должен стать MASTER за 3–4 секунды, шлюз продолжит отвечать.' }
       ],
       scenes: [{
-        path: 'Interface → VRRP', win: 'VRRP', tabs: ['VRRP', 'Interface'],
+        path: 'Interfaces → VRRP', win: 'VRRP', tabs: ['VRRP', 'Interface'],
         cols: [{ t: 'Name', w: 96 }, { t: 'Interface', w: 104 }, { t: 'VRID', w: 56 }, { t: 'Priority', w: 66 }, { t: 'Version', w: 60 }, { t: 'State', w: 82 }],
         rows: [
           [{ v: 'vrrp-lan', m: 1 }, 'bridge-lan', { v: '1', m: 2 }, { v: '200', m: 3 }, '3', { v: 'MASTER', c: 'ok' }],
@@ -394,7 +394,7 @@ window.DATA.push({
     },
     {
       id: 'if-detect', t: 'Detect Internet', lvl: 2,
-      path: 'Interface → Detect Internet', tags: ['wan', 'lan', 'списки'],
+      path: 'Interfaces → Detect Internet', tags: ['wan', 'lan', 'списки'],
       purpose: 'Функция автоматически определяет, какие интерфейсы смотрят в интернет (WAN), какие — в локальную сеть (LAN), и поддерживает списки интерфейсов для firewall, NAT и Cloud DDNS.',
       usage: [
         'Быстрое заполнение интерфейсных списков WAN/LAN без ручного перечисления портов.',
@@ -402,14 +402,14 @@ window.DATA.push({
         'Корректная работа IP → Cloud DDNS на мульти-WAN.'
       ],
       steps: [
-        { t: 'Откройте Detect Internet', d: 'Interface → Detect Internet (в списке интерфейсов кнопка Detect Internet).' },
-        { t: 'Создайте списки', d: 'Interface → Interface List: создайте `WAN` и `LAN`.' },
+        { t: 'Откройте Detect Internet', d: 'Interfaces → Detect Internet (в списке интерфейсов кнопка Detect Internet).' },
+        { t: 'Создайте списки', d: 'Interfaces → Interface List: создайте `WAN` и `LAN`.' },
         { t: 'Включите детект', d: 'В окне Detect Internet выберите detect-interface-list=WAN, internet-interface-list=WAN, lan-interface-list=LAN.' },
-        { t: 'Добавьте порты в списки', d: 'Interface → Interface List → `+` (или вкладка List в окне интерфейса): WAN = ether1/pppoe-out1, LAN = bridge-lan.' },
+        { t: 'Добавьте порты в списки', d: 'Interfaces → Interface List → `+` (или вкладка List в окне интерфейса): WAN = ether1/pppoe-out1, LAN = bridge-lan.' },
         { t: 'Используйте в правилах', d: 'Firewall/NAT: in-interface-list=WAN, out-interface-list=WAN.' }
       ],
       scenes: [{
-        path: 'Interface → Interface List', win: 'Interface List', tabs: ['Interface List', 'Detect Internet'],
+        path: 'Interfaces → Interface List', win: 'Interface List', tabs: ['Interface List', 'Detect Internet'],
         cols: [{ t: 'List', w: 90 }, { t: 'Interface', w: 130 }, { t: 'Dynamic', w: 80 }, { t: 'Comment', w: 200 }],
         rows: [
           [{ v: 'WAN', m: 1 }, { v: 'ether1', m: 2 }, 'false', 'провайдер'],
@@ -466,7 +466,7 @@ window.DATA.push({
         { t: 'Создайте VLAN', d: 'Switch → VLANs → `+`: Switch=switch1, VLAN ID=10, Ports=ether2,ether3 (доступ), tagging по необходимости.' },
         { t: 'Настройте порт', d: 'Switch → Ports: для access-порта Port VLAN ID=10, VLAN Header=add if missing / remove.' },
         { t: 'Транк', d: 'Для порта к роутеру/другому свитчу: VLAN Header=keep, Port VLAN ID=1.' },
-        { t: 'IP-адрессация', d: 'На CRS1xx VLAN-интерфейсы создаются в Interface → VLAN поверх bridge/порта для маршрутизации.' },
+        { t: 'IP-адрессация', d: 'На CRS1xx VLAN-интерфейсы создаются в Interfaces → VLAN поверх bridge/порта для маршрутизации.' },
         { t: 'Проверьте', d: 'Switch → Hosts покажет VLAN для каждого MAC; Switch → Ports покажет counters.' }
       ],
       scenes: [{
