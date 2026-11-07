@@ -68,7 +68,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p /tmp/wb docs/shots
-          rm -f docs/shots/*.png docs/shots/*.txt docs/shots/probe-*.jpg || true
+          rm -f docs/shots/*.png docs/shots/*.txt docs/shots/probe-*.jpg docs/shots/jpg/*.jpg || true
           curl -fL --retry 3 -o /tmp/wb/chr.zip "https://download.mikrotik.com/routeros/${CHR_VER}/chr-${CHR_VER}.img.zip"
           curl -fL --retry 3 -o /tmp/wb/winbox.zip "$WINBOX_URL"
           cd /tmp/wb
@@ -93,22 +93,15 @@ jobs:
           sleep 5
           ps -p "$(cat /tmp/wb/qemu.pid)" -o pid,etime,cmd || true
 
-      - name: Дождаться, когда RouterOS загрузится
+      - name: Дать CHR время загрузиться
         run: |
           set -ux
           cd "$GITHUB_WORKSPACE"
-          ready=0
-          for i in $(seq 1 40); do
-            sleep 20
-            t=$((i*20))
-            # порт 8291 у QEMU открывается сразу, поэтому ждём консоль RouterOS в serial.log
-            if grep -qiE 'login:|RouterOS' /tmp/wb/serial.log 2>/dev/null; then
-              ready=1; echo "консоль RouterOS в serial.log на ${t}c" >> docs/shots/report.txt; break
-            fi
-            echo "t=${t}c serial: $(tail -c 200 /tmp/wb/serial.log 2>/dev/null | tr -d '\r' | tail -1)" >> docs/shots/report.txt
-          done
-          echo "ready=$ready" >> docs/shots/report.txt
-          sleep 30
+          # CHR под TCG грузится 8-12 минут; точный момент входа проверяет
+          # winbox-nav.py — он повторяет попытку, пока не появится дерево меню.
+          sleep 420
+          echo "прошло 7 минут после старта QEMU" >> docs/shots/report.txt
+          tail -c 300 /tmp/wb/serial.log >> docs/shots/report.txt 2>/dev/null || true
 
       - name: Запустить Xvfb и Winbox 4
         run: |
@@ -137,6 +130,7 @@ jobs:
           ps aux | grep -E 'WinBox|Xvfb' | grep -v grep >> docs/shots/report.txt || true
 
       - name: Снять окна (настоящий Winbox 4)
+        if: steps.mode.outputs.mode != 'nav'
         run: |
           cd "$GITHUB_WORKSPACE"
           bash .github/scripts/winbox-capture.sh "${{ steps.mode.outputs.mode }}" || true

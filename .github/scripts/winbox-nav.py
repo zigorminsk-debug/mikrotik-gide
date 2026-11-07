@@ -135,6 +135,43 @@ def sd_now(X, Y, W, H):
         return 0
 
 
+
+def tree_words(X, Y, H):
+    return ocr(X + 2, Y + 20, 150, H - 130, 'tree')
+
+
+def logged_in(X, Y, H):
+    """Вошли в роутер, если в дереве есть Quick Set (на экране входа его нет)."""
+    return find(tree_words(X, Y, H), 'Quick Set') is not None
+
+
+def connect(X, Y, W, H, tries=20):
+    """Заполняем Connect to, жмём Enter — и так до получаса, пока не войдём.
+
+    RouterOS в QEMU грузится 10-15 минут, а порт 8291 открыт сразу, поэтому
+    «порт отвечает» ничего не значит: единственный критерий — появилось дерево.
+    """
+    for attempt in range(1, tries + 1):
+        if logged_in(X, Y, H):
+            log('вход выполнен (попытка %d)' % attempt)
+            return True
+        click(X + 300, Y + 291)          # поле Connect to
+        run(['xdotool', 'key', '--clearmodifiers', 'ctrl+a'])
+        run(['xdotool', 'type', '--delay', '50', '127.0.0.1'])
+        run(['xdotool', 'key', 'Return'])
+        time.sleep(9)
+        if logged_in(X, Y, H):
+            log('вход выполнен по Enter (попытка %d)' % attempt)
+            return True
+        click(X + 182, Y + 431)          # кнопка Connect
+        time.sleep(9)
+        if logged_in(X, Y, H):
+            log('вход выполнен по кнопке Connect (попытка %d)' % attempt)
+            return True
+        log('  попытка %d: роутер ещё не пустил, ждём 30 с' % attempt)
+        time.sleep(30)
+    return False
+
 def escape(times=2):
     for _ in range(times):
         run(['xdotool', 'key', 'Escape'])
@@ -190,6 +227,13 @@ def shoot(name, X, Y, W, H):
 def main():
     X, Y, W, H = geom()
     log('окно %dx%d+%d+%d' % (W, H, X, Y))
+    shoot('00-login', X, Y, W, H)
+    if not connect(X, Y, W, H):
+        log('!! войти в RouterOS не удалось — снимать нечего')
+        return
+    escape(1)
+    time.sleep(2)
+    shoot('03-desktop', X, Y, W, H)
     with open(TASKS, encoding='utf-8') as f:
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
     log('задач: %d' % len(tasks))
