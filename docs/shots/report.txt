@@ -913,3 +913,151 @@ total 1996
 -rw-r--r-- 1 runner runner 64118 Nov  8 16:44 wifi-security.jpg
 -rw-r--r-- 1 runner runner 46912 Nov  8 16:44 wifi.jpg
 -rw-r--r-- 1 runner runner 40995 Nov  8 16:44 wireguard.jpg
+прошло 5 минут после старта QEMU
+BIN=/tmp/wb/winbox/WinBox
+Winbox запущен (попытка 1)
+runner      3978  0.4  0.4 223708 77844 ?        S    20:07   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4006  1.7  0.5 925164 90492 ?        Sl   20:07   0:00 /tmp/wb/winbox/WinBox
+  попытка 1: timed out
+  попытка 2: timed out
+  попытка 3: timed out
+  попытка 4: timed out
+  попытка 5: timed out
+  попытка 6: timed out
+  попытка 7: timed out
+  попытка 8: timed out
+  попытка 9: timed out
+  попытка 10: timed out
+  попытка 11: timed out
+  попытка 12: timed out
+  попытка 13: timed out
+  попытка 14: timed out
+  попытка 15: timed out
+  попытка 16: timed out
+  попытка 17: timed out
+  попытка 18: timed out
+  попытка 19: timed out
+  попытка 20: timed out
+  попытка 21: timed out
+  попытка 22: timed out
+  попытка 23: timed out
+  попытка 24: timed out
+  попытка 25: timed out
+  попытка 26: timed out
+  попытка 27: timed out
+  попытка 28: timed out
+  попытка 29: timed out
+  попытка 30: timed out
+  попытка 31: timed out
+  попытка 32: timed out
+  попытка 33: timed out
+  попытка 34: timed out
+  попытка 35: timed out
+  попытка 36: timed out
+  попытка 37: timed out
+  попытка 38: timed out
+  попытка 39: timed out
+  попытка 40: timed out
+API так и не поднялся за 18 минут
+=== время ===
+Sun Nov  8 20:26:22 UTC 2026
+=== процессы ===
+runner      3896  199  0.7 3103272 116592 ?      Sl   20:02  47:04 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      3978  0.0  0.4 223708 77844 ?        S    20:07   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4006  0.1  0.5 859612 90436 ?        Sl   20:07   0:01 /tmp/wb/winbox/WinBox
+=== файлы ===
+docs/shots:
+total 972
+-rw-r--r-- 1 runner runner  8438 Nov  8 20:02 README.md
+-rw-r--r-- 1 runner runner 21711 Nov  8 20:02 dbg-attempt-1.jpg
+-rw-r--r-- 1 runner runner 20204 Nov  8 20:02 dbg-ip-addresses-new.jpg
+-rw-r--r-- 1 runner runner 20161 Nov  8 20:02 dbg-ip-addresses.jpg
+-rw-r--r-- 1 runner runner 20194 Nov  8 20:02 dbg-ip-arp.jpg
+-rw-r--r-- 1 runner runner 20191 Nov  8 20:02 dbg-ip-cloud.jpg
+-rw-r--r-- 1 runner runner 20197 Nov  8 20:02 dbg-ip-dhcp-client.jpg
+-rw-r--r-- 1 runner runner 20194 Nov  8 20:02 dbg-ip-dhcp-relay.jpg
+-rw-r--r-- 1 runner runner 20139 Nov  8 20:02 dbg-ip-dhcp-server-leases.jpg
+-rw-r--r-- 1 runner runner 20169 Nov  8 20:02 dbg-ip-dhcp-server-networks.jpg
+-rw-r--r-- 1 runner runner 20188 Nov  8 20:02 dbg-ip-dhcp-server.jpg
+-rw-r--r-- 1 runner runner 20171 Nov  8 20:02 dbg-ip-dns-static.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 20:02 dbg-ip-dns.jpg
+-rw-r--r-- 1 runner runner 20183 Nov  8 20:02 dbg-ip-firewall-address-lists.jpg
+-rw-r--r-- 1 runner runner 20171 Nov  8 20:02 dbg-ip-firewall-connections.jpg
+-rw-r--r-- 1 runner runner 20176 Nov  8 20:02 dbg-ip-firewall-filter-rules-new.jpg
+-rw-r--r-- 1 runner runner 20167 Nov  8 20:02 dbg-ip-firewall-filter-rules.jpg
+-rw-r--r-- 1 runner runner 20185 Nov  8 20:02 dbg-ip-firewall-mangle.jpg
+-rw-r--r-- 1 runner runner 20174 Nov  8 20:02 dbg-ip-firewall-nat-new.jpg
+-rw-r--r-- 1 runner runner 20182 Nov  8 20:02 dbg-ip-firewall-nat.jpg
+-rw-r--r-- 1 runner runner 20173 Nov  8 20:02 dbg-ip-firewall-raw.jpg
+-rw-r--r-- 1 runner runner 20190 Nov  8 20:02 dbg-ip-firewall-service-ports.jpg
+-rw-r--r-- 1 runner runner 20177 Nov  8 20:02 dbg-ip-firewall.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 20:02 dbg-ip-hotspot-user-profiles.jpg
+-rw-r--r-- 1 runner runner 20178 Nov  8 20:02 dbg-ip-hotspot-users.jpg
+-rw-r--r-- 1 runner runner 20162 Nov  8 20:02 dbg-ip-hotspot.jpg
+-rw-r--r-- 1 runner runner 20180 Nov  8 20:02 dbg-ip-ipsec-identities.jpg
+-rw-r--r-- 1 runner runner 20187 Nov  8 20:02 dbg-ip-ipsec-peers.jpg
+-rw-r--r-- 1 runner runner 20172 Nov  8 20:02 dbg-ip-ipsec-policies.jpg
+-rw-r--r-- 1 runner runner 20185 Nov  8 20:02 dbg-ip-kid-control.jpg
+-rw-r--r-- 1 runner runner 20167 Nov  8 20:02 dbg-ip-neighbors.jpg
+-rw-r--r-- 1 runner runner 20168 Nov  8 20:02 dbg-ip-pool.jpg
+-rw-r--r-- 1 runner runner 20160 Nov  8 20:02 dbg-ip-routes-new.jpg
+-rw-r--r-- 1 runner runner 20178 Nov  8 20:02 dbg-ip-routes.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 20:02 dbg-ip-services.jpg
+-rw-r--r-- 1 runner runner 20176 Nov  8 20:02 dbg-ip-settings.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 20:02 dbg-ip-smb.jpg
+-rw-r--r-- 1 runner runner 20182 Nov  8 20:02 dbg-ip-snmp.jpg
+-rw-r--r-- 1 runner runner 20160 Nov  8 20:02 dbg-ip-tftp.jpg
+-rw-r--r-- 1 runner runner 20139 Nov  8 20:02 dbg-ip-upnp.jpg
+-rw-r--r-- 1 runner runner 20168 Nov  8 20:02 dbg-ip-vrf.jpg
+-rw-r--r-- 1 runner runner 20174 Nov  8 20:02 dbg-ip-web-proxy.jpg
+drwxr-xr-x 2 runner runner  4096 Nov  8 20:02 jpg
+-rw-r--r-- 1 runner runner   245 Nov  8 20:02 manifest.txt
+-rw-r--r-- 1 runner runner 59804 Nov  8 20:26 report.txt
+-rw-r--r-- 1 runner runner 66350 Nov  8 20:02 step-audit.json
+
+docs/shots/jpg:
+total 1996
+-rw-r--r-- 1 runner runner 26448 Nov  8 20:02 00-login.jpg
+-rw-r--r-- 1 runner runner 19888 Nov  8 20:02 03-desktop.jpg
+-rw-r--r-- 1 runner runner 45498 Nov  8 20:02 backup.jpg
+-rw-r--r-- 1 runner runner 44750 Nov  8 20:02 bonding.jpg
+-rw-r--r-- 1 runner runner 44983 Nov  8 20:02 bridge-filters.jpg
+-rw-r--r-- 1 runner runner 43039 Nov  8 20:02 bridge-hosts.jpg
+-rw-r--r-- 1 runner runner 56524 Nov  8 20:02 bridge-new.jpg
+-rw-r--r-- 1 runner runner 43878 Nov  8 20:02 bridge-ports.jpg
+-rw-r--r-- 1 runner runner 42504 Nov  8 20:02 bridge-vlans.jpg
+-rw-r--r-- 1 runner runner 49344 Nov  8 20:02 bridge.jpg
+-rw-r--r-- 1 runner runner 39016 Nov  8 20:02 dot1x.jpg
+-rw-r--r-- 1 runner runner 47564 Nov  8 20:02 eth.jpg
+-rw-r--r-- 1 runner runner 44271 Nov  8 20:02 files.jpg
+-rw-r--r-- 1 runner runner 49593 Nov  8 20:02 interfaces.jpg
+-rw-r--r-- 1 runner runner 31387 Nov  8 20:02 ipv6.jpg
+-rw-r--r-- 1 runner runner 40151 Nov  8 20:02 l2tp-server.jpg
+-rw-r--r-- 1 runner runner 52117 Nov  8 20:02 log.jpg
+-rw-r--r-- 1 runner runner 46148 Nov  8 20:02 lte.jpg
+-rw-r--r-- 1 runner runner 40560 Nov  8 20:02 mesh.jpg
+-rw-r--r-- 1 runner runner 41067 Nov  8 20:02 ovpn-server.jpg
+-rw-r--r-- 1 runner runner 41686 Nov  8 20:02 ppp-active.jpg
+-rw-r--r-- 1 runner runner 46314 Nov  8 20:02 ppp-profiles.jpg
+-rw-r--r-- 1 runner runner 43471 Nov  8 20:02 ppp-secrets.jpg
+-rw-r--r-- 1 runner runner 46707 Nov  8 20:02 ppp.jpg
+-rw-r--r-- 1 runner runner 42802 Nov  8 20:02 pppoe-server.jpg
+-rw-r--r-- 1 runner runner 43625 Nov  8 20:02 queue-iface.jpg
+-rw-r--r-- 1 runner runner 45096 Nov  8 20:02 queue-types.jpg
+-rw-r--r-- 1 runner runner 44421 Nov  8 20:02 queues.jpg
+-rw-r--r-- 1 runner runner 55648 Nov  8 20:02 quickset.jpg
+-rw-r--r-- 1 runner runner 41630 Nov  8 20:02 radius.jpg
+-rw-r--r-- 1 runner runner 31042 Nov  8 20:02 routing.jpg
+-rw-r--r-- 1 runner runner 56813 Nov  8 20:02 simple-new.jpg
+-rw-r--r-- 1 runner runner 35683 Nov  8 20:02 system.jpg
+-rw-r--r-- 1 runner runner 46037 Nov  8 20:02 terminal.jpg
+-rw-r--r-- 1 runner runner 44135 Nov  8 20:02 vlan.jpg
+-rw-r--r-- 1 runner runner 44828 Nov  8 20:02 vrrp.jpg
+-rw-r--r-- 1 runner runner 44565 Nov  8 20:02 vxlan.jpg
+-rw-r--r-- 1 runner runner 55339 Nov  8 20:02 wg-new.jpg
+-rw-r--r-- 1 runner runner 41014 Nov  8 20:02 wg-peers.jpg
+-rw-r--r-- 1 runner runner 43140 Nov  8 20:02 wifi-access-list.jpg
+-rw-r--r-- 1 runner runner 63071 Nov  8 20:02 wifi-new.jpg
+-rw-r--r-- 1 runner runner 64118 Nov  8 20:02 wifi-security.jpg
+-rw-r--r-- 1 runner runner 46912 Nov  8 20:02 wifi.jpg
+-rw-r--r-- 1 runner runner 40995 Nov  8 20:02 wireguard.jpg
