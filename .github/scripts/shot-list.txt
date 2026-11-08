@@ -2,6 +2,7 @@
 # Меню читается по экрану через OCR, поэтому координаты не нужны.
 # «new» в третьем поле — после открытия окна нажать кнопку New.
 
+quickset|Quick Set||Quick Set
 wifi|WiFi||WiFi → WiFi
 wifi-new|WiFi → New|new|WiFi → WiFi → New
 wifi-security|WiFi → Security||WiFi → Security
@@ -29,18 +30,15 @@ bridge-ports|Bridge → Ports||Bridge → Ports
 bridge-vlans|Bridge → VLANs||Bridge → VLANs
 bridge-hosts|Bridge → Hosts||Bridge → Hosts
 bridge-filters|Bridge → Filters||Bridge → Filters
-bridge-settings|Bridge → Settings||Bridge → Settings
 bridge-new|Bridge → New|new|Bridge → Bridge → New
 
 ppp|PPP||PPP → Interfaces
 ppp-profiles|PPP → Profiles||PPP → Profiles
 ppp-secrets|PPP → Secrets||PPP → Secrets
 ppp-active|PPP → Active Connections||PPP → Active Connections
-pppoe-server|PPP → PPPoE Server||PPP → PPPoE Server
-l2tp-server|PPP → L2TP Server||PPP → L2TP Server
-ovpn-server|PPP → OVPN Server||PPP → OVPN Server
-pptp-server|PPP → PPTP Server||PPP → PPTP Server
-sstp-server|PPP → SSTP Server||PPP → SSTP Server
+pppoe-server|PPP → PPPoE Servers||PPP → PPPoE Server
+l2tp-server|PPP → L2TP Secrets||PPP → L2TP Server
+ovpn-server|PPP → OVPN Servers||PPP → OVPN Server
 
 mesh|Mesh||Mesh
 

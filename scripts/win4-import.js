@@ -38,6 +38,12 @@ function norm(p) {
   return String(p || '').replace(/\s*→\s*/g, ' → ').replace(/\s+/g, ' ').trim();
 }
 
+/* Кадры, которым не нашлось статьи: Quick Set показываем в статье о первом
+   входе (это первое окно после подключения), Mesh не показываем вовсе —
+   статей про mesh в учебнике нет, а «прицепить» его некуда. */
+const FORCE_ARTICLE = { quickset: 'start-first-login' };
+const SKIP = new Set(['mesh']);
+
 function shotList() {
   const file = path.join(ROOT, '.github/scripts/shot-list.txt');
   const rows = [];
@@ -71,7 +77,10 @@ function main() {
     console.error('Нет ' + SRC + ' — сначала запустите workflow «Winbox 4 — настоящие скриншоты окон».');
     process.exit(2);
   }
-  const have = new Set(fs.readdirSync(SRC).filter(f => /\.jpg$/i.test(f)).map(f => f.replace(/\.jpg$/i, '')));
+  const jpgs = dir => (fs.existsSync(dir) ? fs.readdirSync(dir) : [])
+    .filter(f => /\.jpg$/i.test(f)).map(f => f.replace(/\.jpg$/i, ''));
+  // кадры, снятые в этом прогоне, плюс уже лежащие в приложении
+  const have = new Set([...jpgs(SRC), ...jpgs(DST)]);
   const list = shotList();
   const shots = [];
   const noTitle = [];
@@ -88,7 +97,7 @@ function main() {
   });
 
   list.forEach(row => {
-    if (!have.has(row.name)) return;
+    if (!have.has(row.name) || SKIP.has(row.name)) return;
     const t = titles[row.name];
     if (!t) { noTitle.push(row.name); return; }
     shots.push({ f: row.name + '.jpg', t: t[0], g: t[1], d: t[2], appPath: row.appPath });
@@ -110,7 +119,10 @@ function main() {
 
   if (!dry) {
     fs.mkdirSync(DST, { recursive: true });
-    shots.forEach(s => fs.copyFileSync(path.join(SRC, s.src || s.f), path.join(DST, s.f)));
+    shots.forEach(s => {
+      const from = path.join(SRC, s.src || s.f);
+      if (fs.existsSync(from)) fs.copyFileSync(from, path.join(DST, s.f));
+    });
   }
 
   /* 1) галерея */
@@ -128,32 +140,99 @@ function main() {
 
   /* 2) привязка «шаг статьи → кадр» по пути окна */
   const win = loadData();
-  const byPath = new Map();
-  shots.forEach(s => {
-    const k = norm(s.appPath);
-    if (k && !byPath.has(k)) byPath.set(k, s.f);
-  });
+  const articles = [];
+  (win.DATA || []).forEach(g => (g.items || []).forEach(a => {
+    articles.push({
+      id: a.id,
+      path: norm(a.path),
+      scenes: (a.scenes || []).map(sc => norm(sc && sc.path)),
+      steps: (a.steps || []).length,
+    });
+  }));
+
+  // Во сколько «стоит» совпадение пути снимка и пути окна в статье
+  function score(shotPath, scenePath) {
+    if (!shotPath || !scenePath) return 0;
+    if (shotPath === scenePath) return 100;
+    const sp = shotPath.split(' → '), sc = scenePath.split(' → ');
+    // путь снимка — начало пути окна (Bridge → Bridge ↔ Bridge → Bridge → New)
+    let n = 0;
+    while (n < sp.length && n < sc.length && sp[n] === sc[n]) n++;
+    if (n === sp.length) return 60 + n;
+    if (n === sc.length) return 50 + n;
+    return n >= 2 ? 20 + n : (n === 1 ? 10 : 0);
+  }
 
   const mapping = {};
-  let arts = [], steps = 0;
-  (win.DATA || []).forEach(g => (g.items || []).forEach(a => {
-    const m = {};
-    const take = (i, p) => {
-      const f = byPath.get(norm(p));
-      if (f && m[i] === undefined) m[i] = f;
-    };
-    // сцены статьи задают путь окна для каждого шага
-    if (Array.isArray(a.scenes)) a.scenes.forEach((sc, i) => sc && take(i, sc.path));
-    // если окон больше, чем шагов, добиваем шаги сценами по порядку
-    (a.steps || []).forEach((st, i) => {
-      if (m[i] === undefined && a.scenes && a.scenes.length) take(i, (a.scenes[i] || a.scenes[0] || {}).path);
+  const bound = new Set();
+  let steps = 0;
+
+  // Пары «снимок ↔ шаг статьи» с оценкой; раздаём от лучших совпадений к
+  // слабым, чтобы точное окно не занял общий кадр раздела.
+  const pairs = [];
+  shots.forEach(s => {
+    const p = norm(s.appPath);
+    articles.forEach(a => {
+      a.scenes.forEach((sc, i) => {
+        const v = score(p, sc);
+        if (v) pairs.push({ f: s.f, id: a.id, step: i, v: v });
+      });
+      const vp = score(p, a.path);
+      if (vp >= 10) pairs.push({ f: s.f, id: a.id, step: 0, v: vp - 5 });
     });
-    if (Object.keys(m).length) {
-      mapping[a.id] = m;
-      arts.push(a.id);
-      steps += Object.keys(m).length;
+  });
+  pairs.sort((a, b) => b.v - a.v);
+
+  const byId = {};
+  articles.forEach(a => { byId[a.id] = a; });
+  const perShot = {};
+  pairs.forEach(pair => {
+    const m = mapping[pair.id] || (mapping[pair.id] = {});
+    if ((perShot[pair.f] || 0) >= 8) return;
+    let step = pair.step;
+    if (m[step] !== undefined) {
+      // нужный шаг занят более точным кадром — берём свободный шаг этой статьи
+      const n = Math.max(1, (byId[pair.id] || {}).steps || 1);
+      let free = -1;
+      for (let i = 0; i < n; i++) if (m[i] === undefined) { free = i; break; }
+      if (free < 0) return;
+      step = free;
     }
-  }));
+    m[step] = pair.f;
+    perShot[pair.f] = (perShot[pair.f] || 0) + 1;
+    bound.add(pair.f);
+    steps++;
+  });
+
+  // каждый кадр галереи должен быть хотя бы где-то показан: иначе он «висит»
+  const unboundShots = shots.filter(s => !bound.has(s.f));
+  unboundShots.forEach(s => {
+    const p = norm(s.appPath);
+    const name = s.f.replace(/\.jpg$/, '');
+    const a = (FORCE_ARTICLE[name] && articles.find(x => x.id === FORCE_ARTICLE[name]))
+      || articles.find(x => x.path && (x.path.startsWith(p) || p.startsWith(x.path)))
+      || articles.find(x => x.id === 'start-first-login');
+    if (!a) return;
+    const m = mapping[a.id] || (mapping[a.id] = {});
+    // ищем свободный шаг; если свободных нет — заменяем повтор (один и тот же
+    // кадр, показанный дважды, лучше заменить другим окном)
+    let step = -1;
+    const n = Math.max(1, a.steps || 1);
+    for (let i = 0; i < n; i++) if (m[i] === undefined) { step = i; break; }
+    if (step < 0) {
+      const seen = {};
+      for (let i = 0; i < n; i++) {
+        if (seen[m[i]]) { step = i; break; }
+        seen[m[i]] = 1;
+      }
+    }
+    if (step < 0) return;
+    m[step] = s.f;
+    bound.add(s.f);
+    steps++;
+  });
+
+  const arts = Object.keys(mapping);
 
   const photos = '/* Настоящие снимки Winbox 4, привязанные к шагам статей.\n' +
     '   Ключ — id статьи, значение — { «номер шага с нуля»: «файл в img/shots» }.\n' +

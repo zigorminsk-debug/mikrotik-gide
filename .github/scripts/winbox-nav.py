@@ -126,15 +126,49 @@ def ocr(x, y, w, h, tag='ocr'):
 
 
 def find(words, needle, near=None, xmin=None):
-    key = clean(needle)
-    exact = [w for w in words if clean(w[0]) == key]
-    cand = exact or [w for w in words if key in clean(w[0])]
-    if xmin is not None and cand:
-        cand = [w for w in cand if w[1] >= xmin] or cand
+    """Ищем пункт меню по названию.
+
+    OCR отдаёт слова по одному и иногда склеивает («PPPoEServers»), поэтому:
+      * фраза разбивается на слова, первое ищется как отдельное слово;
+      * «хвост» фразы может быть как следующим словом, так и частью того же.
+    Возвращает (текст, x, y) лучшего совпадения или None.
+    """
+    keys = [k for k in clean(needle).split() if k]
+    if not keys:
+        return None
+    head, tail = keys[0], keys[1:]
+
+    def tail_ok(w, x, y):
+        """Все слова хвоста есть рядом с найденным (та же строка)."""
+        if not tail:
+            return True
+        rest = ' '.join(clean(t) for t, tx, ty in words
+                        if abs(ty - y) < 12 and x - 10 <= tx <= x + 420)
+        glued = clean(w) + rest
+        pos = 0
+        for t in tail:
+            i = glued.find(t, pos)
+            if i < 0:
+                return False
+            pos = i + len(t)
+        return True
+
+    exact, partial = [], []
+    for w, x, y in words:
+        cw = clean(w)
+        if cw.startswith(head) and len(cw) > 1:
+            (exact if cw == head else partial).append((w, x, y))
+    cand = []
+    for group in (exact, partial):
+        for w, x, y in group:
+            if tail_ok(w, x, y) and (xmin is None or x >= xmin):
+                cand.append((w, x, y))
+        if cand:
+            break
     if not cand:
         return None
     if near:
-        cand.sort(key=lambda w: abs(w[2] - near[1]) + 0.35 * abs(w[1] - near[0]))
+        cand.sort(key=lambda v: abs(v[2] - near[1]) + 0.35 * abs(v[1] - near[0]))
     return cand[0]
 
 
@@ -278,9 +312,19 @@ def open_window(parts, want_new, X, Y, W, H):
     else:
         click(hit[1], hit[2])
         cur = (hit[1], hit[2])
+        if sd_now(X, Y, W, H) <= 5 and not parts[1:]:
+            # пункт только подсветился — в Winbox 4 окно открывает второй клик
+            click(hit[1], hit[2], repeat=2)
+            log('  «%s»: второй клик по пункту' % root)
     for part in parts[1:]:
         words = ocr(X + 100, Y + 20, W - 140, H - 130, 'menu')
         hit = find(words, part, near=cur, xmin=X + 120)
+        if not hit:
+            # возможно, список подменю ещё не раскрылся: щёлкаем раздел ещё раз
+            click(cur[0], cur[1], repeat=2)
+            time.sleep(1.2)
+            words = ocr(X + 100, Y + 20, W - 140, H - 130, 'menu')
+            hit = find(words, part, near=cur, xmin=X + 120)
         if not hit:
             log('!! не нашёл «%s» (путь: %s); OCR: %s' %
                 (part, ' → '.join(parts), ' '.join(w[0] for w in words[:30])))

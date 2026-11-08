@@ -95,6 +95,8 @@ module.exports = {
   mesh: ['Mesh', 'Прочее',
     'Mesh-интерфейсы MikroTik: список mesh-сетей, соседей и параметров. Используется для динамического соединения точек по радио.'],
 
+  quickset: ['Quick Set', 'Быстрый старт',
+    'Быстрая настройка: Mode (Router/Bridge), Configuration (Static, Automatic, PPPoE), адрес, шлюз, DNS и беспроводная сеть. Годится для первого запуска — firewall и сервисы здесь не настраиваются.'],
   'ip-arp': ['IP → ARP', 'IP',
     'ARP-таблица: соответствие IP и MAC, интерфейс и признак динамической записи.'],
   'ip-address': ['IP → Addresses', 'IP',
