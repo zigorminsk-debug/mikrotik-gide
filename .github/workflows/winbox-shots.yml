@@ -66,6 +66,25 @@ jobs:
             libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core \
             openbox
 
+      - name: Проверить скрипт съёмки (нет необъявленных имён)
+        run: |
+          python3 - <<'PY'
+          import ast, builtins
+          src = open('.github/scripts/winbox-nav.py', encoding='utf-8').read()
+          tree = ast.parse(src)
+          defined = {n.name for n in ast.walk(tree) if isinstance(n, ast.FunctionDef)}
+          local = {n.arg for n in ast.walk(tree) if isinstance(n, ast.arg)}
+          local |= {n.id for n in ast.walk(tree)
+                    if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
+          used = {n.id for n in ast.walk(tree)
+                  if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
+          bad = sorted(u for u in used
+                       if u not in defined and not hasattr(builtins, u) and u not in local)
+          if bad:
+              raise SystemExit('не объявлены: ' + ', '.join(bad))
+          print('скрипт цел, все имена объявлены')
+          PY
+
       - name: Скачать CHR и Winbox 4
         run: |
           set -euxo pipefail

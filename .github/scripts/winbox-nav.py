@@ -320,6 +320,26 @@ def connect(X, Y, W, H, tries=40):
     return False
 
 
+def maximize(X, Y, W, H):
+    """Растянуть окно Winbox почти на весь экран.
+
+    В окне 1200x700 вкладки не помещаются («Interface List», «Registration»,
+    «PPPoE Client» уезжают в прокрутку), и найти их по тексту нельзя. В окне
+    1560x1040 они видны все. Без оконного менеджера Qt размер игнорирует,
+    поэтому в CI запускается openbox.
+    """
+    wid = activate()
+    if not wid:
+        return X, Y, W, H
+    run(['xdotool', 'windowsize', wid, '1560', '1040'])
+    run(['xdotool', 'windowmove', wid, '20', '20'])
+    time.sleep(1.5)
+    g = geom()
+    if g[2] * g[3] < 600000:
+        log('  окно не растянулось: %dx%d' % (g[2], g[3]))
+    return g
+
+
 def restart_winbox(X, Y, W, H):
     """Перезапуск Winbox: за десятки окон копятся диалоги и клики перестают
     доходить. После перезапуска входим заново."""
@@ -416,7 +436,10 @@ def open_window(parts, want_new, X, Y, W, H):
 # ------------------------------------------------------------------ старт ----
 def main():
     X, Y, W, H = geom()
-    X, Y, W, H = maximize(X, Y, W, H)
+    try:
+        X, Y, W, H = maximize(X, Y, W, H)
+    except Exception as exc:                             # noqa: BLE001
+        log('  растяжка окна не удалась: %s' % exc)
     log('окно %dx%d+%d+%d' % (W, H, X, Y))
     shoot('00-login', X, Y, W, H)
     if not connect(X, Y, W, H):
@@ -424,7 +447,11 @@ def main():
         return
     escape(1)
     time.sleep(2)
-    X, Y, W, H = maximize(*geom())
+    try:
+        X, Y, W, H = maximize(*geom())
+    except Exception as exc:                             # noqa: BLE001
+        log('  растяжка окна не удалась: %s' % exc)
+        X, Y, W, H = geom()
     log('окно после входа: %dx%d+%d+%d' % (W, H, X, Y))
     shoot('03-desktop', X, Y, W, H)
 
