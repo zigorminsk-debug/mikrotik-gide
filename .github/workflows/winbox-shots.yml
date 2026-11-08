@@ -76,6 +76,13 @@ jobs:
           local = {n.arg for n in ast.walk(tree) if isinstance(n, ast.arg)}
           local |= {n.id for n in ast.walk(tree)
                     if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Store)}
+          # импорты и «except … as exc» — тоже объявления
+          for node in ast.walk(tree):
+              if isinstance(node, (ast.Import, ast.ImportFrom)):
+                  for al in node.names:
+                      local.add((al.asname or al.name).split('.')[0])
+              if isinstance(node, ast.ExceptHandler) and node.name:
+                  local.add(node.name)
           used = {n.id for n in ast.walk(tree)
                   if isinstance(n, ast.Name) and isinstance(n.ctx, ast.Load)}
           bad = sorted(u for u in used
