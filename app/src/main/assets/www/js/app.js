@@ -1351,7 +1351,7 @@
       const winName = photo && typeof photo === 'object' ? photo.w : '';
       if (file) {
         host.innerHTML = '<figure class="w4-step">' +
-          '<a href="img/shots/' + esc(file) + '" target="_blank" rel="noopener">' +
+          '<a href="img/shots/' + esc(file) + '" class="shot-link" data-title="Окно Winbox 4" aria-label="Открыть снимок на весь экран">' +
           '<img loading="lazy" src="img/shots/' + esc(file) + '" alt="Окно Winbox 4"></a>' +
           '<figcaption>Скриншот настоящего Winbox 4 — снят в CI на живом RouterOS' +
           (winName ? ', окно «' + esc(winName) + '»: это тот же раздел меню, окно шага ещё не снято'
@@ -2526,7 +2526,7 @@
       '</div>';
     html += '<div class="w4-grid" id="w4Grid">' + list.map(function (x) {
       return '<figure class="w4-fig" data-w4g="' + esc(x.g) + '">' +
-        '<a href="img/shots/' + esc(x.f) + '" target="_blank" rel="noopener">' +
+        '<a href="img/shots/' + esc(x.f) + '" class="shot-link" data-title="' + esc(x.t) + '" aria-label="Открыть снимок на весь экран">' +
         '<img loading="lazy" src="img/shots/' + esc(x.f) + '" alt="' + esc(x.t) + '"></a>' +
         '<figcaption><b>' + esc(x.t) + '</b><span>' + esc(x.d) + '</span></figcaption></figure>';
     }).join('') + '</div></div>';
@@ -5717,6 +5717,12 @@
   }
 
   function goBack() {
+    /* Снимок Winbox 4 открыт поверх статьи: «Назад» закрывает его,
+       а не уводит в предыдущий экран (раньше — в «О программе»). */
+    if (window.ShotView && window.ShotView.isOpen()) {
+      window.ShotView.close();
+      return;
+    }
     if (navTrail.length) {
       popping = true;
       const target = navTrail.pop();
@@ -5956,6 +5962,20 @@
     }
     btn.textContent = 'скопировано';
     setTimeout(function () { btn.textContent = 'копировать'; }, 1400);
+  });
+
+  /* Снимки Winbox 4 открываем своим полноэкранным слоем, а не target=_blank:
+     иначе WebView уводит на файл картинки, «Назад» возвращает не в статью,
+     и нет ни крестика, ни нормального масштаба. */
+  document.addEventListener('click', function (e) {
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const a = t.closest('a.shot-link');
+    if (!a || !window.ShotView) return;
+    e.preventDefault();
+    window.ShotView.open(a.getAttribute('href'), {
+      title: a.getAttribute('data-title') || 'Снимок Winbox 4'
+    });
   });
 
   /* ---------------- init ---------------- */

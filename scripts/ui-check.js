@@ -910,6 +910,23 @@ async function checkCasesAndShots() {
     /<img[^>]+img\/shots\/[a-z0-9-]+\.jpg/.test(html));
   ok('снимок подписан как скриншот Winbox 4', /Скриншот настоящего Winbox 4/.test(html));
 
+  /* Снимок открывается полноэкранным слоем с крестиком, а «Назад» закрывает
+     слой и оставляет читателя в статье (раньше уводило в «О программе»). */
+  const shotLink = win.document.querySelector('.step-shot a.shot-link');
+  ok('снимок под шагом открывется своей кнопкой-ссылкой', !!shotLink && !shotLink.target);
+  if (shotLink) {
+    shotLink.click();
+    await new Promise(d => setTimeout(d, 60));
+    ok('снимок открылся полноэкранным слоем', !!win.document.querySelector('.shot-layer'));
+    ok('у слоя есть кнопка закрытия', !!win.document.querySelector('.shot-close'));
+    ok('есть масштаб 1:1 без размытия', !!win.document.querySelector('.shot-layer .zoom-ctl button:last-child'));
+    const backBtn = win.document.getElementById('backBtn');
+    if (backBtn) backBtn.click();
+    await new Promise(d => setTimeout(d, 80));
+    ok('«Назад» закрывает снимок, а не уводит из статьи',
+      !win.document.querySelector('.shot-layer') && win.location.hash === '#/if-bridge');
+  }
+
   // 5) Под каждым шагом — либо настоящий снимок, либо честно подписанная
   //    схема. Проверяем на всех статьях, где ещё остались схемы.
   const schemeArticles = ['#/tool-ping', '#/sw-vlan', '#/mpls-ldp', '#/sys-scheduler'];
