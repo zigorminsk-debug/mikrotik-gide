@@ -16,39 +16,50 @@ window.SHOT_STEPS = {
     "0": "wifi.jpg",
     "1": "wifi-new.jpg",
     "2": "wifi-security.jpg",
-    "3": "wifi-wps.jpg",
-    "4": "wifi-sniffer.jpg"
+    "3": "wifi-access-list.jpg",
+    "4": "wifi-wps.jpg"
   },
   "wifi-channels": {
     "0": "wifi.jpg",
     "1": "wifi-new.jpg",
-    "2": "wifi-sniffer.jpg"
+    "2": "wifi-wps.jpg",
+    "3": "wifi-sniffer.jpg"
   },
   "task-guest-wifi": {
     "0": "wifi-new.jpg",
     "1": "wifi.jpg",
-    "2": "wifi-sniffer.jpg"
+    "2": "wifi-wps.jpg",
+    "3": "wifi-sniffer.jpg"
   },
   "wifi-security": {
     "0": "wifi-security.jpg",
     "1": "wifi-security.jpg",
     "2": "wifi.jpg",
     "3": "wifi-new.jpg",
-    "4": "wifi-wps.jpg"
+    "4": "wifi-access-list.jpg"
   },
   "task-corp-wifi-8021x": {
-    "0": "wifi-security.jpg"
+    "0": "wifi-security.jpg",
+    "1": "wifi-sniffer.jpg"
+  },
+  "wifi-accesslist": {
+    "0": "wifi-access-list.jpg",
+    "1": "wifi-access-list.jpg",
+    "2": "wifi.jpg",
+    "3": "wifi-new.jpg"
   },
   "wifi-wps": {
     "0": "wifi-wps.jpg",
     "1": "wifi-wps.jpg",
     "2": "wifi-security.jpg",
-    "3": "wifi-sniffer.jpg"
+    "3": "wifi-access-list.jpg"
   },
   "wifi-sniffer": {
     "0": "wifi-sniffer.jpg",
     "1": "wifi-sniffer.jpg",
-    "2": "wifi-wps.jpg"
+    "2": "wifi-security.jpg",
+    "3": "wifi-access-list.jpg",
+    "4": "wifi-wps.jpg"
   },
   "start-base-setup": {
     "0": "ip-address.jpg",
@@ -223,20 +234,53 @@ window.SHOT_STEPS = {
     "0": "ppp-profiles.jpg",
     "1": "ppp-profiles.jpg",
     "2": "ppp.jpg",
-    "3": "ppp-secrets.jpg"
+    "3": "ppp-secrets.jpg",
+    "4": "ppp-active.jpg"
   },
   "ppp-limits": {
     "0": "ppp-profiles.jpg",
-    "1": "ppp-profiles.jpg"
+    "1": "ppp-profiles.jpg",
+    "2": "pppoe-server.jpg",
+    "3": "l2tp-server.jpg",
+    "4": "ovpn-server.jpg"
   },
   "vpn-split-tunnel": {
-    "0": "ppp-profiles.jpg"
+    "0": "ppp-profiles.jpg",
+    "1": "ovpn-server.jpg"
   },
   "ppp-secrets": {
     "0": "ppp-secrets.jpg",
     "1": "ppp-secrets.jpg",
     "2": "ppp.jpg",
-    "3": "ppp-profiles.jpg"
+    "3": "ppp-profiles.jpg",
+    "4": "ppp-active.jpg"
+  },
+  "ppp-active": {
+    "0": "ppp-active.jpg",
+    "1": "pppoe-server.jpg",
+    "2": "l2tp-server.jpg",
+    "3": "ovpn-server.jpg"
+  },
+  "ppp-pppoe-server": {
+    "0": "pppoe-server.jpg",
+    "1": "ppp.jpg",
+    "2": "ppp-profiles.jpg",
+    "3": "ppp-secrets.jpg",
+    "4": "ppp-active.jpg",
+    "5": "l2tp-server.jpg"
+  },
+  "task-pppoe-isp": {
+    "0": "pppoe-server.jpg"
+  },
+  "vpn-choose": {
+    "0": "l2tp-server.jpg",
+    "1": "ovpn-server.jpg"
+  },
+  "task-l2tp-vpn": {
+    "0": "l2tp-server.jpg"
+  },
+  "vpn-openvpn": {
+    "0": "ovpn-server.jpg"
   },
   "ip-address": {
     "0": "ip-address.jpg",
@@ -334,6 +378,38 @@ window.SHOT_STEPS = {
   "start-rollback": {
     "0": "log.jpg"
   },
+  "q-simple": {
+    "0": "queues.jpg",
+    "1": "simple-new.jpg",
+    "2": "queues.jpg",
+    "3": "queues.jpg",
+    "4": "simple-new.jpg"
+  },
+  "q-cake": {
+    "0": "queues.jpg",
+    "1": "simple-new.jpg",
+    "2": "queue-types.jpg",
+    "3": "queue-iface.jpg"
+  },
+  "q-burst": {
+    "0": "queues.jpg",
+    "1": "queues.jpg",
+    "2": "simple-new.jpg",
+    "3": "simple-new.jpg"
+  },
+  "q-types": {
+    "0": "queue-types.jpg",
+    "1": "queue-types.jpg",
+    "2": "queues.jpg",
+    "3": "simple-new.jpg",
+    "4": "queue-iface.jpg"
+  },
+  "q-interface": {
+    "0": "queue-iface.jpg",
+    "1": "queue-iface.jpg",
+    "2": "simple-new.jpg",
+    "3": "queue-types.jpg"
+  },
   "ppp-aaa-radius": {
     "0": "radius.jpg"
   },
@@ -344,12 +420,16 @@ window.SHOT_STEPS = {
   "ppp-pppoe-client": {
     "0": "ppp.jpg",
     "1": "ppp-profiles.jpg",
-    "2": "ppp-secrets.jpg"
+    "2": "ppp-secrets.jpg",
+    "3": "ppp-active.jpg",
+    "4": "pppoe-server.jpg"
   },
   "ppp-l2tp-client": {
     "0": "ppp.jpg",
     "1": "ppp.jpg",
-    "2": "ppp-secrets.jpg"
+    "2": "ppp-secrets.jpg",
+    "3": "ppp-active.jpg",
+    "4": "pppoe-server.jpg"
   },
   "ip-tftp-pxe": {},
   "mpls-basics": {
@@ -367,23 +447,21 @@ window.SHOT_STEPS = {
     "2": "ip-address.jpg",
     "3": "ip-dns.jpg"
   },
-  "wifi-accesslist": {
-    "0": "wifi.jpg",
-    "1": "wifi-new.jpg",
-    "2": "wifi-security.jpg",
-    "3": "wifi-wps.jpg"
-  },
   "wifi-capsman": {
     "0": "wifi-security.jpg",
-    "1": "wifi-wps.jpg",
-    "2": "wifi-sniffer.jpg"
+    "1": "wifi-access-list.jpg",
+    "2": "wifi-wps.jpg",
+    "3": "wifi-sniffer.jpg"
   },
   "wifi-slow": {
     "0": "wifi-security.jpg",
-    "1": "wifi-wps.jpg",
-    "2": "wifi-sniffer.jpg"
+    "1": "wifi-access-list.jpg",
+    "2": "wifi-wps.jpg",
+    "3": "wifi-sniffer.jpg"
   },
-  "task-capsman": {},
+  "task-capsman": {
+    "0": "wifi-sniffer.jpg"
+  },
   "if-pppoe-client": {
     "0": "vlan.jpg",
     "1": "bonding.jpg",
@@ -411,26 +489,28 @@ window.SHOT_STEPS = {
     "3": "bridge-new.jpg",
     "4": "bridge-filters.jpg"
   },
-  "ppp-pppoe-server": {
-    "0": "ppp.jpg",
-    "1": "ppp-profiles.jpg",
-    "2": "ppp-secrets.jpg"
-  },
   "ppp-pptp-server": {
     "0": "ppp.jpg",
-    "1": "ppp-secrets.jpg"
+    "1": "ppp-secrets.jpg",
+    "2": "ppp-active.jpg",
+    "3": "pppoe-server.jpg",
+    "4": "l2tp-server.jpg"
   },
   "ppp-sstp-server": {
     "0": "ppp.jpg",
-    "1": "ppp-secrets.jpg"
+    "1": "ppp-secrets.jpg",
+    "2": "ppp-active.jpg",
+    "3": "pppoe-server.jpg",
+    "4": "l2tp-server.jpg",
+    "5": "ovpn-server.jpg"
   },
-  "ppp-active": {},
-  "vpn-choose": {},
-  "vpn-pptp": {},
-  "vpn-sstp": {},
-  "vpn-openvpn": {},
-  "task-l2tp-vpn": {},
-  "task-pppoe-isp": {},
+  "vpn-pptp": {
+    "0": "l2tp-server.jpg",
+    "1": "ovpn-server.jpg"
+  },
+  "vpn-sstp": {
+    "0": "ovpn-server.jpg"
+  },
   "ip-dhcp-client": {},
   "ip-dhcp-relay": {},
   "ip-arp": {},
@@ -532,6 +612,17 @@ window.SHOT_STEPS = {
   "task-recover-access": {},
   "task-audit-checkup": {},
   "task-config-versioning": {},
+  "q-tree": {
+    "0": "queues.jpg",
+    "1": "simple-new.jpg",
+    "2": "queue-types.jpg",
+    "3": "queue-iface.jpg",
+    "4": "queue-types.jpg"
+  },
+  "task-qos": {
+    "0": "queue-types.jpg",
+    "1": "queue-iface.jpg"
+  },
   "wifi-power": {},
   "ppp-l2tp-server": {},
   "ppp-ipv6": {},
@@ -540,5 +631,9 @@ window.SHOT_STEPS = {
   "netvpn-start": {},
   "task-wan-failover": {},
   "ppp-ovpn-server": {},
-  "container-basics": {}
+  "container-basics": {},
+  "queue-cake": {
+    "0": "queue-types.jpg",
+    "1": "queue-iface.jpg"
+  }
 };

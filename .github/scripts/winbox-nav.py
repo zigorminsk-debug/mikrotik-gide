@@ -295,35 +295,56 @@ def escape(times=2):
         time.sleep(0.4)
 
 
+def menu_area_words(X, Y, W, H, tag='menu'):
+    """Слова в области содержимого: так видно и окно, и раскрытое подменю."""
+    return ocr(X + 110, Y + 16, W - 150, H - 130, tag)
+
+
+def click_root(root, X, Y, W, H):
+    """Открыть раздел из дерева: по OCR, по таблице высот и с проверкой.
+
+    Если после клика в области содержимого пусто и ни одного слова нет —
+    значит пункт только подсветился: пробуем соседние высоты и двойной клик.
+    """
+    cands = []
+    hit = find(tree_words(X, Y, H), root)
+    if hit:
+        cands.append((hit[1], hit[2]))
+    base = TREE_Y.get(clean(root))
+    if base is not None:
+        for dy in (0, -6, 6, -12, 12):
+            cands.append((X + 60, Y + base + dy))
+    for cx, cy in cands[:6]:
+        click(cx, cy)
+        time.sleep(1.0)
+        words = menu_area_words(X, Y, W, H)
+        if len(words) >= 6 or sd_now(X, Y, W, H) > 5:
+            return cx, cy
+        log('  «%s»: после клика пусто, пробую ещё' % root)
+    # последняя попытка — двойной клик по табличной высоте
+    if base is not None:
+        click(X + 60, Y + base, repeat=2)
+        time.sleep(1.5)
+        if len(menu_area_words(X, Y, W, H)) >= 4 or sd_now(X, Y, W, H) > 5:
+            return X + 60, Y + base
+    return None
+
+
 def open_window(parts, want_new, X, Y, W, H):
     root = parts[0]
-    words = ocr(X + 2, Y + 20, 150, H - 130, 'tree')
-    hit = find(words, root)
-    if not hit:
-        y = TREE_Y.get(clean(root))
-        if y is None:
-            log('!! не нашёл «%s» в дереве; OCR: %s' %
-                (root, ' '.join(w[0] for w in words[:25])))
-            return False
-        log('  «%s» взял из таблицы высот (y=+%d), OCR дерева: %s' %
-            (root, y, ' '.join(w[0] for w in words[:20])))
-        click(X + 60, Y + y)
-        cur = (X + 60, Y + y)
-    else:
-        click(hit[1], hit[2])
-        cur = (hit[1], hit[2])
-        if sd_now(X, Y, W, H) <= 5 and not parts[1:]:
-            # пункт только подсветился — в Winbox 4 окно открывает второй клик
-            click(hit[1], hit[2], repeat=2)
-            log('  «%s»: второй клик по пункту' % root)
+    pos = click_root(root, X, Y, W, H)
+    if not pos:
+        log('!! раздел «%s» не открылся' % root)
+        return False
+    cur = pos
     for part in parts[1:]:
-        words = ocr(X + 100, Y + 20, W - 140, H - 130, 'menu')
+        words = menu_area_words(X, Y, W, H)
         hit = find(words, part, near=cur, xmin=X + 120)
         if not hit:
-            # возможно, список подменю ещё не раскрылся: щёлкаем раздел ещё раз
+            # подменю могло ещё не раскрыться — щёлкаем узел ещё раз
             click(cur[0], cur[1], repeat=2)
             time.sleep(1.2)
-            words = ocr(X + 100, Y + 20, W - 140, H - 130, 'menu')
+            words = menu_area_words(X, Y, W, H)
             hit = find(words, part, near=cur, xmin=X + 120)
         if not hit:
             log('!! не нашёл «%s» (путь: %s); OCR: %s' %
@@ -332,7 +353,7 @@ def open_window(parts, want_new, X, Y, W, H):
         click(hit[1], hit[2])
         cur = (hit[1], hit[2])
     if want_new:
-        words = ocr(X + 100, Y + 60, W - 140, H - 200, 'new')
+        words = menu_area_words(X, Y, W, H)
         hit = find(words, 'New', near=(X + 260, Y + 165))
         if not hit:
             log('!! не нашёл кнопку New (путь: %s)' % ' → '.join(parts))

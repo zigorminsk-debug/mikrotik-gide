@@ -1,7 +1,7 @@
 /* Настоящие снимки окон Winbox 4.
    Сделаны автоматически в GitHub Actions: CHR RouterOS 7.24.6 в QEMU +
    Winbox 4.4 под Xvfb. Ничего не дорисовано — это окна живой программы.
-   Файлы лежат в img/shots/ (JPEG, ширина 900 px), всего 40.
+   Файлы лежат в img/shots/ (JPEG, ширина 900 px), всего 49.
 
    Поля: f — файл, t — заголовок окна, g — группа, d — что видно и зачем.
    Файл создаёт scripts/win4-import.js, руками не править. */
@@ -29,6 +29,10 @@ window.WIN4_SHOTS = [
   {
     f: "wifi-security.jpg", t: "WiFi → Security", g: "Wi-Fi",
     d: "Профили безопасности: режим (WPA2/WPA3), шифры и пароли. Один профиль можно повесить на несколько точек доступа."
+  },
+  {
+    f: "wifi-access-list.jpg", t: "WiFi → Access List", g: "Wi-Fi",
+    d: "Список доступа по MAC: разрешение и запрет клиентов, привязка к профилю безопасности."
   },
   {
     f: "wifi-wps.jpg", t: "WiFi → WPS", g: "Wi-Fi",
@@ -115,6 +119,22 @@ window.WIN4_SHOTS = [
     d: "Учётные записи PPP: имя, пароль, профиль, сервис (pppoe, l2tp, ovpn) и привязанный адрес."
   },
   {
+    f: "ppp-active.jpg", t: "PPP → Active Connections", g: "PPP",
+    d: "Активные подключения: кто вошёл, с какого адреса, время сессии и полученный IP."
+  },
+  {
+    f: "pppoe-server.jpg", t: "PPP → PPPoE Server", g: "PPP",
+    d: "PPPoE-сервер: на каком интерфейсе слушать, пул адресов, профиль по умолчанию и authentication."
+  },
+  {
+    f: "l2tp-server.jpg", t: "PPP → L2TP Server", g: "PPP",
+    d: "L2TP-сервер: включение, адрес для клиентов, IPSec Secret и профиль по умолчанию."
+  },
+  {
+    f: "ovpn-server.jpg", t: "PPP → OVPN Server", g: "PPP",
+    d: "OVPN-сервер: порт, режим, сертификат и требования к клиентам."
+  },
+  {
     f: "ip-address.jpg", t: "IP → Addresses", g: "IP",
     d: "Адреса интерфейсов: адрес/маска, сеть, интерфейс и пометка D (dynamic). Первое, что проверяют, когда «нет сети»."
   },
@@ -157,6 +177,22 @@ window.WIN4_SHOTS = [
   {
     f: "terminal.jpg", t: "New Terminal", g: "Система",
     d: "New Terminal: консоль RouterOS внутри Winbox. Сюда вставляют конфиг из приложения — команды видны в правой части окна."
+  },
+  {
+    f: "queues.jpg", t: "Queues → Simple Queues", g: "Очереди",
+    d: "Simple Queues: правила «кто и с какой скоростью» — цель, лимиты up/down и счётчики."
+  },
+  {
+    f: "simple-new.jpg", t: "Queues → Simple Queues → New", g: "Очереди",
+    d: "Новая очередь: General (цель, адреса, интерфейс), Advanced, Statistics, Traffic, Burst."
+  },
+  {
+    f: "queue-types.jpg", t: "Queues → Queue Types", g: "Очереди",
+    d: "Типы очередей: алгоритм (pfifo, sfq, cake), размер буфера и лимиты."
+  },
+  {
+    f: "queue-iface.jpg", t: "Queues → Interface Queues", g: "Очереди",
+    d: "Очереди на интерфейсе: ограничение всего порта целиком."
   },
   {
     f: "dot1x.jpg", t: "Dot1X", g: "Прочее",

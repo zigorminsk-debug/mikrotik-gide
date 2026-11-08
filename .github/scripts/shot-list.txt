@@ -81,6 +81,20 @@ ip-upnp|IP → UPnP||IP → UPnP
 ip-vrf|IP → VRF||IP → VRF
 ip-proxy|IP → Web Proxy||IP → Web Proxy
 
+ip-dhcp-leases|IP → DHCP Server → Leases||IP → DHCP Server → Leases
+ip-dhcp-networks|IP → DHCP Server → Networks||IP → DHCP Server → Networks
+ip-dhcp-options|IP → DHCP Server → Options||IP → DHCP Server → Options
+ip-sntp|IP → SNTP Client||IP → SNTP Client
+ipv6-dhcp-client|IPv6 → DHCP Client||IPv6 → DHCP Client
+ipv6-dhcp-server|IPv6 → DHCP Server||IPv6 → DHCP Server
+ipv6-settings|IPv6 → Settings||IPv6 → Settings
+routing-ospf-neighbors|Routing → OSPF → Neighbors||Routing → OSPF → Neighbors
+routing-bgp-sessions|Routing → BGP → Sessions||Routing → BGP → Sessions
+routing-igmp|Routing → IGMP Proxy||Routing → IGMP Proxy
+routing-bgp-new|Routing → BGP → Connections → New|new|Routing → BGP → Connections → New
+system-ports|System → Ports||System → Ports
+tool-monitor|Tools → Traffic Monitor||Tools → Traffic Monitor
+tool-trafficgen|Tools → Traffic Generator||Tools → Traffic Generator
 ipv6|IPv6||IPv6 → Address
 ipv6-address|IPv6 → Address||IPv6 → Address
 ipv6-nd|IPv6 → ND||IPv6 → ND
