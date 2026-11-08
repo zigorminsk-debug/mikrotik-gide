@@ -345,6 +345,13 @@ window.SHOT_STEPS = {
   "sys-users": {
     "2": "ip-services.jpg"
   },
+  "ipv6-address": {
+    "0": "ipv6.jpg",
+    "1": "ipv6.jpg"
+  },
+  "ppp-ipv6": {
+    "0": "ipv6.jpg"
+  },
   "rt-settings": {
     "0": "routing.jpg",
     "1": "routing.jpg"
@@ -548,6 +555,25 @@ window.SHOT_STEPS = {
   "task-tenants": {},
   "task-monitoring": {},
   "task-snmp-zabbix": {},
+  "ipv6-dhcp-client": {
+    "0": "ipv6.jpg"
+  },
+  "ipv6-dhcp-server": {
+    "0": "ipv6.jpg"
+  },
+  "ipv6-nd": {
+    "0": "ipv6.jpg"
+  },
+  "ipv6-firewall": {
+    "0": "ipv6.jpg"
+  },
+  "ipv6-routes": {
+    "0": "ipv6.jpg"
+  },
+  "ipv6-pd": {},
+  "ipv6-dualstack-check": {},
+  "ipv6-pool": {},
+  "ipv6-settings": {},
   "rt-tables": {
     "0": "routing.jpg"
   },
@@ -625,9 +651,9 @@ window.SHOT_STEPS = {
   },
   "wifi-power": {},
   "ppp-l2tp-server": {},
-  "ppp-ipv6": {},
   "dhcp-relay-deep": {},
   "routing-policy": {},
+  "ipv6-slaac": {},
   "netvpn-start": {},
   "task-wan-failover": {},
   "ppp-ovpn-server": {},

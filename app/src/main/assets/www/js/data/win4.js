@@ -1,7 +1,7 @@
 /* Настоящие снимки окон Winbox 4.
    Сделаны автоматически в GitHub Actions: CHR RouterOS 7.24.6 в QEMU +
    Winbox 4.4 под Xvfb. Ничего не дорисовано — это окна живой программы.
-   Файлы лежат в img/shots/ (JPEG, ширина 900 px), всего 49.
+   Файлы лежат в img/shots/ (JPEG, ширина 900 px), всего 50.
 
    Поля: f — файл, t — заголовок окна, g — группа, d — что видно и зачем.
    Файл создаёт scripts/win4-import.js, руками не править. */
@@ -153,6 +153,10 @@ window.WIN4_SHOTS = [
   {
     f: "ip-services.jpg", t: "IP → Services", g: "IP",
     d: "Сервисы роутера: telnet, ftp, www, ssh, winbox, api и с каких адресов они доступны. Лишнее — отключают."
+  },
+  {
+    f: "ipv6.jpg", t: "IPv6", g: "IPv6",
+    d: "IPv6 в Winbox 4: Address, DHCP Client/Server, ND, Firewall, Routes. Настройка похожа на IPv4, но с префиксами."
   },
   {
     f: "routing.jpg", t: "Routing", g: "Маршрутизация",
