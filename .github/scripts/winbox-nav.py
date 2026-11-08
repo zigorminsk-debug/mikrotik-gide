@@ -382,11 +382,12 @@ def open_window(parts, want_new, X, Y, W, H):
         words = menu_area_words(X, Y, W, H)
         hit = find(words, part, near=cur, xmin=X + 120)
         if not hit:
-            # вкладки могли уехать за край — прокручиваем полосу вкладок
-            for _ in range(5):
-                click(X + W - 45, Y + 113)
-                words = menu_area_words(X, Y, W, H)
-                hit = find(words, part, near=cur, xmin=X + 120)
+            # вкладки не помещаются в полосу — открываем список пунктов из
+            # заголовка окна (рядом с названием есть «▾»)
+            for _ in range(2):
+                click(X + 291, Y + 113)
+                words = ocr(X + 150, Y + 120, 520, H - 200, 'titlemenu')
+                hit = find(words, part, xmin=X + 150)
                 if hit:
                     break
         if not hit:
@@ -398,7 +399,6 @@ def open_window(parts, want_new, X, Y, W, H):
         if not hit:
             log('!! не нашёл «%s» (путь: %s); OCR: %s' %
                 (part, ' → '.join(parts), ' '.join(w[0] for w in words[:30])))
-            dbg(name_slug(parts))
             return False
         click(hit[1], hit[2])
         cur = (hit[1], hit[2])
@@ -431,8 +431,11 @@ def main():
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
     log('задач: %d' % len(tasks))
 
-    ok, fail = 0, []
+    ok, fail, started = 0, [], time.time()
     for i, line in enumerate(tasks):
+        if time.time() - started > 5400:
+            log('!! стоп по времени: снято %d из %d' % (ok, len(tasks)))
+            break
         if i and i % 40 == 0:
             try:
                 good, X, Y, W, H = restart_winbox(X, Y, W, H)
@@ -442,7 +445,11 @@ def main():
                 log('!! перезапуск не удался, продолжаю в том же окне')
             except Exception as exc:                     # noqa: BLE001
                 log('!! перезапуск: ошибка %s' % exc)
-        escape(3)
+        # чистый экран перед задачей: если что-то висит, закрываем
+        for _ in range(3):
+            if sd_now(X, Y, W, H) <= 5:
+                break
+            escape(3)
 
         fields = line.split('|')
         name = fields[0].strip()
