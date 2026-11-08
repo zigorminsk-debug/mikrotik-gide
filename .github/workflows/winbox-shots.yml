@@ -5,7 +5,10 @@ name: Winbox 4 — настоящие скриншоты окон
 # Результат (PNG, JPEG 900px и манифест) коммитится в ветку в docs/shots/.
 #
 # Режимы (вход mode):
-#   capture   — снять окна по .github/scripts/shot-list.txt (по умолчанию)
+#   nav       — открыть окна по названиям пунктов меню и снять недостающие
+#               кадры (по умолчанию; уже снятые пропускаются, force=true
+#               переснимает весь список)
+#   capture   — старый режим съёмки по Y-координатам из shot-list.txt
 #   calibrate — пройти по дереву меню с шагом 23 px и записать, какое окно
 #               открывается от каждого клика (нужно, чтобы точно задать y)
 
@@ -13,9 +16,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'capture или calibrate'
+        description: 'capture, calibrate или nav'
         required: false
-        default: 'capture'
+        default: 'nav'
+      force:
+        description: 'Переснять все окна, а только недостающие'
+        required: false
+        type: boolean
+        default: false
   push:
     paths:
       - 'ci/shots-mode.txt'
@@ -28,6 +36,10 @@ on:
 
 permissions:
   contents: write
+
+concurrency:
+  group: winbox-shots-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   shots:
@@ -55,17 +67,6 @@ jobs:
             echo "mode=capture" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Зависимости (QEMU, Xvfb, Qt, xdotool, ImageMagick)
-        run: |
-          sudo apt-get update -qq
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-            qemu-system-x86 qemu-utils xvfb x11-utils xdotool imagemagick unzip \
-            netcat-openbsd tesseract-ocr libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
-            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
-            libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 \
-            libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core \
-            openbox
-
       - name: Проверить скрипт съёмки (нет необъявленных имён)
         run: |
           python3 - <<'PY'
@@ -91,6 +92,17 @@ jobs:
               raise SystemExit('не объявлены: ' + ', '.join(bad))
           print('скрипт цел, все имена объявлены')
           PY
+
+      - name: Зависимости (QEMU, Xvfb, Qt, xdotool, ImageMagick)
+        run: |
+          sudo apt-get update -qq
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
+            qemu-system-x86 qemu-utils xvfb x11-utils xdotool imagemagick unzip \
+            netcat-openbsd tesseract-ocr libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
+            libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
+            libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 \
+            libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core \
+            openbox
 
       - name: Скачать CHR и Winbox 4
         run: |
@@ -165,7 +177,7 @@ jobs:
         if: steps.mode.outputs.mode != 'nav'
         run: |
           cd "$GITHUB_WORKSPACE"
-          bash .github/scripts/winbox-capture.sh "${{ steps.mode.outputs.mode }}" || true
+          bash .github/scripts/winbox-capture.sh "${{ steps.mode.outputs.mode }}"
           echo "=== окна X ===" >> docs/shots/report.txt
           for w in $(xdotool search --name '.' 2>/dev/null); do
             xdotool getwindowname "$w" 2>/dev/null || true
@@ -174,10 +186,15 @@ jobs:
 
       - name: Снять окна по названиям пунктов меню
         if: steps.mode.outputs.mode == 'nav'
+        env:
+          FORCE: ${{ (github.event.inputs.force == true || github.event.inputs.force == 'true') && '1' || '0' }}
         run: |
+          set -o pipefail
           cd "$GITHUB_WORKSPACE"
-          # tee: вывод и трейсбеки скрипта тоже попадают в отчёт в ветке
-          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/shot-list.txt 2>&1 | tee -a docs/shots/report.txt || true
+          # tee: вывод и трейсбеки скрипта тоже попадают в отчёт в ветке.
+          # Без «|| true»: NameError/трейсбек должен валить шаг, а не красить
+          # job в зелёный. Отчёт всё равно уедет в ветку шагом ниже (always()).
+          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/shot-list.txt 2>&1 | tee -a docs/shots/report.txt
 
       - name: Снимки в артефакт
         if: always()
@@ -209,4 +226,9 @@ jobs:
                git push origin "HEAD:${{ github.ref_name }}"; then ok=1; break; fi
             echo "попытка $i не удалась, ждём"; sleep 10
           done
-          [ "$ok" = 1 ] && echo "снимки в ветке" || echo "push не удался после 4 попыток"
+          if [ "$ok" = 1 ]; then
+            echo "снимки в ветке"
+          else
+            echo "push не удался после 4 попыток" >&2
+            exit 1
+          fi

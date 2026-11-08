@@ -30,3 +30,7 @@ dist/
 
 # ресурсы Windows-сборки (генерируются в CI из windows/icon.ico)
 *.syso
+
+# Python-кэш скриптов CI
+__pycache__/
+*.pyc

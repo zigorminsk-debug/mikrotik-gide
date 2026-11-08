@@ -362,6 +362,11 @@ def restart_winbox(X, Y, W, H):
     ok = connect(X, Y, W, H, tries=12)
     if ok:
         escape(1)
+        try:
+            X, Y, W, H = maximize(*geom())
+        except Exception as exc:                         # noqa: BLE001
+            log('  растяжка после перезапуска не удалась: %s' % exc)
+            X, Y, W, H = geom()
     return ok, X, Y, W, H
 
 
@@ -444,7 +449,7 @@ def main():
     shoot('00-login', X, Y, W, H)
     if not connect(X, Y, W, H):
         log('!! войти в RouterOS не удалось — снимать нечего')
-        return
+        return 2
     escape(1)
     time.sleep(2)
     try:
@@ -459,11 +464,20 @@ def main():
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
     log('задач: %d' % len(tasks))
 
-    ok, fail, started, streak = 0, [], time.time(), 0
+    # Продолжение съёмки: уже снятые кадры лежат в docs/shots/jpg из прошлых
+    # прогонов. Не переснимаем их каждый раз — добираем недостающие окна.
+    # NAV_RESUME=0 или FORCE=1 снимает весь список заново.
+    resume = os.environ.get('NAV_RESUME', '1') != '0' and os.environ.get('FORCE', '') != '1'
+    ok, fail, skipped, started, streak = 0, [], 0, time.time(), 0
     for i, line in enumerate(tasks):
         if time.time() - started > 5400:
-            log('!! стоп по времени: снято %d из %d' % (ok, len(tasks)))
+            log('!! стоп по времени: снято %d, пропущено %d из %d' % (ok, skipped, len(tasks)))
             break
+        fields = line.split('|')
+        name = fields[0].strip()
+        if resume and os.path.exists(os.path.join(JPG, name + '.jpg')):
+            skipped += 1
+            continue
         if i and i % 40 == 0:
             try:
                 good, X, Y, W, H = restart_winbox(X, Y, W, H)
@@ -479,8 +493,6 @@ def main():
                 break
             escape(3)
 
-        fields = line.split('|')
-        name = fields[0].strip()
         parts = [p.strip() for p in fields[1].split('→') if p.strip()] \
             if len(fields) > 1 else [name]
         want_new = len(fields) > 2 and fields[2].strip().lower() in ('new', '1', 'да')
@@ -527,9 +539,12 @@ def main():
         streak = 0
         escape()
 
-    log('итого: снято %d, не вышло %d%s' % (ok, len(fail),
-                                           (': ' + ', '.join(fail)) if fail else ''))
+    log('итого: снято %d, уже было %d, не вышло %d%s' % (
+        ok, skipped, len(fail), (': ' + ', '.join(fail)) if fail else ''))
+    if ok == 0 and skipped == 0:
+        return 1
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    sys.exit(main() or 0)
