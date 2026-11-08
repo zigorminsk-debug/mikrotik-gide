@@ -35,7 +35,10 @@ const GROUPS = ['Вход', 'Быстрый старт', 'Wi-Fi', 'Интерф�
   'PPP', 'IP', 'IPv6', 'MPLS', 'Маршрутизация', 'Система', 'Очереди', 'Прочее', 'Инструменты'];
 
 function norm(p) {
-  return String(p || '').replace(/\s*→\s*/g, ' → ').replace(/\s+/g, ' ').trim();
+  // Путь окна в статьях иногда перечисляет несколько вариантов через «·»:
+  // «WireGuard → WireGuard · IP → Address». Для привязки берём первый.
+  return String(p || '').split('·')[0]
+    .replace(/\s*→\s*/g, ' → ').replace(/\s+/g, ' ').trim();
 }
 
 /* Кадры, которым не нашлось статьи: Quick Set показываем в статье о первом
@@ -142,11 +145,21 @@ function main() {
   const win = loadData();
   const articles = [];
   (win.DATA || []).forEach(g => (g.items || []).forEach(a => {
+    // Путь окна шага лежит и в a.scenes (старый формат), и прямо в шаге
+    // (s.sc.path — так записано большинство статей). Важно, чтобы номер
+    // элемента совпадал с номером шага: под каждым шагом свой кадр.
+    const stepArr = a.steps || [];
+    const scenes = stepArr.map((st, i) => {
+      if (st && typeof st === 'object' && st.sc && st.sc.path) return norm(st.sc.path);
+      const old = (a.scenes || [])[i];
+      return norm(old && old.path);
+    });
+    if (!stepArr.length) (a.scenes || []).forEach(sc => scenes.push(norm(sc && sc.path)));
     articles.push({
       id: a.id,
       path: norm(a.path),
-      scenes: (a.scenes || []).map(sc => norm(sc && sc.path)),
-      steps: (a.steps || []).length,
+      scenes: scenes,
+      steps: Math.max(stepArr.length, (a.scenes || []).length),
     });
   }));
 
@@ -166,42 +179,46 @@ function main() {
   const mapping = {};
   const bound = new Set();
   let steps = 0;
+  let exactSteps = 0;
 
-  // Пары «снимок ↔ шаг статьи» с оценкой; раздаём от лучших совпадений к
-  // слабым, чтобы точное окно не занял общий кадр раздела.
-  const pairs = [];
-  shots.forEach(s => {
-    const p = norm(s.appPath);
-    articles.forEach(a => {
-      a.scenes.forEach((sc, i) => {
-        const v = score(p, sc);
-        if (v) pairs.push({ f: s.f, id: a.id, step: i, v: v });
-      });
-      const vp = score(p, a.path);
-      if (vp >= 10) pairs.push({ f: s.f, id: a.id, step: 0, v: vp - 5 });
-    });
+  /* Каждый шаг получает СВОЙ кадр: для шага берём окно с лучшим совпадением
+     пути. Ничего не размазываем по свободным шагам — иначе под шагом про
+     DHCP Client оказывался VLAN. Точное окно (совпал весь путь) — строка,
+     окно того же раздела — объект { f, w } с честной подписью. */
+  const shotByPath = shots.map(s => ({ f: s.f, p: norm(s.appPath), t: s.t }));
+  const rootShots = {};
+  shotByPath.forEach(sh => {
+    if (!sh.p) return;
+    const r = sh.p.split(' → ')[0];
+    (rootShots[r] = rootShots[r] || []).push(sh);
   });
-  pairs.sort((a, b) => b.v - a.v);
-
-  const byId = {};
-  articles.forEach(a => { byId[a.id] = a; });
-  const perShot = {};
-  pairs.forEach(pair => {
-    const m = mapping[pair.id] || (mapping[pair.id] = {});
-    if ((perShot[pair.f] || 0) >= 8) return;
-    let step = pair.step;
-    if (m[step] !== undefined) {
-      // нужный шаг занят более точным кадром — берём свободный шаг этой статьи
-      const n = Math.max(1, (byId[pair.id] || {}).steps || 1);
-      let free = -1;
-      for (let i = 0; i < n; i++) if (m[i] === undefined) { free = i; break; }
-      if (free < 0) return;
-      step = free;
-    }
-    m[step] = pair.f;
-    perShot[pair.f] = (perShot[pair.f] || 0) + 1;
-    bound.add(pair.f);
-    steps++;
+  articles.forEach(a => {
+    a.scenes.forEach((sc, i) => {
+      if (!sc) return;
+      let best = null, bestV = 0;
+      shotByPath.forEach(sh => {
+        const v = score(sh.p, sc);
+        if (v > bestV) { bestV = v; best = sh; }
+      });
+      // ниже 20 — это уже «просто общий корень», такие совпадения не берём:
+      // лучше схема, чем чужое окно
+      if (!best || bestV < 20) return;
+      const m = mapping[a.id] || (mapping[a.id] = {});
+      if (m[i] !== undefined) return;
+      if (bestV >= 50) {
+        m[i] = best.f;
+        exactSteps++;
+      } else {
+        // запасной вариант: настоящее окно того же раздела меню; чтобы под
+        // шагами не повторялась одна и та же картинка, чередуем кадры раздела
+        const root = sc.split(' → ')[0];
+        const pool = rootShots[root] || [];
+        const pick2 = pool.length ? pool[i % pool.length] : best;
+        m[i] = { f: pick2.f, w: pick2.t };
+      }
+      bound.add(best.f);
+      steps++;
+    });
   });
 
   // каждый кадр галереи должен быть хотя бы где-то показан: иначе он «висит»
@@ -227,9 +244,61 @@ function main() {
       }
     }
     if (step < 0) return;
-    m[step] = s.f;
+    // это окно того же раздела, а не окно шага — подписываем его честно
+    m[step] = { f: s.f, w: s.t };
     bound.add(s.f);
     steps++;
+  });
+
+  /* 2b) шаги без точного кадра: если раздел снят (Interfaces, WiFi,
+     Bridge, PPP…), показываем настоящее окно этого раздела и честно
+     подписываем, какое именно окно на снимке. Схема остаётся только там,
+     где такого раздела в снимках нет вовсе. */
+  const rootOf = p => (p ? p.split(' → ')[0] : '');
+  const byRoot = {};
+  shots.forEach(s => {
+    const r = rootOf(norm(s.appPath));
+    if (!r) return;
+    const depth = norm(s.appPath).split(' → ').length;
+    if (!byRoot[r] || depth < byRoot[r].depth) {
+      byRoot[r] = { f: s.f, t: s.t, depth: depth };
+    }
+  });
+
+  // Последний проход: шагам, у которых нет своего описания окна (просто текст),
+  // тоже даём настоящее окно раздела статьи — с подписью, какое это окно.
+  // Последний проход: всё, что осталось без кадра (шаги-строки, окна, которых
+  // ещё не сняли), получает настоящее окно того же раздела с честной подписью.
+  // Кадры раздела чередуем, чтобы под шагами не повторялась одна картинка.
+  articles.forEach(a => {
+    const rootA = rootOf(a.path);
+    const n = Math.max(a.steps || 0, a.scenes.length);
+    for (let i = 0; i < n; i++) {
+      const m = mapping[a.id] || (mapping[a.id] = {});
+      if (m[i] !== undefined) continue;
+      const full = a.scenes[i] || a.path || '';
+      const root = rootOf(full) || rootA;
+      let pool = rootShots[root];
+      if (!pool && rootA) pool = rootShots[rootA];
+      if (!pool) {
+        // окно живёт не в первом разделе: WireGuard снимается через
+        // Interfaces → WireGuard, поэтому ищем кадры с общим словом пути
+        const segs = full.toLowerCase().split(' → ');
+        const near = shotByPath
+          .map(sh => {
+            const ss = sh.p.toLowerCase().split(' → ');
+            const same = ss.filter(x => segs.indexOf(x) >= 0).length;
+            return { sh: sh, same: same };
+          })
+          .filter(v => v.same > 0)
+          .sort((x, y) => y.same - x.same);
+        pool = near.length ? near.map(v => v.sh) : null;
+      }
+      if (!pool || !pool.length) continue;
+      const sh = pool[i % pool.length];
+      m[i] = { f: sh.f, w: sh.t };
+      steps++;
+    }
   });
 
   const arts = Object.keys(mapping);
@@ -241,6 +310,8 @@ function main() {
     '   «Схема окна Winbox 4». Файл создаёт scripts/win4-import.js. */\n' +
     'window.SHOT_STEPS = ' + JSON.stringify(mapping, null, 2) + ';\n';
 
+  const exact = exactSteps;
+
   if (!dry) {
     fs.writeFileSync(path.join(DATA, 'win4.js'), win4, 'utf8');
     fs.writeFileSync(path.join(DATA, 'photos.js'), photos, 'utf8');
@@ -248,7 +319,8 @@ function main() {
 
   console.log('Галерея: ' + shots.length + ' снимков, групп: ' +
     new Set(shots.map(s => s.g)).size);
-  console.log('Статей с живым кадром: ' + arts.length + ', шагов со снимком: ' + steps);
+  console.log('Статей с живым кадром: ' + arts.length + ', шагов со снимком: ' + steps +
+    ' (точное окно: ' + exact + ')');
 }
 
 main();

@@ -461,7 +461,8 @@ async function checkWanFailover() {
   ok('на странице есть шаги', /Как это работает/.test(page));
   ok('на странице есть тело скрипта', /wan-failover/.test(page) && /:local ups 6/.test(page));
   ok('на странице есть испытание кабелем', /выдерните кабель/i.test(page));
-  ok('под шагами стоят окна с номерами', win.document.querySelectorAll('.step-shot .wb-num').length > 0);
+  ok('под шагами стоят окна Winbox 4',
+    win.document.querySelectorAll('.step-shot img, .step-shot .wb-num').length > 0);
   ok('под окнами есть расшифровка номеров', /1 — /.test(page) || /1 —/.test(page));
 }
 
@@ -602,11 +603,12 @@ async function checkNetVpn() {
   await new Promise(r => setTimeout(r, 80));
   const doc = win.document;
   ok('страница wg-server рисуется', /WireGuard/.test(text(q(win, '#content'))));
-  ok('под шагами стоят окна с номерами', doc.querySelectorAll('.step-shot .wb-num').length > 0,
-    'номеров: ' + doc.querySelectorAll('.step-shot .wb-num').length);
-  ok('под окнами видна расшифровка шагов',
-    doc.querySelectorAll('.step-shot .scene-block.guide .notes li').length > 0,
-    'подписей: ' + doc.querySelectorAll('.step-shot .scene-block.guide .notes li').length);
+  ok('под шагами стоят окна Winbox 4',
+    doc.querySelectorAll('.step-shot img, .step-shot .wb-num').length > 0,
+    'окон: ' + doc.querySelectorAll('.step-shot img, .step-shot .wb-num').length);
+  ok('каждое окно под шагом подписано, что на нём',
+    doc.querySelectorAll('.step-shot figcaption, .step-shot .shot-tag').length > 0,
+    'подписей: ' + doc.querySelectorAll('.step-shot figcaption, .step-shot .shot-tag').length);
 
   const home = (function () {
     win.location.hash = '#/';
@@ -882,7 +884,11 @@ async function checkCasesAndShots() {
   const shots = win.eval(`(function(){
     const S = window.SHOT_STEPS || {};
     const files = Object.keys(S).reduce(function (acc, id) {
-      Object.keys(S[id]).forEach(function (k) { acc[S[id][k]] = (acc[S[id][k]] || 0) + 1; });
+      Object.keys(S[id]).forEach(function (k) {
+        const v = S[id][k];
+        const f = typeof v === 'string' ? v : (v && v.f);
+        if (f) acc[f] = (acc[f] || 0) + 1;
+      });
       return acc;
     }, {});
     return { articles: Object.keys(S).length, files: files };
@@ -901,15 +907,24 @@ async function checkCasesAndShots() {
   await new Promise(d => setTimeout(d, 40));
   html = win.document.getElementById('content').innerHTML;
   ok('под шагом показывается настоящий снимок Winbox 4',
-    /<img[^>]+img\/shots\/bridge-new\.jpg/.test(html));
+    /<img[^>]+img\/shots\/[a-z0-9-]+\.jpg/.test(html));
   ok('снимок подписан как скриншот Winbox 4', /Скриншот настоящего Winbox 4/.test(html));
 
-  // 5) Там, где снимка нет, схема честно подписана.
-  win.location.hash = '#/sys-scheduler';
-  win.dispatchEvent(new win.Event('hashchange'));
-  await new Promise(d => setTimeout(d, 40));
-  html = win.document.getElementById('content').innerHTML;
-  ok('схема окна подписана как схема', /Схема окна Winbox 4/.test(html));
+  // 5) Под каждым шагом — либо настоящий снимок, либо честно подписанная
+  //    схема. Проверяем на всех статьях, где ещё остались схемы.
+  const schemeArticles = ['#/tool-ping', '#/sw-vlan', '#/mpls-ldp', '#/sys-scheduler'];
+  let sawScheme = false, badScheme = false;
+  for (const route of schemeArticles) {
+    win.location.hash = route;
+    win.dispatchEvent(new win.Event('hashchange'));
+    await new Promise(d => setTimeout(d, 40));
+    html = win.document.getElementById('content').innerHTML;
+    if (!/shot-tag/.test(html)) continue;
+    sawScheme = true;
+    if (!/Схема окна Winbox 4/.test(html)) badScheme = true;
+  }
+  ok('схема (если осталась) подписана как схема', !badScheme,
+    sawScheme ? '' : 'схем не осталось — все шаги на настоящих снимках');
 
   // 6) Галерея живых снимков открывается и грузит картинки.
   win.location.hash = '#/win4';

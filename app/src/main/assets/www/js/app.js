@@ -553,8 +553,10 @@
         (withShots ? '<div class="hint" style="margin:-4px 0 10px">Под каждым шагом — окно Winbox 4 ' +
           'с красными номерами на кнопках и полях, а под окном — расшифровка: что нажимать в порядке ' +
           '1, 2, 3 … Номера на картинке и в списке совпадают. Тап по окну открывает его на весь экран. ' +
-          'Где окно подписано «Скриншот настоящего Winbox 4» — это живой снимок программы, ' +
-          'а «Схема окна Winbox 4» — точная схема того же окна с подписями.</div>' : '') +
+          'Под шагами — снимки настоящего Winbox 4, сделанные на живом RouterOS: ' +
+          'где окно шага ещё не снято, показано окно того же раздела меню, и это прямо ' +
+          'написано в подписи. Схема с подписью «Схема окна Winbox 4» осталась только ' +
+          'для окон, которых в снимках нет.</div>' : '') +
         '<ol class="steps">' +
         a.steps.map(function (s, i) {
           if (typeof s === 'string') {
@@ -1343,11 +1345,17 @@
       /* Сначала настоящий снимок Winbox 4 (data/photos.js), потом схема окна. */
       const map = (window.SHOT_STEPS && window.SHOT_STEPS[a.id]) || null;
       const photo = map ? map[i] : null;
-      if (photo) {
+      /* Значение бывает строкой (точное окно шага) и объектом { f, w } —
+         живой снимок того же раздела, когда точного окна ещё нет. */
+      const file = typeof photo === 'string' ? photo : (photo && photo.f);
+      const winName = photo && typeof photo === 'object' ? photo.w : '';
+      if (file) {
         host.innerHTML = '<figure class="w4-step">' +
-          '<a href="img/shots/' + esc(photo) + '" target="_blank" rel="noopener">' +
-          '<img loading="lazy" src="img/shots/' + esc(photo) + '" alt="Окно Winbox 4"></a>' +
-          '<figcaption>Скриншот настоящего Winbox 4 — снят в CI на живом RouterOS. ' +
+          '<a href="img/shots/' + esc(file) + '" target="_blank" rel="noopener">' +
+          '<img loading="lazy" src="img/shots/' + esc(file) + '" alt="Окно Winbox 4"></a>' +
+          '<figcaption>Скриншот настоящего Winbox 4 — снят в CI на живом RouterOS' +
+          (winName ? ', окно «' + esc(winName) + '»: это тот же раздел меню, окно шага ещё не снято'
+            : '') + '. ' +
           '<a href="#/win4">Все окна Winbox 4</a></figcaption></figure>';
         return;
       }
