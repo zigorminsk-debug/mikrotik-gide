@@ -369,3 +369,205 @@ total 2004
 -rw-r--r-- 1 runner runner 64118 Nov  8 10:27 wifi-security.jpg
 -rw-r--r-- 1 runner runner 46912 Nov  8 10:27 wifi.jpg
 -rw-r--r-- 1 runner runner 40995 Nov  8 10:27 wireguard.jpg
+прошло 5 минут после старта QEMU
+BIN=/tmp/wb/winbox/WinBox
+Winbox запущен (попытка 1)
+runner      3891  0.1  0.4 219404 76364 ?        S    10:59   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3902  1.3  0.5 923668 89744 ?        Sl   10:59   0:00 /tmp/wb/winbox/WinBox
+  окно 900x525+350+287
+окно 900x525+350+287
+  Neighbors: роутера в списке ещё нет (7 IAC Address « IP Address Identity Version Board Refr)
+    Neighbors: роутера в списке ещё нет (7 IAC Address « IP Address Identity Version Board Refr)
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 2)
+  вход через Neighbors (попытка 2)
+окно после входа: 900x525+350+287
+  окно после входа: 900x525+350+287
+  задач: 151
+задач: 151
+!! не нашёл «ARP» (путь: IP → ARP); OCR: 
+  !! не нашёл «ARP» (путь: IP → ARP); OCR: 
+!! не нашёл «Addresses» (путь: IP → Addresses); OCR: 
+  !! не нашёл «Addresses» (путь: IP → Addresses); OCR: 
+!! не нашёл «Addresses» (путь: IP → Addresses → New); OCR: 
+  !! не нашёл «Addresses» (путь: IP → Addresses → New); OCR: 
+!! не нашёл «Cloud» (путь: IP → Cloud); OCR: 
+  !! не нашёл «Cloud» (путь: IP → Cloud); OCR: 
+!! не нашёл «DHCP Client» (путь: IP → DHCP Client); OCR: 
+  !! не нашёл «DHCP Client» (путь: IP → DHCP Client); OCR: 
+!! не нашёл «DHCP Relay» (путь: IP → DHCP Relay); OCR: 
+  !! не нашёл «DHCP Relay» (путь: IP → DHCP Relay); OCR: 
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server); OCR: 
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server); OCR: 
+!! не нашёл «DNS» (путь: IP → DNS); OCR: 
+  !! не нашёл «DNS» (путь: IP → DNS); OCR: 
+!! не нашёл «DNS» (путь: IP → DNS → Static); OCR: 
+  !! не нашёл «DNS» (путь: IP → DNS → Static); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules → New); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules → New); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → NAT); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → NAT); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → NAT → New); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → NAT → New); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → Mangle); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → Mangle); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → Raw); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → Raw); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → Connections); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → Connections); OCR: 
+!! не нашёл «Firewall» (путь: IP → Firewall → Service Ports); OCR: 
+  !! не нашёл «Firewall» (путь: IP → Firewall → Service Ports); OCR: 
+!! не нашёл «Hotspot» (путь: IP → Hotspot); OCR: 
+  !! не нашёл «Hotspot» (путь: IP → Hotspot); OCR: 
+!! не нашёл «Hotspot» (путь: IP → Hotspot → User Profiles); OCR: 
+  !! не нашёл «Hotspot» (путь: IP → Hotspot → User Profiles); OCR: 
+!! не нашёл «Hotspot» (путь: IP → Hotspot → Users); OCR: 
+  !! не нашёл «Hotspot» (путь: IP → Hotspot → Users); OCR: 
+!! не нашёл «IPsec» (путь: IP → IPsec → Policies); OCR: 
+  !! не нашёл «IPsec» (путь: IP → IPsec → Policies); OCR: 
+!! не нашёл «IPsec» (путь: IP → IPsec → Peers); OCR: 
+  !! не нашёл «IPsec» (путь: IP → IPsec → Peers); OCR: 
+!! не нашёл «IPsec» (путь: IP → IPsec → Identities); OCR: 
+  !! не нашёл «IPsec» (путь: IP → IPsec → Identities); OCR: 
+!! не нашёл «Kid Control» (путь: IP → Kid Control); OCR: 
+  !! не нашёл «Kid Control» (путь: IP → Kid Control); OCR: 
+!! не нашёл «Neighbors» (путь: IP → Neighbors); OCR: 
+  !! не нашёл «Neighbors» (путь: IP → Neighbors); OCR: 
+!! не нашёл «Pool» (путь: IP → Pool); OCR: 
+  !! не нашёл «Pool» (путь: IP → Pool); OCR: 
+!! не нашёл «Routes» (путь: IP → Routes); OCR: 
+  !! не нашёл «Routes» (путь: IP → Routes); OCR: 
+!! не нашёл «Routes» (путь: IP → Routes → New); OCR: 
+  !! не нашёл «Routes» (путь: IP → Routes → New); OCR: 
+!! не нашёл «SMB» (путь: IP → SMB); OCR: 
+  !! не нашёл «SMB» (путь: IP → SMB); OCR: 
+!! не нашёл «SNMP» (путь: IP → SNMP); OCR: 
+  !! не нашёл «SNMP» (путь: IP → SNMP); OCR: 
+!! не нашёл «Services» (путь: IP → Services); OCR: 
+  !! не нашёл «Services» (путь: IP → Services); OCR: 
+!! не нашёл «Settings» (путь: IP → Settings); OCR: 
+  !! не нашёл «Settings» (путь: IP → Settings); OCR: 
+!! не нашёл «TFTP» (путь: IP → TFTP); OCR: 
+  !! не нашёл «TFTP» (путь: IP → TFTP); OCR: 
+!! не нашёл «UPnP» (путь: IP → UPnP); OCR: 
+  !! не нашёл «UPnP» (путь: IP → UPnP); OCR: 
+!! не нашёл «VRF» (путь: IP → VRF); OCR: 
+  !! не нашёл «VRF» (путь: IP → VRF); OCR: 
+!! не нашёл «Web Proxy» (путь: IP → Web Proxy); OCR: 
+  !! не нашёл «Web Proxy» (путь: IP → Web Proxy); OCR: 
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server → Leases); OCR: 
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Leases); OCR: 
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: 
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: 
+  перезапуск Winbox
+    перезапуск Winbox
+=== время ===
+Sun Nov  8 13:23:43 UTC 2026
+=== процессы ===
+runner      3819  9.4  2.0 3229280 334656 ?      Sl   10:54  14:04 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      3891  0.0  0.4 221708 81100 ?        S    10:59   0:03 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3924  0.0  0.0  20084 12188 ?        S    10:59   0:00 python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/shot-list.txt
+runner      9108  0.0  0.0  11968  6000 ?        S    11:13   0:00 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 QT_SCALE_FACTOR=0.75 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+runner      9109  0.2  0.5 923976 90988 ?        Sl   11:13   0:16 ./WinBox
+=== файлы ===
+docs/shots:
+total 868
+-rw-r--r-- 1 runner runner  3799 Nov  8 10:53 README.md
+-rw-r--r-- 1 runner runner 21711 Nov  8 10:59 dbg-attempt-1.jpg
+-rw-r--r-- 1 runner runner 20204 Nov  8 11:01 dbg-ip-addresses-new.jpg
+-rw-r--r-- 1 runner runner 20161 Nov  8 11:00 dbg-ip-addresses.jpg
+-rw-r--r-- 1 runner runner 20194 Nov  8 11:00 dbg-ip-arp.jpg
+-rw-r--r-- 1 runner runner 20191 Nov  8 11:01 dbg-ip-cloud.jpg
+-rw-r--r-- 1 runner runner 20197 Nov  8 11:01 dbg-ip-dhcp-client.jpg
+-rw-r--r-- 1 runner runner 20194 Nov  8 11:02 dbg-ip-dhcp-relay.jpg
+-rw-r--r-- 1 runner runner 20139 Nov  8 11:12 dbg-ip-dhcp-server-leases.jpg
+-rw-r--r-- 1 runner runner 20169 Nov  8 11:12 dbg-ip-dhcp-server-networks.jpg
+-rw-r--r-- 1 runner runner 20188 Nov  8 11:02 dbg-ip-dhcp-server.jpg
+-rw-r--r-- 1 runner runner 20171 Nov  8 11:03 dbg-ip-dns-static.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 11:02 dbg-ip-dns.jpg
+-rw-r--r-- 1 runner runner 20183 Nov  8 11:05 dbg-ip-firewall-address-lists.jpg
+-rw-r--r-- 1 runner runner 20171 Nov  8 11:05 dbg-ip-firewall-connections.jpg
+-rw-r--r-- 1 runner runner 20176 Nov  8 11:04 dbg-ip-firewall-filter-rules-new.jpg
+-rw-r--r-- 1 runner runner 20167 Nov  8 11:03 dbg-ip-firewall-filter-rules.jpg
+-rw-r--r-- 1 runner runner 20185 Nov  8 11:04 dbg-ip-firewall-mangle.jpg
+-rw-r--r-- 1 runner runner 20174 Nov  8 11:04 dbg-ip-firewall-nat-new.jpg
+-rw-r--r-- 1 runner runner 20182 Nov  8 11:04 dbg-ip-firewall-nat.jpg
+-rw-r--r-- 1 runner runner 20173 Nov  8 11:05 dbg-ip-firewall-raw.jpg
+-rw-r--r-- 1 runner runner 20190 Nov  8 11:06 dbg-ip-firewall-service-ports.jpg
+-rw-r--r-- 1 runner runner 20177 Nov  8 11:03 dbg-ip-firewall.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 11:06 dbg-ip-hotspot-user-profiles.jpg
+-rw-r--r-- 1 runner runner 20178 Nov  8 11:07 dbg-ip-hotspot-users.jpg
+-rw-r--r-- 1 runner runner 20162 Nov  8 11:06 dbg-ip-hotspot.jpg
+-rw-r--r-- 1 runner runner 20180 Nov  8 11:08 dbg-ip-ipsec-identities.jpg
+-rw-r--r-- 1 runner runner 20187 Nov  8 11:07 dbg-ip-ipsec-peers.jpg
+-rw-r--r-- 1 runner runner 20172 Nov  8 11:07 dbg-ip-ipsec-policies.jpg
+-rw-r--r-- 1 runner runner 20185 Nov  8 11:08 dbg-ip-kid-control.jpg
+-rw-r--r-- 1 runner runner 20167 Nov  8 11:08 dbg-ip-neighbors.jpg
+-rw-r--r-- 1 runner runner 20168 Nov  8 11:09 dbg-ip-pool.jpg
+-rw-r--r-- 1 runner runner 20160 Nov  8 11:09 dbg-ip-routes-new.jpg
+-rw-r--r-- 1 runner runner 20178 Nov  8 11:09 dbg-ip-routes.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 11:10 dbg-ip-services.jpg
+-rw-r--r-- 1 runner runner 20176 Nov  8 11:11 dbg-ip-settings.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 11:10 dbg-ip-smb.jpg
+-rw-r--r-- 1 runner runner 20182 Nov  8 11:10 dbg-ip-snmp.jpg
+-rw-r--r-- 1 runner runner 20160 Nov  8 11:11 dbg-ip-tftp.jpg
+-rw-r--r-- 1 runner runner 20139 Nov  8 11:11 dbg-ip-upnp.jpg
+-rw-r--r-- 1 runner runner 20168 Nov  8 11:12 dbg-ip-vrf.jpg
+-rw-r--r-- 1 runner runner 20174 Nov  8 11:12 dbg-ip-web-proxy.jpg
+drwxr-xr-x 2 runner runner  4096 Nov  8 10:53 jpg
+-rw-r--r-- 1 runner runner   245 Nov  8 10:53 manifest.txt
+-rw-r--r-- 1 runner runner 30358 Nov  8 13:23 report.txt
+
+docs/shots/jpg:
+total 2004
+-rw-r--r-- 1 runner runner 27857 Nov  8 10:59 00-login.jpg
+-rw-r--r-- 1 runner runner 27811 Nov  8 11:00 03-desktop.jpg
+-rw-r--r-- 1 runner runner 45498 Nov  8 10:53 backup.jpg
+-rw-r--r-- 1 runner runner 44750 Nov  8 10:53 bonding.jpg
+-rw-r--r-- 1 runner runner 44983 Nov  8 10:53 bridge-filters.jpg
+-rw-r--r-- 1 runner runner 43039 Nov  8 10:53 bridge-hosts.jpg
+-rw-r--r-- 1 runner runner 56524 Nov  8 10:53 bridge-new.jpg
+-rw-r--r-- 1 runner runner 43878 Nov  8 10:53 bridge-ports.jpg
+-rw-r--r-- 1 runner runner 42504 Nov  8 10:53 bridge-vlans.jpg
+-rw-r--r-- 1 runner runner 49344 Nov  8 10:53 bridge.jpg
+-rw-r--r-- 1 runner runner 39016 Nov  8 10:53 dot1x.jpg
+-rw-r--r-- 1 runner runner 47564 Nov  8 10:53 eth.jpg
+-rw-r--r-- 1 runner runner 44271 Nov  8 10:53 files.jpg
+-rw-r--r-- 1 runner runner 49593 Nov  8 10:53 interfaces.jpg
+-rw-r--r-- 1 runner runner 31387 Nov  8 10:53 ipv6.jpg
+-rw-r--r-- 1 runner runner 40151 Nov  8 10:53 l2tp-server.jpg
+-rw-r--r-- 1 runner runner 52117 Nov  8 10:53 log.jpg
+-rw-r--r-- 1 runner runner 46148 Nov  8 10:53 lte.jpg
+-rw-r--r-- 1 runner runner 40560 Nov  8 10:53 mesh.jpg
+-rw-r--r-- 1 runner runner 41067 Nov  8 10:53 ovpn-server.jpg
+-rw-r--r-- 1 runner runner 41686 Nov  8 10:53 ppp-active.jpg
+-rw-r--r-- 1 runner runner 46314 Nov  8 10:53 ppp-profiles.jpg
+-rw-r--r-- 1 runner runner 43471 Nov  8 10:53 ppp-secrets.jpg
+-rw-r--r-- 1 runner runner 46707 Nov  8 10:53 ppp.jpg
+-rw-r--r-- 1 runner runner 42802 Nov  8 10:53 pppoe-server.jpg
+-rw-r--r-- 1 runner runner 43625 Nov  8 10:53 queue-iface.jpg
+-rw-r--r-- 1 runner runner 45096 Nov  8 10:53 queue-types.jpg
+-rw-r--r-- 1 runner runner 44421 Nov  8 10:53 queues.jpg
+-rw-r--r-- 1 runner runner 55648 Nov  8 10:53 quickset.jpg
+-rw-r--r-- 1 runner runner 41630 Nov  8 10:53 radius.jpg
+-rw-r--r-- 1 runner runner 31042 Nov  8 10:53 routing.jpg
+-rw-r--r-- 1 runner runner 56813 Nov  8 10:53 simple-new.jpg
+-rw-r--r-- 1 runner runner 35683 Nov  8 10:53 system.jpg
+-rw-r--r-- 1 runner runner 46037 Nov  8 10:53 terminal.jpg
+-rw-r--r-- 1 runner runner 44135 Nov  8 10:53 vlan.jpg
+-rw-r--r-- 1 runner runner 44828 Nov  8 10:53 vrrp.jpg
+-rw-r--r-- 1 runner runner 44565 Nov  8 10:53 vxlan.jpg
+-rw-r--r-- 1 runner runner 55339 Nov  8 10:53 wg-new.jpg
+-rw-r--r-- 1 runner runner 41014 Nov  8 10:53 wg-peers.jpg
+-rw-r--r-- 1 runner runner 43140 Nov  8 10:53 wifi-access-list.jpg
+-rw-r--r-- 1 runner runner 63071 Nov  8 10:53 wifi-new.jpg
+-rw-r--r-- 1 runner runner 64118 Nov  8 10:53 wifi-security.jpg
+-rw-r--r-- 1 runner runner 46912 Nov  8 10:53 wifi.jpg
+-rw-r--r-- 1 runner runner 40995 Nov  8 10:53 wireguard.jpg
