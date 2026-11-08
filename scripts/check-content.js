@@ -313,6 +313,13 @@ const REVIEW = require('./win4-review.js');
 const WIN4 = global.window.WIN4_SHOTS || [];
 const SHOT_STEPS = global.window.SHOT_STEPS || {};
 const shotByFile = new Map(WIN4.map(x => [x.f, x]));
+/* Текст, распознанный на кадре в CI: им и подтверждается совпадение данных. */
+let EVIDENCE = {};
+const evPath = path.resolve(__dirname, '../docs/shots/verified.json');
+if (fs.existsSync(evPath)) {
+  try { EVIDENCE = JSON.parse(fs.readFileSync(evPath, 'utf8')); }
+  catch (e) { errors.push('verified.json испорчен: ' + e.message); }
+}
 let verifiedShots = 0;
 for (const x of WIN4) {
   const name = x.f.replace(/\.jpg$/i, '');
@@ -328,15 +335,47 @@ for (const [id, steps] of Object.entries(SHOT_STEPS)) {
     if (!meta) { errors.push(`SHOT_STEPS ${id}[${i}]: ${f} нет в галерее`); continue; }
     const st = (a.steps || [])[+i];
     const sc = (st && st.sc) || (a.scenes || [])[+i];
-    const shot = { f, p: meta.p, values: REVIEW.values[f] || [], quarantined: !!REVIEW.quarantine[f.replace(/\.jpg$/i, '')] };
+    const ev = EVIDENCE[f.replace(/\.jpg$/i, '')] || {};
+    const shot = { f, p: meta.p, values: REVIEW.values[f] || [], text: ev.text || '',
+                   quarantined: !!REVIEW.quarantine[f.replace(/\.jpg$/i, '')] };
     const res = RULES.checkStepShot(st, sc, shot);
     if (!res.ok) errors.push(`SHOT_STEPS ${id}[${i}] ${f}: ${res.reason}` +
       (res.missing.length ? ' (нет на снимке: ' + res.missing.join(', ') + ')' : ''));
     else verifiedShots++;
   }
 }
+/* Самопроверка правила сверки: на этих примерах держится вся привязка. */
+{
+  const t = (name, cond) => { if (!cond) errors.push('win4-step-rules: ' + name); };
+  t('значение видно в тексте кадра',
+    RULES.visibleIn('10.10.10.5/32', '10.10.10.5/32  10.10.10.5  wg-office'));
+  t('чужое значение не видно',
+    !RULES.visibleIn('192.168.10.1/24', '10.0.2.15/24 ether1'));
+  t('короткий флаг ищется по границам слов',
+    !RULES.visibleIn('AS', 'Aliases table') && RULES.visibleIn('AS', 'AS 0.0.0.0/0'));
+  t('OCR-путаница 0/O прощается',
+    RULES.visibleIn('10.10.10.5/32', '1O.1O.1O.5/32 wg-office'));
+  t('команда в тексте не считается значением поля',
+    RULES.isCommand('/export file=old-full') &&
+    RULES.isCommand('chain=srcnat action=masquerade') && !RULES.isCommand('wg-office'));
+  const st = { d: 'Address = `10.10.10.5/32`, Interface = `wg-office`' };
+  const sc = { path: 'IP → Address', rows: [[{ v: '10.10.10.5/32' }, { v: 'wg-office' }]] };
+  t('пустой кадр не проходит под шаг с данными',
+    !RULES.checkStepShot(st, sc, { f: 'x.jpg', p: 'IP → Address', text: '10.0.2.15/24 ether1' }).ok);
+  t('кадр стенда проходит под свой шаг',
+    RULES.checkStepShot(st, sc, { f: 'x.jpg', p: 'IP → Address',
+      text: '10.10.10.5/32 10.10.10.5 wg-office wg-office' }).ok);
+  t('чужое окно не проходит даже с теми же данными',
+    !RULES.checkStepShot(st, sc, { f: 'x.jpg', p: 'IP → Routes',
+      text: '10.10.10.5/32 wg-office' }).ok);
+}
 const wgAddr = (SHOT_STEPS['wg-site'] || {})[3];
-if (wgAddr === 'ip-address.jpg') errors.push('wg-site: «Адрес в туннеле» получил чужой ip-address.jpg');
+if (wgAddr === 'ip-address.jpg') {
+  /* Теперь это допустимо только если на кадре действительно адрес туннеля. */
+  const ev = EVIDENCE['ip-address'] || {};
+  const ok = RULES.visibleIn('10.10.10.5/32', ev.text) && RULES.visibleIn('wg-office', ev.text);
+  if (!ok) errors.push('wg-site: «Адрес в туннеле» получил ip-address.jpg без нужных данных');
+}
 
 console.log(`Разделов: ${DATA.length}, статей: ${articles}, схем: ${scenes}, подсказок со стрелками: ${notes}`);
 console.log(`Снимков в галерее: ${WIN4.length}, проверенных привязок к шагам: ${verifiedShots}`);

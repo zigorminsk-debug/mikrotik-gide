@@ -20,12 +20,31 @@ import time
 
 OUT = sys.argv[1] if len(sys.argv) > 1 else 'docs/shots'
 TASKS = sys.argv[2] if len(sys.argv) > 2 else '.github/scripts/shot-list.txt'
+# Режим «стенд»: роутер уже настроен по lab-setup.rsc, поэтому кадры
+# переснимаются всегда (пустые кадры прошлых прогонов надо заменить).
+SCENE = os.environ.get('NAV_SCENE', '') == '1'
+# Сколько секунд снимать в этом прогоне. В режиме «стенд + добор» второму
+# проходу достаётся меньший бюджет, чтобы job не убил таймаут GitHub.
+BUDGET = int(os.environ.get('NAV_BUDGET', '5400'))
 JPG = os.path.join(OUT, 'jpg')
 TMP = '/tmp/wb/nav'
 for _d in (JPG, TMP, OUT):
     os.makedirs(_d, exist_ok=True)
 REPORT = os.path.join(OUT, 'report.txt')
 MANIFEST = os.path.join(OUT, 'manifest.txt')
+
+# Что реально видно на кадрах: имя → {app: путь в приложении, text: OCR}.
+# Прошлые прогоны тоже учитываем — иначе добор одного окна стёр бы
+# доказательства по остальным.
+EVIDENCE = {}
+_ev_path = os.path.join(OUT, 'verified.json')
+if os.path.exists(_ev_path):
+    try:
+        import json
+        with open(_ev_path, encoding='utf-8') as _f:
+            EVIDENCE = json.load(_f)
+    except Exception:                                    # noqa: BLE001
+        EVIDENCE = {}
 
 WB_DIR = '/tmp/wb/winbox'
 QT_ENV = ('QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software '
@@ -165,15 +184,49 @@ def dbg(name):
          os.path.join(OUT, 'dbg-%s.jpg' % name)])
 
 
-def shoot(name, X, Y, W, H):
+def ocr_text(image, tag='evidence'):
+    """Текст кадра целиком — доказательство того, что видно на снимке.
+
+    По этому тексту проверяется привязка к шагу: если значения из инструкции
+    на картинке не читаются, снимок под шаг не ставится.
+    """
+    big = os.path.join(TMP, tag + '-big.png')
+    run(['convert', image, '-colorspace', 'Gray', '-resize', '200%',
+         '-sharpen', '0x1', '-normalize', big])
+    txt = run(['tesseract', big, '-', '-l', 'eng+rus', '--psm', '6']).stdout
+    if not txt.strip():                      # русского пакета может не быть
+        txt = run(['tesseract', big, '-', '--psm', '6']).stdout
+    return txt
+
+
+def shoot(name, X, Y, W, H, app=''):
+    """Кадр окна в натуральную величину (окно 1560 px) и текст для сверки.
+
+    Раньше кадр сжимался до 900 px и текст «мылился» при увеличении — теперь
+    сохраняется исходный размер, JPEG q90.
+    """
     full = os.path.join(TMP, 'shot.png')
     run(['import', '-window', 'root', full])
-    png = os.path.join(OUT, name + '.png')
+    png = os.path.join(TMP, name + '.png')
     run(['convert', full, '-crop', '%dx%d+%d+%d' % (int(W), int(H), int(X), int(Y)),
          '+repage', png])
-    run(['convert', png, '-resize', '900x', '-quality', '82',
-         os.path.join(JPG, name + '.jpg')])
+    run(['convert', png, '-quality', '90', os.path.join(JPG, name + '.jpg')])
+    text = ocr_text(png)
+    ocr_dir = os.path.join(OUT, 'ocr')
+    os.makedirs(ocr_dir, exist_ok=True)
+    with open(os.path.join(ocr_dir, name + '.txt'), 'w', encoding='utf-8') as f:
+        f.write(text)
+    EVIDENCE[name] = {'app': app, 'text': text}
+    save_evidence()
     run(['rm', '-f', png])
+
+
+def save_evidence():
+    """verified.json пишется после каждого кадра: таймаут прогона не должен
+    уносить с собой уже добытые доказательства."""
+    import json
+    with open(os.path.join(OUT, 'verified.json'), 'w', encoding='utf-8') as f:
+        json.dump(EVIDENCE, f, ensure_ascii=False, indent=1)
 
 
 # ------------------------------------------------------------ поиск слов -----
@@ -462,15 +515,18 @@ def main():
 
     with open(TASKS, encoding='utf-8') as f:
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
-    log('задач: %d' % len(tasks))
+    log('задач: %d%s' % (len(tasks), ' (настроенный стенд)' if SCENE else ''))
 
     # Продолжение съёмки: уже снятые кадры лежат в docs/shots/jpg из прошлых
     # прогонов. Не переснимаем их каждый раз — добираем недостающие окна.
     # NAV_RESUME=0 или FORCE=1 снимает весь список заново.
-    resume = os.environ.get('NAV_RESUME', '1') != '0' and os.environ.get('FORCE', '') != '1'
+    # В режиме стенда снимаем заново всегда: прежние кадры этого окна пустые.
+    resume = (not SCENE and os.environ.get('NAV_RESUME', '1') != '0'
+              and os.environ.get('FORCE', '') != '1')
+    restart_every = 12 if SCENE else 40
     ok, fail, skipped, started, streak = 0, [], 0, time.time(), 0
     for i, line in enumerate(tasks):
-        if time.time() - started > 5400:
+        if time.time() - started > BUDGET:
             log('!! стоп по времени: снято %d, пропущено %d из %d' % (ok, skipped, len(tasks)))
             break
         fields = line.split('|')
@@ -478,7 +534,7 @@ def main():
         if resume and os.path.exists(os.path.join(JPG, name + '.jpg')):
             skipped += 1
             continue
-        if i and i % 40 == 0:
+        if i and i % restart_every == 0:
             try:
                 good, X, Y, W, H = restart_winbox(X, Y, W, H)
                 if not good:
@@ -530,7 +586,8 @@ def main():
             escape()
             continue
 
-        shoot(name, X, Y, W, H)
+        app_path = fields[3].strip() if len(fields) > 3 else ' → '.join(parts)
+        shoot(name, X, Y, W, H, app=app_path)
         with open(MANIFEST, 'a', encoding='utf-8') as mf:
             mf.write('%s|1|%s\n' % (name, ' → '.join(parts)))
         log('снято %s: %s%s (sd=%d)' % (name, ' → '.join(parts),

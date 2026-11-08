@@ -1,0 +1,47 @@
+# scene-list.txt — окна, которые снимаются НА НАСТРОЕННОМ стенде.
+#
+# Отличие от shot-list.txt: перед этой съёмкой роутер получает конфигурацию
+# .github/scripts/lab-setup.rsc — те самые объекты, что описаны в статьях
+# (bridge-lan, wg-office, 10.10.10.5/32, guest-limit 20M/20M и т. д.).
+# Поэтому кадр под шагом показывает данные инструкции, а не пустой CHR.
+#
+# Формат: имя|путь в меню Winbox 4|new|путь в приложении
+# Имена совпадают с shot-list.txt: настроенный кадр заменяет пустой.
+# Порядок = приоритет: если прогон упрётся во время, сверху останется самое
+# ценное для инструкций.
+ip-address|IP → Addresses||IP → Address
+ip-filter|IP → Firewall → Filter Rules||IP → Firewall → Filter Rules
+ip-routes|IP → Routes||IP → Routes
+bridge|Bridge||Bridge → Bridge
+bridge-vlans|Bridge → VLANs||Bridge → VLANs
+ip-pool|IP → Pool||IP → Pool
+ppp-profiles|PPP → Profiles||PPP → Profiles
+queues|Queues → Simple Queues||Queues → Simple Queues
+wireguard|WireGuard||Interfaces → WireGuard
+ip-nat|IP → Firewall → NAT||IP → Firewall → NAT
+ip-mangle|IP → Firewall → Mangle||IP → Firewall → Mangle
+scheduler|System → Scheduler||System → Scheduler
+identity|System → Identity||System → Identity
+ip-dhcp-server|IP → DHCP Server||IP → DHCP Server
+ip-dns|IP → DNS||IP → DNS
+users|System → Users||System → Users
+ppp-secrets|PPP → Secrets||PPP → Secrets
+pppoe-server|PPP → PPPoE Servers||PPP → PPPoE Server
+l2tp-server|PPP → L2TP Server||PPP → L2TP Server
+vlan|Interfaces → VLAN||Interfaces → VLAN
+bridge-ports|Bridge → Ports||Bridge → Ports
+vrrp|Interfaces → VRRP||Interfaces → VRRP
+vxlan|Interfaces → VXLAN||Interfaces → VXLAN
+ipv6-address|IPv6 → Address||IPv6 → Address
+tool-netwatch|Tools → Netwatch||Tools → Netwatch
+files|Files||Files
+scripts|System → Scripts||System → Scripts
+logging|System → Logging||System → Logging
+logging-actions|System → Logging → Actions||System → Logging
+queue-types|Queues → Queue Types||Queues → Queue Types
+queue-iface|Queues → Interface Queues||Queues → Interface Queues
+iflist|Interfaces → Interface List||Interfaces → Interface List
+eth|Interfaces → Ethernet||Interfaces → Ethernet
+bridge-filters|Bridge → Filters||Bridge → Filters
+resources|System → Resources||System → Resources
+wg-peers|WireGuard → Peers||Interfaces → WireGuard → Peers

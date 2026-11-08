@@ -23,6 +23,14 @@ const LIST = path.join(ROOT, '.github/scripts/shot-list.txt');
 const WWW = path.join(ROOT, 'app/src/main/assets/www');
 const TITLES = require('./win4-titles.js');
 const REVIEW = require('./win4-review.js');
+/* Доказательства со съёмки: что реально распознано на каждом кадре.
+   Файл пишет .github/scripts/winbox-nav.py (docs/shots/verified.json). */
+const EVIDENCE_PATH = path.join(ROOT, 'docs/shots/verified.json');
+let EVIDENCE = {};
+if (fs.existsSync(EVIDENCE_PATH)) {
+  try { EVIDENCE = JSON.parse(fs.readFileSync(EVIDENCE_PATH, 'utf8')); }
+  catch (e) { console.error('verified.json испорчен: ' + e.message); }
+}
 const RULES = require('./win4-step-rules.js');
 const DRY = process.argv.indexOf('--dry') >= 0;
 
@@ -61,6 +69,7 @@ function readShots() {
       d: REVIEW.desc[name + '.jpg'] || meta[2] || '',
       src,
       values: (REVIEW.values[name + '.jpg'] || []),
+      text: (EVIDENCE[name] && EVIDENCE[name].text) || '',
       quarantined: !!q,
       quarantineReason: q || ''
     });
@@ -87,10 +96,13 @@ function sceneOf(a, st, i) {
 
 function buildStepMap(DATA, shots) {
   const good = shots.filter((s) => !s.quarantined);
+  /* Одному окну может соответствовать несколько кадров (вкладки, стенд и
+     пустой CHR). Сначала пробуем кадры с распознанным текстом — стендовые. */
   const byPath = new Map();
-  for (const s of good) {
+  for (const s of good.slice().sort((a, b) => (b.text ? 1 : 0) - (a.text ? 1 : 0))) {
     const p = RULES.canonicalPath(s.p);
-    if (!byPath.has(p)) byPath.set(p, s);
+    if (!byPath.has(p)) byPath.set(p, []);
+    byPath.get(p).push(s);
   }
   const map = {};
   const audit = [];
@@ -99,13 +111,19 @@ function buildStepMap(DATA, shots) {
     for (const a of group.items || []) {
       (a.steps || []).forEach((st, i) => {
         const sc = sceneOf(a, st, i);
-        const candidate = sc && sc.path ? byPath.get(RULES.canonicalPath(sc.path)) : null;
-        const res = RULES.checkStepShot(st, sc, candidate);
+        const list = (sc && sc.path && byPath.get(RULES.canonicalPath(sc.path))) || [];
+        let candidate = list[0] || null, res = RULES.checkStepShot(st, sc, candidate);
+        for (const s of list) {
+          const r = RULES.checkStepShot(st, sc, s);
+          if (r.ok) { candidate = s; res = r; break; }
+          if (!candidate) { candidate = s; res = r; }
+        }
         if (res.ok) {
           if (!map[a.id]) map[a.id] = {};
           map[a.id][i] = candidate.f;
           kept++;
-          audit.push({ article: a.id, step: i + 1, file: candidate.f, status: 'verified' });
+          audit.push({ article: a.id, step: i + 1, file: candidate.f, status: 'verified',
+                       evidence: candidate.text ? 'ocr' : 'manual' });
         } else {
           removed++;
           if (sc && sc.path) {
@@ -177,7 +195,11 @@ function main() {
     ', на карантине: ' + (all.length - shots.length));
   console.log('Галерея: ' + shots.length + ' снимков, ' + new Set(gallery.map((x) => x.g)).size + ' групп');
   console.log('Статей со снимком под шагом: ' + articles);
-  console.log('Привязок к шагам: оставлено ' + kept + ', снято как непроверенные/чужие ' + removed);
+  const ocr = audit.filter((x) => x.status === 'verified' && x.evidence === 'ocr').length;
+  console.log('Привязок к шагам: оставлено ' + kept + ' (подтверждено OCR: ' + ocr +
+    '), снято как непроверенные/чужие ' + removed);
+  console.log('Кадров с распознанным текстом: ' +
+    Object.keys(EVIDENCE).length);
   if (DRY) console.log('(dry-run: файлы не изменены)');
 }
 

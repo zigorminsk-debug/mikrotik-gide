@@ -3,7 +3,13 @@
  *
  * Нельзя подставлять «похожее окно того же раздела»: данные на снимке
  * обязаны совпадать с данными шага. Если снимок пустой/чужой, шаг должен
- * показывать схему с нужными значениями, а не вводить в заблуждение фотографией.
+ * показывать схему с нужными значениями, а не вводить в заблуждение фото.
+ *
+ * Чем подтверждается «видно на снимке»:
+ *   1) values — значения, вписанные вручную после просмотра кадра;
+ *   2) text   — текст, распознанный на самом кадре в CI (docs/shots/verified.json).
+ * Второе надёжнее: съёмка сама доказывает, что 10.10.10.5/32 и wg-office
+ * действительно на картинке, а не «должны быть».
  */
 
 function normPath(p) {
@@ -64,6 +70,17 @@ const UI_WORDS = new Set([
   'dot1x', 'make supout.rif', 'safe mode'
 ]);
 
+/* Команда из текста шага — не значение поля окна. Её наличие на снимке
+   не требуется: `/export file=old-full` выполняют в терминале, а снимают
+   окно Files с появившимся файлом. */
+function isCommand(s) {
+  if (s.startsWith('/')) return true;
+  if (/^:/.test(s)) return true;
+  if (/^[a-z-]+=\S+\s+[a-z-]+=/i.test(s)) return true;      /* chain=… action=… */
+  if (/^(ping|traceroute|telnet|ssh|nslookup)\s/i.test(s)) return true;
+  return false;
+}
+
 function requiredTokens(step, scene) {
   const out = new Set();
   const add = (v) => {
@@ -76,7 +93,9 @@ function requiredTokens(step, scene) {
     out.add(s);
   };
   const text = String((step && step.d) || '');
-  for (const m of text.matchAll(/`([^`]+)`/g)) add(m[1]);
+  for (const m of text.matchAll(/`([^`]+)`/g)) {
+    if (!isCommand(m[1].trim())) add(m[1]);
+  }
   const walk = (o) => {
     if (!o || typeof o !== 'object') return;
     if (Array.isArray(o)) { o.forEach(walk); return; }
@@ -87,8 +106,46 @@ function requiredTokens(step, scene) {
   return [...out];
 }
 
+/* ------------------------------------------------------- сверка с OCR-текстом --
+   OCR путает похожие глифы (0/O, 1/l/I, 5/S) и рвёт строки пробелами, поэтому
+   сравнение идёт по «плотному» тексту без пробелов. Короткие значения (флаги
+   A, S, AS, «no», «yes») ищем только по границам слов: иначе «AS» нашлось бы
+   внутри любого слова. */
+function normText(s) {
+  return String(s || '').toLowerCase()
+    .replace(/ё/g, 'е')
+    .replace(/[—–−]/g, '-')
+    .replace(/[«»“”„]/g, '"')
+    .replace(/[’‘]/g, "'")
+    .replace(/\u00a0/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function dense(s) { return normText(s).replace(/ /g, ''); }
+
+function digitize(s) {
+  return s.replace(/o/g, '0').replace(/[li|]/g, '1')
+    .replace(/s/g, '5').replace(/b/g, '8');
+}
+
+function visibleIn(token, evidence) {
+  const t = normText(token).trim();
+  if (!t) return true;
+  const plain = normText(evidence);
+  if (!plain.trim()) return false;
+  if (t.length <= 3) {
+    const re = new RegExp('(^|[^0-9a-zа-я])' +
+      t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '($|[^0-9a-zа-я])', 'i');
+    return re.test(plain);
+  }
+  const d = dense(t), hay = dense(plain);
+  if (hay.indexOf(d) >= 0) return true;
+  if (/\d/.test(d) && digitize(hay).indexOf(digitize(d)) >= 0) return true;
+  return false;
+}
+
 /*
- * shot: { f, p, values?: string[], quarantined?: boolean }
+ * shot: { f, p, values?: string[], text?: string, quarantined?: boolean }
  * Возвращает { ok, reason, missing }.
  */
 function checkStepShot(step, scene, shot) {
@@ -101,9 +158,16 @@ function checkStepShot(step, scene, shot) {
   }
   const need = requiredTokens(step, scene);
   const have = new Set((shot.values || []).map((v) => String(v).trim()));
-  const missing = need.filter((v) => !have.has(v));
+  const missing = need.filter((v) => {
+    if (have.has(v)) return false;
+    /* значение может быть частью уже подтверждённого (10.10.10.5 в 10.10.10.5/32) */
+    for (const known of have) if (known.indexOf(v) >= 0) return false;
+    return !visibleIn(v, shot.text);
+  });
   if (missing.length) return { ok: false, reason: 'data-mismatch', missing };
   return { ok: true, reason: 'verified', missing: [] };
 }
 
-module.exports = { normPath, canonicalPath, requiredTokens, checkStepShot };
+module.exports = {
+  normPath, canonicalPath, requiredTokens, checkStepShot, visibleIn, isCommand
+};

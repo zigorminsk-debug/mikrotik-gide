@@ -5,9 +5,10 @@ name: Winbox 4 — настоящие скриншоты окон
 # Результат (PNG, JPEG 900px и манифест) коммитится в ветку в docs/shots/.
 #
 # Режимы (вход mode):
+#   scene     — настроить роутер по lab-setup.rsc (те же данные, что в
+#               инструкциях), снять окна стенда, затем добрать остальные
 #   nav       — открыть окна по названиям пунктов меню и снять недостающие
-#               кадры (по умолчанию; уже снятые пропускаются, force=true
-#               переснимает весь список)
+#               кадры (уже снятые пропускаются, force=true переснимает всё)
 #   capture   — старый режим съёмки по Y-координатам из shot-list.txt
 #   calibrate — пройти по дереву меню с шагом 23 px и записать, какое окно
 #               открывается от каждого клика (нужно, чтобы точно задать y)
@@ -16,9 +17,9 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'capture, calibrate или nav'
+        description: 'scene, nav, capture или calibrate'
         required: false
-        default: 'nav'
+        default: 'scene'
       force:
         description: 'Переснять все окна, а только недостающие'
         required: false
@@ -33,6 +34,9 @@ on:
       - '.github/scripts/winbox-nav.py'
       - '.github/scripts/shot-list.txt'
       - '.github/scripts/guest-shot.py'
+      - '.github/scripts/scene-list.txt'
+      - '.github/scripts/lab-setup.rsc'
+      - '.github/scripts/ros-api.py'
 
 permissions:
   contents: write
@@ -98,7 +102,7 @@ jobs:
           sudo apt-get update -qq
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
             qemu-system-x86 qemu-utils xvfb x11-utils xdotool imagemagick unzip \
-            netcat-openbsd tesseract-ocr libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
+            netcat-openbsd tesseract-ocr tesseract-ocr-rus libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
             libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 \
             libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core \
@@ -118,6 +122,9 @@ jobs:
           qemu-img convert -f raw -O qcow2 "chr-${CHR_VER}.img" chr.qcow2
           qemu-img info chr.qcow2 | tee qemu-img-info.txt
 
+      - name: Самопроверка клиента RouterOS API
+        run: python3 .github/scripts/ros-api.py --selftest
+
       - name: Запустить CHR в QEMU
         run: |
           set -euxo pipefail
@@ -125,8 +132,12 @@ jobs:
           qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max \
             -accel tcg,thread=multi \
             -drive file=chr.qcow2,format=qcow2,if=ide,index=0 \
-            -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 \
+            -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 \
             -device e1000,netdev=n0 \
+            -netdev user,id=n1 -device e1000,netdev=n1 \
+            -netdev user,id=n2 -device e1000,netdev=n2 \
+            -netdev user,id=n3 -device e1000,netdev=n3 \
+            -netdev user,id=n4 -device e1000,netdev=n4 \
             -serial file:/tmp/wb/serial.log \
             -display none -monitor unix:/tmp/wb/mon.sock,server,nowait \
             -daemonize -pidfile /tmp/wb/qemu.pid
@@ -174,7 +185,7 @@ jobs:
           ps aux | grep -E 'WinBox|Xvfb' | grep -v grep >> docs/shots/report.txt || true
 
       - name: Снять окна (настоящий Winbox 4)
-        if: steps.mode.outputs.mode != 'nav'
+        if: steps.mode.outputs.mode != 'nav' && steps.mode.outputs.mode != 'scene'
         run: |
           cd "$GITHUB_WORKSPACE"
           bash .github/scripts/winbox-capture.sh "${{ steps.mode.outputs.mode }}"
@@ -184,10 +195,31 @@ jobs:
           done | sed '/^$/d' | sort -u >> docs/shots/report.txt
           tail -40 /tmp/wb/winbox.log >> docs/shots/report.txt || true
 
+      - name: Настроить учебный стенд (данные из инструкций)
+        if: steps.mode.outputs.mode == 'scene'
+        run: |
+          set -o pipefail
+          cd "$GITHUB_WORKSPACE"
+          # Без этого шага снимки показывают пустой CHR и не совпадают с
+          # текстом статей. Строки применяются по одной, отказ виден в логе.
+          python3 .github/scripts/ros-api.py 127.0.0.1 8728 admin "" \
+            .github/scripts/lab-setup.rsc 2>&1 | tee -a docs/shots/report.txt
+
+      - name: Снять окна настроенного стенда
+        if: steps.mode.outputs.mode == 'scene'
+        env:
+          NAV_SCENE: '1'
+          NAV_BUDGET: '3300'
+        run: |
+          set -o pipefail
+          cd "$GITHUB_WORKSPACE"
+          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/scene-list.txt 2>&1 | tee -a docs/shots/report.txt
+
       - name: Снять окна по названиям пунктов меню
-        if: steps.mode.outputs.mode == 'nav'
+        if: steps.mode.outputs.mode == 'nav' || steps.mode.outputs.mode == 'scene'
         env:
           FORCE: ${{ (github.event.inputs.force == true || github.event.inputs.force == 'true') && '1' || '0' }}
+          NAV_BUDGET: ${{ steps.mode.outputs.mode == 'scene' && '2400' || '5400' }}
         run: |
           set -o pipefail
           cd "$GITHUB_WORKSPACE"
@@ -205,6 +237,8 @@ jobs:
             docs/shots/*.png
             docs/shots/jpg/*.jpg
             docs/shots/*.txt
+            docs/shots/ocr/*.txt
+            docs/shots/verified.json
           if-no-files-found: warn
           retention-days: 14
 
