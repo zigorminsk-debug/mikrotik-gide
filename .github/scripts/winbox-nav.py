@@ -29,7 +29,7 @@ MANIFEST = os.path.join(OUT, 'manifest.txt')
 
 WB_DIR = '/tmp/wb/winbox'
 QT_ENV = ('QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software '
-          'LIBGL_ALWAYS_SOFTWARE=1 QT_SCALE_FACTOR=0.75')
+          'LIBGL_ALWAYS_SOFTWARE=1')
 
 # Высоты пунктов дерева относительно окна — на случай, если OCR не разобрал
 # дерево. Измерены по снимкам прошлых прогонов.
@@ -381,9 +381,9 @@ def open_window(parts, want_new, X, Y, W, H):
     for part in parts[1:]:
         words = menu_area_words(X, Y, W, H)
         hit = find(words, part, near=cur, xmin=X + 120)
-        if not hit:
-            # вкладки не помещаются в полосу — открываем список пунктов из
-            # заголовка окна (рядом с названием есть «▾»)
+        if not hit and W < 1300:
+            # узкое окно: вкладки не помещаются в полосу — открываем список
+            # пунктов из заголовка окна (рядом с названием есть «▾»)
             for _ in range(2):
                 click(X + 291, Y + 113)
                 words = ocr(X + 150, Y + 120, 520, H - 200, 'titlemenu')
@@ -416,6 +416,7 @@ def open_window(parts, want_new, X, Y, W, H):
 # ------------------------------------------------------------------ старт ----
 def main():
     X, Y, W, H = geom()
+    X, Y, W, H = maximize(X, Y, W, H)
     log('окно %dx%d+%d+%d' % (W, H, X, Y))
     shoot('00-login', X, Y, W, H)
     if not connect(X, Y, W, H):
@@ -423,7 +424,7 @@ def main():
         return
     escape(1)
     time.sleep(2)
-    X, Y, W, H = geom()
+    X, Y, W, H = maximize(*geom())
     log('окно после входа: %dx%d+%d+%d' % (W, H, X, Y))
     shoot('03-desktop', X, Y, W, H)
 
@@ -431,7 +432,7 @@ def main():
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
     log('задач: %d' % len(tasks))
 
-    ok, fail, started = 0, [], time.time()
+    ok, fail, started, streak = 0, [], time.time(), 0
     for i, line in enumerate(tasks):
         if time.time() - started > 5400:
             log('!! стоп по времени: снято %d из %d' % (ok, len(tasks)))
@@ -468,7 +469,19 @@ def main():
 
         if not opened:
             fail.append(name)
+            streak += 1
             escape()
+            if streak >= 4:
+                log('  четыре неудачи подряд — перезапускаем Winbox')
+                try:
+                    good, X, Y, W, H = restart_winbox(X, Y, W, H)
+                    if not good:
+                        log('!! после перезапуска не вошли')
+                except SystemExit:
+                    log('!! перезапуск не удался')
+                except Exception as exc:                 # noqa: BLE001
+                    log('!! перезапуск: ошибка %s' % exc)
+                streak = 0
             continue
 
         sd = sd_now(X, Y, W, H)
@@ -484,6 +497,7 @@ def main():
         log('снято %s: %s%s (sd=%d)' % (name, ' → '.join(parts),
                                         ' + New' if want_new else '', sd))
         ok += 1
+        streak = 0
         escape()
 
     log('итого: снято %d, не вышло %d%s' % (ok, len(fail),

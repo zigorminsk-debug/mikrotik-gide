@@ -63,7 +63,8 @@ jobs:
             netcat-openbsd tesseract-ocr libxcb-cursor0 libxkbcommon-x11-0 libegl1 libgl1 \
             libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 \
             libxcb-xinerama0 libxcb-xkb1 libxcomposite1 libxdamage1 libxrandr2 \
-            libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core
+            libxtst6 libxi6 libsm6 libice6 libfontconfig1 fonts-dejavu-core \
+            openbox
 
       - name: Скачать CHR и Winbox 4
         run: |
@@ -112,7 +113,11 @@ jobs:
             Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp > /tmp/wb/xvfb.log 2>&1 &
             sleep 3
           fi
-          export QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 QT_SCALE_FACTOR=0.75
+          # Оконный менеджер: без него Qt не даёт менять размер окна, и вкладки
+          # Winbox («Interface List», «Registration», «WPS») уезжают за край.
+          DISPLAY=:99 openbox --sm-disable > /tmp/wb/openbox.log 2>&1 &
+          sleep 2
+          export QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1
           BIN=$(ls /tmp/wb/winbox/WinBox 2>/dev/null || find /tmp/wb/winbox -maxdepth 2 -name 'WinBox*' -type f -perm -u+x | head -1)
           echo "BIN=$BIN" >> docs/shots/report.txt
           chmod +x "$BIN" 2>/dev/null
