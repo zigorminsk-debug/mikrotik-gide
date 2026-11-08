@@ -1061,3 +1061,183 @@ total 1996
 -rw-r--r-- 1 runner runner 64118 Nov  8 20:02 wifi-security.jpg
 -rw-r--r-- 1 runner runner 46912 Nov  8 20:02 wifi.jpg
 -rw-r--r-- 1 runner runner 40995 Nov  8 20:02 wireguard.jpg
+прошло 3 минуты после старта QEMU
+=== порты хоста ===
+LISTEN 0      1          127.0.0.1:8291      0.0.0.0:*    users:(("qemu-system-x86",pid=3969,fd=12))
+LISTEN 0      1          127.0.0.1:8728      0.0.0.0:*    users:(("qemu-system-x86",pid=3969,fd=10))
+    PID     ELAPSED   RSS CMD
+   3969       03:05 147852 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+  попытка 1: timed out (роутер молчит)
+  попытка 2: timed out (роутер молчит)
+  попытка 3: timed out (роутер молчит)
+  попытка 4: timed out (роутер молчит)
+  попытка 5: timed out (роутер молчит)
+  попытка 6: timed out (роутер молчит)
+  попытка 7: timed out (роутер молчит)
+  попытка 8: timed out (роутер молчит)
+  попытка 9: timed out (роутер молчит)
+  попытка 10: timed out (роутер молчит)
+  попытка 11: timed out (роутер молчит)
+  попытка 12: timed out (роутер молчит)
+  попытка 13: timed out (роутер молчит)
+  попытка 14: timed out (роутер молчит)
+  попытка 15: timed out (роутер молчит)
+  попытка 16: timed out (роутер молчит)
+  попытка 17: timed out (роутер молчит)
+  попытка 18: timed out (роутер молчит)
+  попытка 19: timed out (роутер молчит)
+  попытка 20: timed out (роутер молчит)
+  попытка 21: timed out (роутер молчит)
+  попытка 22: timed out (роутер молчит)
+  попытка 23: timed out (роутер молчит)
+  попытка 24: timed out (роутер молчит)
+  попытка 25: timed out (роутер молчит)
+  попытка 26: timed out (роутер молчит)
+  попытка 27: timed out (роутер молчит)
+  попытка 28: timed out (роутер молчит)
+  попытка 29: timed out (роутер молчит)
+  попытка 30: timed out (роутер молчит)
+  попытка 31: timed out (роутер молчит)
+  попытка 32: timed out (роутер молчит)
+  попытка 33: timed out (роутер молчит)
+  попытка 34: timed out (роутер молчит)
+  попытка 35: timed out (роутер молчит)
+  попытка 36: timed out (роутер молчит)
+  попытка 37: timed out (роутер молчит)
+  попытка 38: timed out (роутер молчит)
+  попытка 39: timed out (роутер молчит)
+  попытка 40: timed out (роутер молчит)
+  попытка 41: timed out (роутер молчит)
+  попытка 42: timed out (роутер молчит)
+  попытка 43: timed out (роутер молчит)
+  попытка 44: timed out (роутер молчит)
+  попытка 45: timed out (роутер молчит)
+  попытка 46: timed out (роутер молчит)
+  попытка 47: timed out (роутер молчит)
+  попытка 48: timed out (роутер молчит)
+  попытка 49: timed out (роутер молчит)
+  попытка 50: timed out (роутер молчит)
+  попытка 51: timed out (роутер молчит)
+  попытка 52: timed out (роутер молчит)
+  попытка 53: timed out (роутер молчит)
+  попытка 54: timed out (роутер молчит)
+  попытка 55: timed out (роутер молчит)
+  попытка 56: timed out (роутер молчит)
+  попытка 57: timed out (роутер молчит)
+  попытка 58: timed out (роутер молчит)
+  попытка 59: timed out (роутер молчит)
+  попытка 60: timed out (роутер молчит)
+  попытка 61: timed out (роутер молчит)
+  попытка 62: timed out (роутер молчит)
+  попытка 63: timed out (роутер молчит)
+  попытка 64: timed out (роутер молчит)
+  попытка 65: timed out (роутер молчит)
+  попытка 66: timed out (роутер молчит)
+  попытка 67: timed out (роутер молчит)
+  попытка 68: timed out (роутер молчит)
+  попытка 69: timed out (роутер молчит)
+  попытка 70: timed out (роутер молчит)
+  попытка 71: timed out (роутер молчит)
+  попытка 72: timed out (роутер молчит)
+API так и не поднялся за 32 минут
+окно Winbox не найдено
+=== время ===
+Sun Nov  8 21:09:03 UTC 2026
+=== процессы ===
+runner      3969  199  0.9 4841780 147872 ?      Sl   20:33  72:04 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+=== файлы ===
+docs/shots:
+total 984
+-rw-r--r-- 1 runner runner  8438 Nov  8 20:32 README.md
+-rw-r--r-- 1 runner runner 21711 Nov  8 20:32 dbg-attempt-1.jpg
+-rw-r--r-- 1 runner runner 20204 Nov  8 20:32 dbg-ip-addresses-new.jpg
+-rw-r--r-- 1 runner runner 20161 Nov  8 20:32 dbg-ip-addresses.jpg
+-rw-r--r-- 1 runner runner 20194 Nov  8 20:32 dbg-ip-arp.jpg
+-rw-r--r-- 1 runner runner 20191 Nov  8 20:32 dbg-ip-cloud.jpg
+-rw-r--r-- 1 runner runner 20197 Nov  8 20:32 dbg-ip-dhcp-client.jpg
+-rw-r--r-- 1 runner runner 20194 Nov  8 20:32 dbg-ip-dhcp-relay.jpg
+-rw-r--r-- 1 runner runner 20139 Nov  8 20:32 dbg-ip-dhcp-server-leases.jpg
+-rw-r--r-- 1 runner runner 20169 Nov  8 20:32 dbg-ip-dhcp-server-networks.jpg
+-rw-r--r-- 1 runner runner 20188 Nov  8 20:32 dbg-ip-dhcp-server.jpg
+-rw-r--r-- 1 runner runner 20171 Nov  8 20:32 dbg-ip-dns-static.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 20:32 dbg-ip-dns.jpg
+-rw-r--r-- 1 runner runner 20183 Nov  8 20:32 dbg-ip-firewall-address-lists.jpg
+-rw-r--r-- 1 runner runner 20171 Nov  8 20:32 dbg-ip-firewall-connections.jpg
+-rw-r--r-- 1 runner runner 20176 Nov  8 20:32 dbg-ip-firewall-filter-rules-new.jpg
+-rw-r--r-- 1 runner runner 20167 Nov  8 20:32 dbg-ip-firewall-filter-rules.jpg
+-rw-r--r-- 1 runner runner 20185 Nov  8 20:32 dbg-ip-firewall-mangle.jpg
+-rw-r--r-- 1 runner runner 20174 Nov  8 20:32 dbg-ip-firewall-nat-new.jpg
+-rw-r--r-- 1 runner runner 20182 Nov  8 20:32 dbg-ip-firewall-nat.jpg
+-rw-r--r-- 1 runner runner 20173 Nov  8 20:32 dbg-ip-firewall-raw.jpg
+-rw-r--r-- 1 runner runner 20190 Nov  8 20:32 dbg-ip-firewall-service-ports.jpg
+-rw-r--r-- 1 runner runner 20177 Nov  8 20:32 dbg-ip-firewall.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 20:32 dbg-ip-hotspot-user-profiles.jpg
+-rw-r--r-- 1 runner runner 20178 Nov  8 20:32 dbg-ip-hotspot-users.jpg
+-rw-r--r-- 1 runner runner 20162 Nov  8 20:32 dbg-ip-hotspot.jpg
+-rw-r--r-- 1 runner runner 20180 Nov  8 20:32 dbg-ip-ipsec-identities.jpg
+-rw-r--r-- 1 runner runner 20187 Nov  8 20:32 dbg-ip-ipsec-peers.jpg
+-rw-r--r-- 1 runner runner 20172 Nov  8 20:32 dbg-ip-ipsec-policies.jpg
+-rw-r--r-- 1 runner runner 20185 Nov  8 20:32 dbg-ip-kid-control.jpg
+-rw-r--r-- 1 runner runner 20167 Nov  8 20:32 dbg-ip-neighbors.jpg
+-rw-r--r-- 1 runner runner 20168 Nov  8 20:32 dbg-ip-pool.jpg
+-rw-r--r-- 1 runner runner 20160 Nov  8 20:32 dbg-ip-routes-new.jpg
+-rw-r--r-- 1 runner runner 20178 Nov  8 20:32 dbg-ip-routes.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 20:32 dbg-ip-services.jpg
+-rw-r--r-- 1 runner runner 20176 Nov  8 20:32 dbg-ip-settings.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 20:32 dbg-ip-smb.jpg
+-rw-r--r-- 1 runner runner 20182 Nov  8 20:32 dbg-ip-snmp.jpg
+-rw-r--r-- 1 runner runner 20160 Nov  8 20:32 dbg-ip-tftp.jpg
+-rw-r--r-- 1 runner runner 20139 Nov  8 20:32 dbg-ip-upnp.jpg
+-rw-r--r-- 1 runner runner 20168 Nov  8 20:32 dbg-ip-vrf.jpg
+-rw-r--r-- 1 runner runner 20174 Nov  8 20:32 dbg-ip-web-proxy.jpg
+drwxr-xr-x 2 runner runner  4096 Nov  8 20:32 jpg
+-rw-r--r-- 1 runner runner   245 Nov  8 20:32 manifest.txt
+-rw-r--r-- 1 runner runner 71482 Nov  8 21:09 report.txt
+-rw-r--r-- 1 runner runner 66350 Nov  8 20:32 step-audit.json
+
+docs/shots/jpg:
+total 1996
+-rw-r--r-- 1 runner runner 26448 Nov  8 20:32 00-login.jpg
+-rw-r--r-- 1 runner runner 19888 Nov  8 20:32 03-desktop.jpg
+-rw-r--r-- 1 runner runner 45498 Nov  8 20:32 backup.jpg
+-rw-r--r-- 1 runner runner 44750 Nov  8 20:32 bonding.jpg
+-rw-r--r-- 1 runner runner 44983 Nov  8 20:32 bridge-filters.jpg
+-rw-r--r-- 1 runner runner 43039 Nov  8 20:32 bridge-hosts.jpg
+-rw-r--r-- 1 runner runner 56524 Nov  8 20:32 bridge-new.jpg
+-rw-r--r-- 1 runner runner 43878 Nov  8 20:32 bridge-ports.jpg
+-rw-r--r-- 1 runner runner 42504 Nov  8 20:32 bridge-vlans.jpg
+-rw-r--r-- 1 runner runner 49344 Nov  8 20:32 bridge.jpg
+-rw-r--r-- 1 runner runner 39016 Nov  8 20:32 dot1x.jpg
+-rw-r--r-- 1 runner runner 47564 Nov  8 20:32 eth.jpg
+-rw-r--r-- 1 runner runner 44271 Nov  8 20:32 files.jpg
+-rw-r--r-- 1 runner runner 49593 Nov  8 20:32 interfaces.jpg
+-rw-r--r-- 1 runner runner 31387 Nov  8 20:32 ipv6.jpg
+-rw-r--r-- 1 runner runner 40151 Nov  8 20:32 l2tp-server.jpg
+-rw-r--r-- 1 runner runner 52117 Nov  8 20:32 log.jpg
+-rw-r--r-- 1 runner runner 46148 Nov  8 20:32 lte.jpg
+-rw-r--r-- 1 runner runner 40560 Nov  8 20:32 mesh.jpg
+-rw-r--r-- 1 runner runner 41067 Nov  8 20:32 ovpn-server.jpg
+-rw-r--r-- 1 runner runner 41686 Nov  8 20:32 ppp-active.jpg
+-rw-r--r-- 1 runner runner 46314 Nov  8 20:32 ppp-profiles.jpg
+-rw-r--r-- 1 runner runner 43471 Nov  8 20:32 ppp-secrets.jpg
+-rw-r--r-- 1 runner runner 46707 Nov  8 20:32 ppp.jpg
+-rw-r--r-- 1 runner runner 42802 Nov  8 20:32 pppoe-server.jpg
+-rw-r--r-- 1 runner runner 43625 Nov  8 20:32 queue-iface.jpg
+-rw-r--r-- 1 runner runner 45096 Nov  8 20:32 queue-types.jpg
+-rw-r--r-- 1 runner runner 44421 Nov  8 20:32 queues.jpg
+-rw-r--r-- 1 runner runner 55648 Nov  8 20:32 quickset.jpg
+-rw-r--r-- 1 runner runner 41630 Nov  8 20:32 radius.jpg
+-rw-r--r-- 1 runner runner 31042 Nov  8 20:32 routing.jpg
+-rw-r--r-- 1 runner runner 56813 Nov  8 20:32 simple-new.jpg
+-rw-r--r-- 1 runner runner 35683 Nov  8 20:32 system.jpg
+-rw-r--r-- 1 runner runner 46037 Nov  8 20:32 terminal.jpg
+-rw-r--r-- 1 runner runner 44135 Nov  8 20:32 vlan.jpg
+-rw-r--r-- 1 runner runner 44828 Nov  8 20:32 vrrp.jpg
+-rw-r--r-- 1 runner runner 44565 Nov  8 20:32 vxlan.jpg
+-rw-r--r-- 1 runner runner 55339 Nov  8 20:32 wg-new.jpg
+-rw-r--r-- 1 runner runner 41014 Nov  8 20:32 wg-peers.jpg
+-rw-r--r-- 1 runner runner 43140 Nov  8 20:32 wifi-access-list.jpg
+-rw-r--r-- 1 runner runner 63071 Nov  8 20:32 wifi-new.jpg
+-rw-r--r-- 1 runner runner 64118 Nov  8 20:32 wifi-security.jpg
+-rw-r--r-- 1 runner runner 46912 Nov  8 20:32 wifi.jpg
+-rw-r--r-- 1 runner runner 40995 Nov  8 20:32 wireguard.jpg
