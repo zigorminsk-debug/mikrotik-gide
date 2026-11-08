@@ -170,6 +170,48 @@ function renderPhotos(map) {
   return s;
 }
 
+/* Отчёт «что ещё не снято»: по нему видно, какие объекты досеять в стенд,
+   чтобы следующий прогон закрыл оставшиеся шаги. Пишется рядом с кадрами. */
+function renderCoverage(audit, kept, shots) {
+  const byWindow = new Map();
+  for (const x of audit) {
+    if (x.status === 'verified') continue;
+    const key = x.path || '(без окна)';
+    if (!byWindow.has(key)) byWindow.set(key, { missing: [], noShot: 0 });
+    const w = byWindow.get(key);
+    if (x.status === 'data-mismatch') w.missing.push(x);
+    else if (x.status === 'no-shot') w.noShot++;
+  }
+  const ocr = audit.filter((x) => x.status === 'verified' && x.evidence === 'ocr').length;
+  let s = '# Покрытие инструкций настоящими снимками\n\n';
+  s += 'Файл создаёт `scripts/win4-import.js` — не править вручную.\n\n';
+  s += '* кадров в галерее: **' + shots.length + '**;\n';
+  s += '* шагов с подтверждённым снимком: **' + kept + '** (из них по тексту кадра: ' + ocr + ');\n';
+  s += '* окон, где кадр есть, но данных шага на нём не хватает: **' +
+    [...byWindow.values()].filter((w) => w.missing.length).length + '**;\n';
+  s += '* окон без кадра вовсе: **' +
+    [...byWindow.values()].filter((w) => w.noShot && !w.missing.length).length + '**.\n\n';
+  s += '## Где кадр есть, но данные не совпали\n\n';
+  s += 'Это список того, что нужно добавить в `.github/scripts/lab-setup.rsc`,\n';
+  s += 'чтобы следующий прогон снял окно с нужными значениями.\n\n';
+  s += '| Окно | Шаг | Чего не видно на кадре |\n| --- | --- | --- |\n';
+  const rows = [...byWindow.entries()].filter(([, w]) => w.missing.length)
+    .sort((a, b) => b[1].missing.length - a[1].missing.length);
+  for (const [pathName, w] of rows) {
+    for (const x of w.missing.slice(0, 4)) {
+      s += '| ' + pathName + ' | `' + x.article + '` №' + x.step + ' | ' +
+        (x.missing || []).map((v) => '`' + String(v).replace(/\|/g, '/') + '`').join(', ') + ' |\n';
+    }
+  }
+  s += '\n## Окна, которые ещё не сняты\n\n';
+  const noShot = [...byWindow.entries()].filter(([, w]) => w.noShot)
+    .sort((a, b) => b[1].noShot - a[1].noShot);
+  for (const [pathName, w] of noShot) {
+    s += '* ' + pathName + ' — шагов: ' + w.noShot + '\n';
+  }
+  return s;
+}
+
 function main() {
   const DATA = loadData();
   if (!DATA || !DATA.length) { console.error('DATA не загрузилась'); process.exit(1); }
@@ -190,6 +232,8 @@ function main() {
     const auditPath = path.join(ROOT, 'docs/shots/step-audit.json');
     fs.mkdirSync(path.dirname(auditPath), { recursive: true });
     fs.writeFileSync(auditPath, JSON.stringify({ kept, removed, audit }, null, 2));
+    fs.writeFileSync(path.join(ROOT, 'docs/shots/coverage.md'),
+      renderCoverage(audit, kept, shots));
   }
 
   const articles = Object.keys(map).length;
