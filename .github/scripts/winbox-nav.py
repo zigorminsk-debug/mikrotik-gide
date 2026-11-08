@@ -287,7 +287,9 @@ def connect(X, Y, W, H, tries=40):
                 if logged_in(X, Y, H):
                     log('вход по Enter (попытка %d)' % attempt)
                     return True
-            click(X + 248, Y + 379)      # кнопка Connect
+            btn = find(ocr(X + 100, Y + 230, 520, 260, 'login'),
+                       'Connect', near=(X + 200, Y + 300))
+            click(btn[1], btn[2]) if btn else click(X + 248, Y + 379)
             time.sleep(8)
             if logged_in(X, Y, H):
                 log('вход по кнопке Connect (попытка %d)' % attempt)
@@ -322,12 +324,15 @@ def restart_winbox(X, Y, W, H):
     time.sleep(3)
     run(['bash', '-lc',
          'cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software '
-         'QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox '
-         '>> /tmp/wb/winbox.log 2>&1 &'])
+         'QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 QT_SCALE_FACTOR=0.75 '
+         'nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &'])
     for _ in range(6):
         time.sleep(5)
         if _geom_once():
             break
+    alive = run(['bash', '-lc', 'pgrep -af WinBox | head -3']).stdout.strip()
+    log('  после перезапуска: %s' % (alive or 'процесс не поднялся'))
+    dbg('restart')
     X, Y, W, H = geom()
     ok = connect(X, Y, W, H, tries=10)
     if ok:
@@ -371,10 +376,15 @@ def main():
     log('задач: %d' % len(tasks))
     ok, fail = 0, []
     for i, line in enumerate(tasks):
-        if i and i % 20 == 0:
-            good, X, Y, W, H = restart_winbox(X, Y, W, H)
-            if not good:
-                log('!! после перезапуска не вошли, продолжаю без него')
+        if i and i % 40 == 0:
+            try:
+                good, X, Y, W, H = restart_winbox(X, Y, W, H)
+                if not good:
+                    log('!! после перезапуска не вошли, продолжаю без него')
+            except SystemExit:
+                log('!! перезапуск не удался, продолжаю в том же окне')
+            except Exception as exc:                   # noqa: BLE001
+                log('!! перезапуск: ошибка %s' % exc)
         escape(3)
         fields = line.split('|')
         name = fields[0].strip()
