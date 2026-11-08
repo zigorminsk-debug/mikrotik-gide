@@ -129,7 +129,7 @@ jobs:
         run: |
           set -euxo pipefail
           cd /tmp/wb
-          qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max \
+          qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max \
             -accel tcg,thread=multi \
             -drive file=chr.qcow2,format=qcow2,if=ide,index=0 \
             -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 \
@@ -150,9 +150,22 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           # CHR под TCG грузится 8-12 минут; точный момент входа проверяет
           # winbox-nav.py — он повторяет попытку, пока не появится дерево меню.
-          sleep 300
-          echo "прошло 5 минут после старта QEMU" >> docs/shots/report.txt
-          tail -c 300 /tmp/wb/serial.log >> docs/shots/report.txt 2>/dev/null || true
+          sleep 180
+          echo "прошло 3 минуты после старта QEMU" >> docs/shots/report.txt
+          tail -c 600 /tmp/wb/serial.log >> docs/shots/report.txt 2>/dev/null || true
+          echo "=== порты хоста ===" >> docs/shots/report.txt
+          ss -ltnp 2>/dev/null | grep -E '8291|8728' >> docs/shots/report.txt || true
+          ps -p "$(cat /tmp/wb/qemu.pid)" -o pid,etime,rss,cmd >> docs/shots/report.txt || true
+
+      - name: Настроить учебный стенд (данные из инструкций)
+        if: steps.mode.outputs.mode == 'scene'
+        run: |
+          set -o pipefail
+          cd "$GITHUB_WORKSPACE"
+          # Без этого шага снимки показывают пустой CHR и не совпадают с
+          # текстом статей. Строки применяются по одной, отказ виден в логе.
+          python3 .github/scripts/ros-api.py 127.0.0.1 8728 admin "" \
+            .github/scripts/lab-setup.rsc 2>&1 | tee -a docs/shots/report.txt
 
       - name: Запустить Xvfb и Winbox 4
         run: |
@@ -195,16 +208,6 @@ jobs:
           done | sed '/^$/d' | sort -u >> docs/shots/report.txt
           tail -40 /tmp/wb/winbox.log >> docs/shots/report.txt || true
 
-      - name: Настроить учебный стенд (данные из инструкций)
-        if: steps.mode.outputs.mode == 'scene'
-        run: |
-          set -o pipefail
-          cd "$GITHUB_WORKSPACE"
-          # Без этого шага снимки показывают пустой CHR и не совпадают с
-          # текстом статей. Строки применяются по одной, отказ виден в логе.
-          python3 .github/scripts/ros-api.py 127.0.0.1 8728 admin "" \
-            .github/scripts/lab-setup.rsc 2>&1 | tee -a docs/shots/report.txt
-
       - name: Снять окна настроенного стенда
         if: steps.mode.outputs.mode == 'scene'
         env:
@@ -235,7 +238,7 @@ jobs:
           exit 1
 
       - name: Снять окна по названиям пунктов меню
-        if: steps.mode.outputs.mode == 'nav' || steps.mode.outputs.mode == 'scene'
+        if: always() && (steps.mode.outputs.mode == 'nav' || steps.mode.outputs.mode == 'scene')
         env:
           FORCE: ${{ (github.event.inputs.force == true || github.event.inputs.force == 'true') && '1' || '0' }}
           NAV_BUDGET: ${{ steps.mode.outputs.mode == 'scene' && '1500' || '5400' }}

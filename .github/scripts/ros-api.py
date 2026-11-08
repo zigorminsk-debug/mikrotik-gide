@@ -170,7 +170,7 @@ def cli_to_words(line):
     return words
 
 
-def wait_api(host, port, user, password, minutes=18):
+def wait_api(host, port, user, password, minutes=32):
     """Ждать, пока RouterOS поднимется и пустит по API."""
     deadline = time.time() + minutes * 60
     attempt = 0
@@ -182,7 +182,11 @@ def wait_api(host, port, user, password, minutes=18):
             print('API готов (попытка %d)' % attempt, flush=True)
             return api
         except Exception as exc:                                  # noqa: BLE001
-            print('  попытка %d: %s' % (attempt, exc), flush=True)
+            # «timed out» без пояснений не отличает закрытый порт от
+            # загружающегося роутера — пишем, что именно произошло.
+            kind = ('соединение не установлено' if isinstance(exc, (ConnectionRefusedError,
+                    OSError)) and not isinstance(exc, socket.timeout) else 'роутер молчит')
+            print('  попытка %d: %s (%s)' % (attempt, exc, kind), flush=True)
             time.sleep(15)
     raise SystemExit('API так и не поднялся за %d минут' % minutes)
 

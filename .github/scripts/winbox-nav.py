@@ -321,7 +321,13 @@ def neighbors_connect(X, Y, W, H):
     click(X + 744, Y + 48)               # вкладка Neighbors
     time.sleep(1.5)
     words = ocr(X + 380, Y + 60, W - 430, 150, 'neighbors')
-    hit = find(words, '127.0.0.1') or find(words, 'CHR')
+    # Имя роутера на стенде — office-gw-01 (System → Identity из инструкции),
+    # поэтому искать только «CHR» нельзя: вход перестанет находить строку.
+    hit = None
+    for needle in ('127.0.0.1', '10.0.2.15', 'office-gw-01', 'CHR', '52:54:00'):
+        hit = find(words, needle)
+        if hit:
+            break
     if not hit:
         log('  Neighbors: роутера в списке ещё нет (%s)' %
             ' '.join(w[0] for w in words[:14]))
