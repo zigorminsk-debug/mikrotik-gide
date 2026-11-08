@@ -209,17 +209,36 @@ jobs:
         if: steps.mode.outputs.mode == 'scene'
         env:
           NAV_SCENE: '1'
-          NAV_BUDGET: '3300'
+          NAV_BUDGET: '2700'
         run: |
           set -o pipefail
           cd "$GITHUB_WORKSPACE"
           python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/scene-list.txt 2>&1 | tee -a docs/shots/report.txt
 
+      # Кадры стенда публикуются сразу, не дожидаясь добора остальных окон:
+      # иначе таймаут или отмена прогона уносят с собой всю съёмку.
+      - name: Опубликовать кадры стенда
+        if: steps.mode.outputs.mode == 'scene'
+        run: |
+          set -x
+          cd "$GITHUB_WORKSPACE"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A docs/shots
+          git commit -m "CI: снимки настроенного стенда Winbox 4 [skip ci]" || { echo "нечего коммитить"; exit 0; }
+          for i in 1 2 3 4; do
+            if git pull --rebase --autostash origin "${{ github.ref_name }}" && \
+               git push origin "HEAD:${{ github.ref_name }}"; then exit 0; fi
+            echo "попытка $i не удалась"; sleep 10
+          done
+          echo "push не удался" >&2
+          exit 1
+
       - name: Снять окна по названиям пунктов меню
         if: steps.mode.outputs.mode == 'nav' || steps.mode.outputs.mode == 'scene'
         env:
           FORCE: ${{ (github.event.inputs.force == true || github.event.inputs.force == 'true') && '1' || '0' }}
-          NAV_BUDGET: ${{ steps.mode.outputs.mode == 'scene' && '2400' || '5400' }}
+          NAV_BUDGET: ${{ steps.mode.outputs.mode == 'scene' && '1500' || '5400' }}
         run: |
           set -o pipefail
           cd "$GITHUB_WORKSPACE"

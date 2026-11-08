@@ -523,7 +523,10 @@ def main():
     # В режиме стенда снимаем заново всегда: прежние кадры этого окна пустые.
     resume = (not SCENE and os.environ.get('NAV_RESUME', '1') != '0'
               and os.environ.get('FORCE', '') != '1')
-    restart_every = 12 if SCENE else 40
+    # Перезапуск Winbox дорогой: повторный вход занимает минуты. На стенде
+    # окон меньше, поэтому перезапускаем реже — иначе проход не укладывается
+    # в свой бюджет и последние окна списка не снимаются вовсе.
+    restart_every = 20 if SCENE else 40
     ok, fail, skipped, started, streak = 0, [], 0, time.time(), 0
     for i, line in enumerate(tasks):
         if time.time() - started > BUDGET:
