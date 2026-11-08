@@ -684,3 +684,101 @@ total 2004
 -rw-r--r-- 1 runner runner 64118 Nov  8 15:50 wifi-security.jpg
 -rw-r--r-- 1 runner runner 46912 Nov  8 15:50 wifi.jpg
 -rw-r--r-- 1 runner runner 40995 Nov  8 15:50 wireguard.jpg
+=== время ===
+Sun Nov  8 16:19:27 UTC 2026
+=== процессы ===
+=== файлы ===
+docs/shots:
+total 880
+-rw-r--r-- 1 runner runner  3799 Nov  8 16:18 README.md
+-rw-r--r-- 1 runner runner 21711 Nov  8 16:18 dbg-attempt-1.jpg
+-rw-r--r-- 1 runner runner 20204 Nov  8 16:18 dbg-ip-addresses-new.jpg
+-rw-r--r-- 1 runner runner 20161 Nov  8 16:18 dbg-ip-addresses.jpg
+-rw-r--r-- 1 runner runner 20194 Nov  8 16:18 dbg-ip-arp.jpg
+-rw-r--r-- 1 runner runner 20191 Nov  8 16:18 dbg-ip-cloud.jpg
+-rw-r--r-- 1 runner runner 20197 Nov  8 16:18 dbg-ip-dhcp-client.jpg
+-rw-r--r-- 1 runner runner 20194 Nov  8 16:18 dbg-ip-dhcp-relay.jpg
+-rw-r--r-- 1 runner runner 20139 Nov  8 16:18 dbg-ip-dhcp-server-leases.jpg
+-rw-r--r-- 1 runner runner 20169 Nov  8 16:18 dbg-ip-dhcp-server-networks.jpg
+-rw-r--r-- 1 runner runner 20188 Nov  8 16:18 dbg-ip-dhcp-server.jpg
+-rw-r--r-- 1 runner runner 20171 Nov  8 16:18 dbg-ip-dns-static.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 16:18 dbg-ip-dns.jpg
+-rw-r--r-- 1 runner runner 20183 Nov  8 16:18 dbg-ip-firewall-address-lists.jpg
+-rw-r--r-- 1 runner runner 20171 Nov  8 16:18 dbg-ip-firewall-connections.jpg
+-rw-r--r-- 1 runner runner 20176 Nov  8 16:18 dbg-ip-firewall-filter-rules-new.jpg
+-rw-r--r-- 1 runner runner 20167 Nov  8 16:18 dbg-ip-firewall-filter-rules.jpg
+-rw-r--r-- 1 runner runner 20185 Nov  8 16:18 dbg-ip-firewall-mangle.jpg
+-rw-r--r-- 1 runner runner 20174 Nov  8 16:18 dbg-ip-firewall-nat-new.jpg
+-rw-r--r-- 1 runner runner 20182 Nov  8 16:18 dbg-ip-firewall-nat.jpg
+-rw-r--r-- 1 runner runner 20173 Nov  8 16:18 dbg-ip-firewall-raw.jpg
+-rw-r--r-- 1 runner runner 20190 Nov  8 16:18 dbg-ip-firewall-service-ports.jpg
+-rw-r--r-- 1 runner runner 20177 Nov  8 16:18 dbg-ip-firewall.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 16:18 dbg-ip-hotspot-user-profiles.jpg
+-rw-r--r-- 1 runner runner 20178 Nov  8 16:18 dbg-ip-hotspot-users.jpg
+-rw-r--r-- 1 runner runner 20162 Nov  8 16:18 dbg-ip-hotspot.jpg
+-rw-r--r-- 1 runner runner 20180 Nov  8 16:18 dbg-ip-ipsec-identities.jpg
+-rw-r--r-- 1 runner runner 20187 Nov  8 16:18 dbg-ip-ipsec-peers.jpg
+-rw-r--r-- 1 runner runner 20172 Nov  8 16:18 dbg-ip-ipsec-policies.jpg
+-rw-r--r-- 1 runner runner 20185 Nov  8 16:18 dbg-ip-kid-control.jpg
+-rw-r--r-- 1 runner runner 20167 Nov  8 16:18 dbg-ip-neighbors.jpg
+-rw-r--r-- 1 runner runner 20168 Nov  8 16:18 dbg-ip-pool.jpg
+-rw-r--r-- 1 runner runner 20160 Nov  8 16:18 dbg-ip-routes-new.jpg
+-rw-r--r-- 1 runner runner 20178 Nov  8 16:18 dbg-ip-routes.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 16:18 dbg-ip-services.jpg
+-rw-r--r-- 1 runner runner 20176 Nov  8 16:18 dbg-ip-settings.jpg
+-rw-r--r-- 1 runner runner 20166 Nov  8 16:18 dbg-ip-smb.jpg
+-rw-r--r-- 1 runner runner 20182 Nov  8 16:18 dbg-ip-snmp.jpg
+-rw-r--r-- 1 runner runner 20160 Nov  8 16:18 dbg-ip-tftp.jpg
+-rw-r--r-- 1 runner runner 20139 Nov  8 16:18 dbg-ip-upnp.jpg
+-rw-r--r-- 1 runner runner 20168 Nov  8 16:18 dbg-ip-vrf.jpg
+-rw-r--r-- 1 runner runner 20174 Nov  8 16:18 dbg-ip-web-proxy.jpg
+drwxr-xr-x 2 runner runner  4096 Nov  8 16:18 jpg
+-rw-r--r-- 1 runner runner   245 Nov  8 16:18 manifest.txt
+-rw-r--r-- 1 runner runner 43271 Nov  8 16:19 report.txt
+
+docs/shots/jpg:
+total 2004
+-rw-r--r-- 1 runner runner 27857 Nov  8 16:18 00-login.jpg
+-rw-r--r-- 1 runner runner 27811 Nov  8 16:18 03-desktop.jpg
+-rw-r--r-- 1 runner runner 45498 Nov  8 16:18 backup.jpg
+-rw-r--r-- 1 runner runner 44750 Nov  8 16:18 bonding.jpg
+-rw-r--r-- 1 runner runner 44983 Nov  8 16:18 bridge-filters.jpg
+-rw-r--r-- 1 runner runner 43039 Nov  8 16:18 bridge-hosts.jpg
+-rw-r--r-- 1 runner runner 56524 Nov  8 16:18 bridge-new.jpg
+-rw-r--r-- 1 runner runner 43878 Nov  8 16:18 bridge-ports.jpg
+-rw-r--r-- 1 runner runner 42504 Nov  8 16:18 bridge-vlans.jpg
+-rw-r--r-- 1 runner runner 49344 Nov  8 16:18 bridge.jpg
+-rw-r--r-- 1 runner runner 39016 Nov  8 16:18 dot1x.jpg
+-rw-r--r-- 1 runner runner 47564 Nov  8 16:18 eth.jpg
+-rw-r--r-- 1 runner runner 44271 Nov  8 16:18 files.jpg
+-rw-r--r-- 1 runner runner 49593 Nov  8 16:18 interfaces.jpg
+-rw-r--r-- 1 runner runner 31387 Nov  8 16:18 ipv6.jpg
+-rw-r--r-- 1 runner runner 40151 Nov  8 16:18 l2tp-server.jpg
+-rw-r--r-- 1 runner runner 52117 Nov  8 16:18 log.jpg
+-rw-r--r-- 1 runner runner 46148 Nov  8 16:18 lte.jpg
+-rw-r--r-- 1 runner runner 40560 Nov  8 16:18 mesh.jpg
+-rw-r--r-- 1 runner runner 41067 Nov  8 16:18 ovpn-server.jpg
+-rw-r--r-- 1 runner runner 41686 Nov  8 16:18 ppp-active.jpg
+-rw-r--r-- 1 runner runner 46314 Nov  8 16:18 ppp-profiles.jpg
+-rw-r--r-- 1 runner runner 43471 Nov  8 16:18 ppp-secrets.jpg
+-rw-r--r-- 1 runner runner 46707 Nov  8 16:18 ppp.jpg
+-rw-r--r-- 1 runner runner 42802 Nov  8 16:18 pppoe-server.jpg
+-rw-r--r-- 1 runner runner 43625 Nov  8 16:18 queue-iface.jpg
+-rw-r--r-- 1 runner runner 45096 Nov  8 16:18 queue-types.jpg
+-rw-r--r-- 1 runner runner 44421 Nov  8 16:18 queues.jpg
+-rw-r--r-- 1 runner runner 55648 Nov  8 16:18 quickset.jpg
+-rw-r--r-- 1 runner runner 41630 Nov  8 16:18 radius.jpg
+-rw-r--r-- 1 runner runner 31042 Nov  8 16:18 routing.jpg
+-rw-r--r-- 1 runner runner 56813 Nov  8 16:18 simple-new.jpg
+-rw-r--r-- 1 runner runner 35683 Nov  8 16:18 system.jpg
+-rw-r--r-- 1 runner runner 46037 Nov  8 16:18 terminal.jpg
+-rw-r--r-- 1 runner runner 44135 Nov  8 16:18 vlan.jpg
+-rw-r--r-- 1 runner runner 44828 Nov  8 16:18 vrrp.jpg
+-rw-r--r-- 1 runner runner 44565 Nov  8 16:18 vxlan.jpg
+-rw-r--r-- 1 runner runner 55339 Nov  8 16:18 wg-new.jpg
+-rw-r--r-- 1 runner runner 41014 Nov  8 16:18 wg-peers.jpg
+-rw-r--r-- 1 runner runner 43140 Nov  8 16:18 wifi-access-list.jpg
+-rw-r--r-- 1 runner runner 63071 Nov  8 16:18 wifi-new.jpg
+-rw-r--r-- 1 runner runner 64118 Nov  8 16:18 wifi-security.jpg
+-rw-r--r-- 1 runner runner 46912 Nov  8 16:18 wifi.jpg
+-rw-r--r-- 1 runner runner 40995 Nov  8 16:18 wireguard.jpg
