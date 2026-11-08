@@ -362,6 +362,24 @@ def open_window(parts, want_new, X, Y, W, H):
     return True
 
 
+def restart_winbox(X, Y, W, H):
+    """Перезапуск Winbox: за десятки окон он накапливает открытые диалоги,
+    и клики по дереву перестают доходить. После перезапуска входим заново."""
+    log('  перезапуск Winbox')
+    run(['pkill', '-f', '/WinBox'])
+    time.sleep(3)
+    run(['bash', '-lc',
+         'cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software '
+         'QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox '
+         '>> /tmp/wb/winbox.log 2>&1 &'])
+    time.sleep(14)
+    X, Y, W, H = geom()
+    ok = connect(X, Y, W, H, tries=8)
+    if ok:
+        escape(1)
+    return ok, X, Y, W, H
+
+
 def shoot(name, X, Y, W, H):
     full = os.path.join(TMP, 'shot.png')
     run(['import', '-window', 'root', full])
@@ -388,7 +406,12 @@ def main():
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
     log('задач: %d' % len(tasks))
     ok, fail = 0, []
-    for line in tasks:
+    for i, line in enumerate(tasks):
+        if i and i % 14 == 0:
+            good, X, Y, W, H = restart_winbox(X, Y, W, H)
+            if not good:
+                log('!! после перезапуска не вошли, продолжаю без него')
+        escape(3)
         fields = line.split('|')
         name = fields[0].strip()
         parts = [p.strip() for p in fields[1].split('→') if p.strip()] \
@@ -397,6 +420,9 @@ def main():
         if not open_window(parts, want_new, X, Y, W, H):
             fail.append(name)
             escape()
+            # если на экране что-то висит поверх стола — начинаем с чистого листа
+            if sd_now(X, Y, W, H) > 5:
+                good, X, Y, W, H = restart_winbox(X, Y, W, H)
             continue
         sd = sd_now(X, Y, W, H)
         if sd <= 5:
