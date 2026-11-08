@@ -26,6 +26,7 @@ SCENE = os.environ.get('NAV_SCENE', '') == '1'
 # Сколько секунд снимать в этом прогоне. В режиме «стенд + добор» второму
 # проходу достаётся меньший бюджет, чтобы job не убил таймаут GitHub.
 BUDGET = int(os.environ.get('NAV_BUDGET', '5400'))
+OCR_SCALE = 1.7
 JPG = os.path.join(OUT, 'jpg')
 TMP = '/tmp/wb/nav'
 for _d in (JPG, TMP, OUT):
@@ -142,7 +143,7 @@ def ocr(x, y, w, h, tag='ocr'):
     run(['import', '-window', 'root', full])
     crop = os.path.join(TMP, tag + '.png')
     run(['convert', full, '-crop', '%dx%d+%d+%d' % (int(w), int(h), int(x), int(y)),
-         '+repage', '-colorspace', 'Gray', '-resize', '250%', '-sharpen', '0x1',
+         '+repage', '-colorspace', 'Gray', '-resize', '170%', '-sharpen', '0x1',
          '-normalize', crop])
     tsv = run(['tesseract', crop, '-', '--psm', '11', 'tsv']).stdout
     words = []
@@ -156,7 +157,7 @@ def ocr(x, y, w, h, tag='ocr'):
             continue
         if conf < 40:
             continue
-        words.append((f[11].strip(), int(x + int(f[6]) / 2.5), int(y + int(f[7]) / 2.5)))
+        words.append((f[11].strip(), int(x + int(f[6]) / OCR_SCALE), int(y + int(f[7]) / OCR_SCALE)))
     return words
 
 
@@ -191,7 +192,7 @@ def ocr_text(image, tag='evidence'):
     на картинке не читаются, снимок под шаг не ставится.
     """
     big = os.path.join(TMP, tag + '-big.png')
-    run(['convert', image, '-colorspace', 'Gray', '-resize', '200%',
+    run(['convert', image, '-colorspace', 'Gray', '-resize', '150%',
          '-sharpen', '0x1', '-normalize', big])
     txt = run(['tesseract', big, '-', '-l', 'eng+rus', '--psm', '6']).stdout
     if not txt.strip():                      # русского пакета может не быть
