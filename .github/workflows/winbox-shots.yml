@@ -157,16 +157,6 @@ jobs:
           ss -ltnp 2>/dev/null | grep -E '8291|8728' >> docs/shots/report.txt || true
           ps -p "$(cat /tmp/wb/qemu.pid)" -o pid,etime,rss,cmd >> docs/shots/report.txt || true
 
-      - name: Настроить учебный стенд (данные из инструкций)
-        if: steps.mode.outputs.mode == 'scene'
-        run: |
-          set -o pipefail
-          cd "$GITHUB_WORKSPACE"
-          # Без этого шага снимки показывают пустой CHR и не совпадают с
-          # текстом статей. Строки применяются по одной, отказ виден в логе.
-          python3 .github/scripts/ros-api.py 127.0.0.1 8728 admin "" \
-            .github/scripts/lab-setup.rsc 2>&1 | tee -a docs/shots/report.txt
-
       - name: Запустить Xvfb и Winbox 4
         run: |
           set -ux
@@ -196,6 +186,25 @@ jobs:
             sleep 5
           done
           ps aux | grep -E 'WinBox|Xvfb' | grep -v grep >> docs/shots/report.txt || true
+
+      - name: Включить API на роутере (через терминал Winbox)
+        if: steps.mode.outputs.mode == 'scene'
+        run: |
+          set -o pipefail
+          cd "$GITHUB_WORKSPACE"
+          # На свежем CHR служба api выключена: без этого шага посев стенда
+          # не подключается, хотя Winbox входит. Включаем её в терминале.
+          python3 .github/scripts/winbox-nav.py docs/shots --enable-api 2>&1 | tee -a docs/shots/report.txt
+
+      - name: Настроить учебный стенд (данные из инструкций)
+        if: steps.mode.outputs.mode == 'scene'
+        run: |
+          set -o pipefail
+          cd "$GITHUB_WORKSPACE"
+          # Без этого шага снимки показывают пустой CHR и не совпадают с
+          # текстом статей. Строки применяются по одной, отказ виден в логе.
+          python3 .github/scripts/ros-api.py 127.0.0.1 8728 admin "" \
+            .github/scripts/lab-setup.rsc 2>&1 | tee -a docs/shots/report.txt
 
       - name: Снять окна (настоящий Winbox 4)
         if: steps.mode.outputs.mode != 'nav' && steps.mode.outputs.mode != 'scene'

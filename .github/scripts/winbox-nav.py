@@ -465,6 +465,16 @@ def open_window(parts, want_new, X, Y, W, H):
     for part in parts[1:]:
         words = menu_area_words(X, Y, W, H)
         hit = find(words, part, near=cur, xmin=X + 120)
+        if not hit:
+            # Подменю дерева (IP, System, Tools, IPv6, Routing) раскрывается
+            # В ЛЕВОЙ колонке, а не в области содержимого. Раньше поиск шёл
+            # только справа от x+120 и не находил ни одного пункта: из-за
+            # этого не снималось ни одного окна «IP → …», «System → …».
+            tw = tree_words(X, Y, H)
+            cand = find(tw, part, near=(X + 70, cur[1] + 24))
+            if cand and cand[2] > cur[1] - 6:
+                hit = cand
+                log('  подменю дерева: «%s» найден в левой колонке' % part)
         if not hit and W < 1300:
             # узкое окно: вкладки не помещаются в полосу — открываем список
             # пунктов из заголовка окна (рядом с названием есть «▾»)
@@ -497,8 +507,54 @@ def open_window(parts, want_new, X, Y, W, H):
     return True
 
 
+# ------------------------------------------------------- API через терминал ---
+def enable_api(X, Y, W, H):
+    """Включить службу API на роутере через терминал Winbox.
+
+    На свежем CHR служба api выключена, поэтому посев стенда по API не
+    подключается («роутер молчит»), хотя Winbox входит нормально. Терминал —
+    такой же пункт дерева, как Files: открывается одним щелчком.
+    """
+    escape(2)
+    if not open_window(['New Terminal'], False, X, Y, W, H):
+        log('!! терминал не открылся — API включить нечем')
+        return False
+    time.sleep(2)
+    activate()
+    # Первый вход в терминал спрашивает про лицензию — отвечаем «n».
+    run(['xdotool', 'type', '--delay', '60', 'n'])
+    run(['xdotool', 'key', 'Return'])
+    time.sleep(2)
+    for cmd in ('/ip service enable api',
+                '/ip service set api address=0.0.0.0/0',
+                '/ip service print'):
+        run(['xdotool', 'type', '--clearmodifiers', '--delay', '45', cmd])
+        run(['xdotool', 'key', 'Return'])
+        time.sleep(2)
+    words = ocr(X + 200, Y + 150, W - 320, H - 300, 'terminal-api')
+    text = ' '.join(w[0] for w in words)
+    log('  терминал после включения API: %s' % text[:300])
+    escape(2)
+    return True
+
+
 # ------------------------------------------------------------------ старт ----
 def main():
+    if '--enable-api' in sys.argv:
+        X, Y, W, H = geom()
+        try:
+            X, Y, W, H = maximize(X, Y, W, H)
+        except Exception as exc:                         # noqa: BLE001
+            log('  растяжка окна не удалась: %s' % exc)
+        if not connect(X, Y, W, H):
+            log('!! входа нет — API включить нельзя')
+            return 2
+        escape(1)
+        try:
+            X, Y, W, H = maximize(*geom())
+        except Exception:                                # noqa: BLE001
+            X, Y, W, H = geom()
+        return 0 if enable_api(X, Y, W, H) else 1
     X, Y, W, H = geom()
     try:
         X, Y, W, H = maximize(X, Y, W, H)

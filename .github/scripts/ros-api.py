@@ -170,7 +170,7 @@ def cli_to_words(line):
     return words
 
 
-def wait_api(host, port, user, password, minutes=32):
+def wait_api(host, port, user, password, minutes=8):
     """Ждать, пока RouterOS поднимется и пустит по API."""
     deadline = time.time() + minutes * 60
     attempt = 0
