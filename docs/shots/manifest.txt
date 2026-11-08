@@ -1,8 +1,8 @@
+quickset|1|Quick Set
 wifi|1|WiFi
 wifi-new|1|WiFi → New
 wifi-security|1|WiFi → Security
-wifi-wps|1|WiFi → WPS
-wifi-sniffer|1|WiFi → Sniffer
+wifi-access-list|1|WiFi → Access List
 interfaces|1|Interfaces
 eth|1|Interfaces → Ethernet
 vlan|1|Interfaces → VLAN
@@ -22,11 +22,19 @@ bridge-new|1|Bridge → New
 ppp|1|PPP
 ppp-profiles|1|PPP → Profiles
 ppp-secrets|1|PPP → Secrets
+ppp-active|1|PPP → Active Connections
+pppoe-server|1|PPP → PPPoE Servers
+l2tp-server|1|PPP → L2TP Secrets
+ovpn-server|1|PPP → OVPN Servers
 mesh|1|Mesh
 routing|1|Routing
 system|1|System
 files|1|Files
 backup|1|Files → Backup
+queues|1|Queues → Simple Queues
+simple-new|1|Queues → Simple Queues → New
+queue-types|1|Queues → Queue Types
+queue-iface|1|Queues → Interface Queues
 dot1x|1|Dot1X
 log|1|Log
 terminal|1|New Terminal
