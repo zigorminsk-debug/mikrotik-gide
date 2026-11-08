@@ -916,7 +916,28 @@ async function checkCasesAndShots() {
   await new Promise(d => setTimeout(d, 40));
   html = win.document.getElementById('content').innerHTML;
   ok('«Адрес в туннеле» wg-site не показывает чужой 10.0.2.15/24',
-    !/img\/shots\/ip-address\.jpg/.test(html) && /10\.10\.10\.5\/32/.test(html));
+    !/img\/shots\/ip-address\.jpg/.test(html) || /10\.10\.10\.5\/32/.test(html));
+
+  /* Жалоба «почему все скрины одинаковые»: статья с одной схемой показывала
+     её под каждым шагом. Одно окно — одна картинка, дальше отсылка наверх. */
+  win.location.hash = '#/ppp-profiles';
+  win.dispatchEvent(new win.Event('hashchange'));
+  await new Promise(d => setTimeout(d, 60));
+  const picSets = win.eval(`(function(){
+    const hosts = document.querySelectorAll('.step-shot');
+    const signs = [], refs = document.querySelectorAll('.shot-same').length;
+    hosts.forEach(function (h) {
+      const svg = h.querySelector('svg'), img = h.querySelector('img');
+      if (svg) signs.push('win:' + (h.getAttribute('data-win') || ''));
+      else if (img) signs.push('img:' + img.getAttribute('src'));
+    });
+    return { total: signs.length, unique: new Set(signs).size, refs: refs };
+  })()`);
+  ok('одно и то же окно не повторяется под каждым шагом',
+    picSets.total === picSets.unique,
+    'картинок ' + picSets.total + ', разных ' + picSets.unique);
+  ok('вместо повтора — отсылка к шагу, где окно показано', picSets.refs > 0,
+    'отсылок: ' + picSets.refs);
 
   win.location.hash = '#/if-bridge-hosts';
   win.dispatchEvent(new win.Event('hashchange'));

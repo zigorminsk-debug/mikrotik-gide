@@ -1321,6 +1321,8 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 .w4-step figcaption{padding:7px 10px;font-size:calc(12px * var(--fsm,1));color:var(--mute)}
 .w4-step figcaption a{color:var(--accent)}
 .shot-tag{font-size:calc(11px * var(--fsm,1));text-transform:uppercase;letter-spacing:.04em;color:var(--mute);opacity:.8;margin:8px 0 2px}
+/* Повтор того же окна не рисуем второй раз — отсылка к первому шагу. */
+.shot-same{font-size:calc(12px * var(--fsm,1));color:var(--mute);opacity:.85;margin:6px 0 2px;padding:6px 10px;border-left:2px solid var(--line,rgba(255,255,255,.14))}
 
 /* Полноэкранный просмотр снимка: свой слой, крестик, масштаб 1:1.
    Ссылка больше не уводит WebView на файл картинки. */

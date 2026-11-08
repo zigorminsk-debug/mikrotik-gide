@@ -1338,8 +1338,12 @@
 
     bindNotes(a);
 
-    /* окно под каждым шагом инструкции */
+    /* Окно под шагом инструкции. Одно и то же окно не повторяем под каждым
+       шагом: раньше статья с одной схемой показывала пять одинаковых
+       картинок подряд («почему все скрины одинаковые»). Теперь повтор
+       заменяется короткой отсылкой к тому шагу, где окно уже показано. */
     const shots = content.querySelectorAll('.step-shot');
+    const shown = Object.create(null);
     Array.prototype.forEach.call(shots, function (host) {
       const i = parseInt(host.getAttribute('data-si'), 10);
       /* Сначала настоящий снимок Winbox 4 (data/photos.js), потом схема окна. */
@@ -1350,6 +1354,12 @@
       const file = typeof photo === 'string' ? photo : (photo && photo.f);
       const winName = photo && typeof photo === 'object' ? photo.w : '';
       if (file) {
+        if (shown['foto:' + file] != null) {
+          host.innerHTML = '<div class="shot-same">Снимок этого окна — в шаге ' +
+            (shown['foto:' + file] + 1) + ' выше.</div>';
+          return;
+        }
+        shown['foto:' + file] = i;
         host.innerHTML = '<figure class="w4-step">' +
           '<a href="img/shots/' + esc(file) + '" class="shot-link" data-title="Окно Winbox 4" aria-label="Открыть снимок на весь экран">' +
           '<img loading="lazy" src="img/shots/' + esc(file) + '" alt="Окно Winbox 4"></a>' +
@@ -1361,8 +1371,37 @@
       }
       const pick = stepSceneFor(a, i);
       if (!pick) return;
+      /* Одно окно раздела — одна картинка на статью. Свои схемы шага
+         (src === 'own') не трогаем: они нарисованы под конкретный шаг. */
+      const winKey = 'win:' + (pick.spec.path || pick.spec.win || '');
+      if (pick.src !== 'own' && shown[winKey] != null) {
+        host.innerHTML = '<div class="shot-same">Окно «' +
+          esc(pick.spec.win || pick.spec.path || a.title || 'Winbox') +
+          '» то же, что в шаге ' + (shown[winKey] + 1) + ' выше.</div>';
+        return;
+      }
+      const sign = 'scene:' + JSON.stringify(pick.spec);
+      if (shown[sign] != null) {
+        host.innerHTML = '<div class="shot-same">Окно «' +
+          esc(pick.spec.win || pick.spec.path || a.title || 'Winbox') +
+          '» то же, что в шаге ' + (shown[sign] + 1) + ' выше.</div>';
+        return;
+      }
+      shown[sign] = i;
+      if (pick.src !== 'own') shown[winKey] = i;
+      host.setAttribute('data-win', pick.spec.path || pick.spec.win || '');
       host.insertAdjacentHTML('afterbegin', '<div class="shot-tag">Схема окна Winbox 4</div>');
       Scene.mount(host, [pick.spec], { compact: true });
+      /* Спеки могут отличаться только подсветкой, а выглядеть одинаково —
+         сравниваем то, что действительно нарисовано. */
+      const drawn = 'drawn:' + host.textContent.replace(/\s+/g, ' ').trim();
+      if (shown[drawn] != null && shown[drawn] !== i) {
+        host.innerHTML = '<div class="shot-same">Окно «' +
+          esc(pick.spec.win || pick.spec.path || a.title || 'Winbox') +
+          '» то же, что в шаге ' + (shown[drawn] + 1) + ' выше.</div>';
+      } else {
+        shown[drawn] = i;
+      }
     });
 
     const checkHost = $('#checkHost');
