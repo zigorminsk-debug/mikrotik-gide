@@ -57,8 +57,17 @@ def clean(t):
     return t.lower().replace('ё', 'е').strip(' .,:;|·•<>()[]')
 
 
-def geom():
+def geom(tries=6):
     """X, Y, W, H главного окна Winbox (наибольшее окно с заголовком WinBox)."""
+    for attempt in range(tries):
+        g = _geom_once()
+        if g:
+            return g
+        time.sleep(5)
+    raise SystemExit('окно Winbox не найдено')
+
+
+def _geom_once():
     best, area = None, 0
     for wid in run(['xdotool', 'search', '--name', 'WinBox']).stdout.split():
         g = run(['xdotool', 'getwindowgeometry', '--shell', wid]).stdout
@@ -70,7 +79,7 @@ def geom():
             best = (int(d['X']), int(d['Y']), int(d['WIDTH']), int(d['HEIGHT']))
             area = a
     if not best:
-        raise SystemExit('окно Winbox не найдено')
+        return None
     return best
 
 
@@ -289,6 +298,22 @@ def connect(X, Y, W, H, tries=40):
     return False
 
 
+def maximize(X, Y, W, H):
+    """Растянуть окно Winbox почти на весь экран.
+
+    В окне 1200x700 вкладки не помещаются («Interface List», «Registration»
+    уезжают в прокрутку), и найти их по тексту нельзя. В окне 1560x1040
+    они видны все, а выпадающие списки раскрываются целиком.
+    """
+    wid = activate()
+    if not wid:
+        return X, Y, W, H
+    run(['xdotool', 'windowsize', wid, '1560', '1040'])
+    run(['xdotool', 'windowmove', wid, '20', '20'])
+    time.sleep(1.5)
+    return geom()
+
+
 def restart_winbox(X, Y, W, H):
     """Перезапуск Winbox: за десятки окон он накапливает открытые диалоги,
     и клики по дереву перестают доходить. После перезапуска входим заново."""
@@ -299,11 +324,15 @@ def restart_winbox(X, Y, W, H):
          'cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software '
          'QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox '
          '>> /tmp/wb/winbox.log 2>&1 &'])
-    time.sleep(14)
+    for _ in range(6):
+        time.sleep(5)
+        if _geom_once():
+            break
     X, Y, W, H = geom()
-    ok = connect(X, Y, W, H, tries=8)
+    ok = connect(X, Y, W, H, tries=10)
     if ok:
         escape(1)
+        X, Y, W, H = maximize(X, Y, W, H)
     return ok, X, Y, W, H
 
 
@@ -334,7 +363,7 @@ def main():
         return
     escape(1)
     time.sleep(2)
-    X, Y, W, H = geom()
+    X, Y, W, H = maximize(*geom())
     log('окно после входа: %dx%d+%d+%d' % (W, H, X, Y))
     shoot('03-desktop', X, Y, W, H)
     with open(TASKS, encoding='utf-8') as f:
@@ -352,7 +381,13 @@ def main():
         parts = [p.strip() for p in fields[1].split('→') if p.strip()] \
             if len(fields) > 1 else [name]
         want_new = len(fields) > 2 and fields[2].strip().lower() in ('new', '1', 'да')
-        if not open_window(parts, want_new, X, Y, W, H):
+        try:
+            opened = open_window(parts, want_new, X, Y, W, H)
+        except Exception as exc:                       # noqa: BLE001
+            log('!! %s: ошибка %s' % (name, exc))
+            dbg(name)
+            opened = False
+        if not opened:
             fail.append(name)
             escape()
             continue
