@@ -27,6 +27,7 @@ pppoe-server|1|PPP → PPPoE Servers
 l2tp-server|1|PPP → L2TP Secrets
 ovpn-server|1|PPP → OVPN Servers
 mesh|1|Mesh
+ipv6|1|IPv6
 routing|1|Routing
 system|1|System
 files|1|Files

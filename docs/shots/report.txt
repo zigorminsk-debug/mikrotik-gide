@@ -1,42 +1,33 @@
 прошло 4 минуты после старта QEMU
-BIN=/tmp/wb/winbox/WinBox
+[1;1H[H[JcMikroTik 7.24.6 (long-term)
+CHR Login: BIN=/tmp/wb/winbox/WinBox
 Winbox запущен (попытка 1)
-runner      3809  0.3  0.4 222276 77916 ?        S    06:30   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      3825  1.7  0.5 925164 91684 ?        Sl   06:30   0:00 /tmp/wb/winbox/WinBox
+runner      4028  0.5  0.4 222268 75876 ?        S    06:58   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4042  1.9  0.5 925176 91452 ?        Sl   06:59   0:00 /tmp/wb/winbox/WinBox
   окно 1200x700+200+200
     фокус: 2097159
-    Neighbors: роутера в списке ещё нет (Q Find Y Filter oO & Acti MAC Address « IP Address Identity Version)
-    фокус: 2097159
-    ввод #1: в поле ''
-    фокус: 2097159
-    ввод #2: в поле ''
-    фокус: 2097159
-    ввод #3: в поле ''
-    фокус: 2097159
-    попытка 1: роутер ещё не пустил, ждём 30 с
-    фокус: 2097159
     Neighbors: нашёл '127.0.0.1', двойной щелчок
-  вход через Neighbors (попытка 2)
+  вход через Neighbors (попытка 1)
   окно после входа: 1200x700+200+200
-  задач: 137
+  задач: 151
   снято quickset: Quick Set (sd=141)
   снято wifi: WiFi (sd=118)
   снято wifi-new: WiFi → New + New (sd=113)
   снято wifi-security: WiFi → Security (sd=124)
   снято wifi-access-list: WiFi → Access List (sd=114)
-  !! не нашёл «Registration» (путь: WiFi → Registration); OCR: TA = WiFi WiFi Network Configurati Channel Security Interworkin Steering Registrat CG New > Enable Disable Remove Comment # “| MAC MAC Interface Action ut.rif > Live
-  !! не нашёл «WPS» (путь: WiFi → WPS); OCR: TA = WiFi WiFi Network Configurati Channel Security Interworkin Steering Registrat CG New > Enable Disable Remove Comment # “| MAC MAC Interface Action ut.rif > Live
-  !! не нашёл «Sniffer» (путь: WiFi → Sniffer); OCR: TA = WiFi WiFi Network Configurati Channel Security Interworkin Steering Registrat CG New > Enable Disable Remove Comment # “| MAC MAC Interface Action ut.rif > Live
+  !! не нашёл «Registration» (путь: WiFi → Registration); OCR: bd MA = WiFi WiFi Network Configurati Channel Security Interworkin Steering CG New > Enable Disable * Remove Comment # “| MAC Addr... MAC Addr... Interface Action | > Live
+  !! не нашёл «WPS» (путь: WiFi → WPS); OCR: bd MA = WiFi WiFi Network Configurati Channel Security Interworkin Steering CG New > Enable Disable * Remove Comment # “| MAC Addr... MAC Addr... Interface Action | > Live
+  !! не нашёл «Sniffer» (путь: WiFi → Sniffer); OCR: bd MA = WiFi WiFi Network Configurati Channel Security Interworkin Steering CG New > Enable Disable * Remove Comment # “| MAC Addr... MAC Addr... Interface Action | > Live
   снято interfaces: Interfaces (sd=122)
   снято eth: Interfaces → Ethernet (sd=122)
   снято vlan: Interfaces → VLAN (sd=116)
   снято bonding: Interfaces → Bonding (sd=117)
-  !! не нашёл «Interface List» (путь: Interfaces → Interface List); OCR: >) TA Interfaces Interface Ethernet EolP Tunnel GRETunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE CG New > Enable Disable Remove P Comment Q Find Y Filter O Actions P
-  !! не нашёл «PPPoE Client» (путь: Interfaces → PPPoE Client); OCR: >) TA Interfaces Interface Ethernet EolP Tunnel GRETunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE CG New > Enable Disable Remove P Comment Q Find Y Filter O Actions P
+  !! не нашёл «Interface List» (путь: Interfaces → Interface List); OCR: pt MA Interfaces Interface Ethernet EolP Tunnel GRETunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE CG New > Enable Disable * Remove Comment Q Find Y Filter O Actions P
+  !! не нашёл «PPPoE Client» (путь: Interfaces → PPPoE Client); OCR: pt MA Interfaces Interface Ethernet EolP Tunnel GRETunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE CG New > Enable Disable * Remove Comment Q Find Y Filter O Actions P
   снято vrrp: Interfaces → VRRP (sd=117)
   снято lte: Interfaces → LTE (sd=117)
   снято vxlan: Interfaces → VXLAN (sd=116)
-  !! не нашёл «EoIP Tunnel» (путь: Interfaces → EoIP Tunnel); OCR: >) TA Interfaces Interface Ethernet EolP Tunnel GRETunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE CG New > Enable Disable * Remove Comment Q Find Y Filter O © Configura
+  !! не нашёл «EoIP Tunnel» (путь: Interfaces → EoIP Tunnel); OCR: pte kal Interfaces Interface Ethernet EolP Tunnel GRETunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE CG New > Enable Disable * Remove Comment Q Find Y Filter O © Configura
   снято wireguard: WireGuard (sd=109)
   снято wg-peers: WireGuard → Peers (sd=109)
   снято wg-new: WireGuard → Peers → New + New (sd=111)
@@ -54,254 +45,228 @@ runner      3825  1.7  0.5 925164 91684 ?        Sl   06:30   0:00 /tmp/wb/winbo
   снято l2tp-server: PPP → L2TP Secrets (sd=126)
   снято ovpn-server: PPP → OVPN Servers (sd=154)
   снято mesh: Mesh (sd=107)
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh YE <? MPLS Routing System G
-  !! не нашёл «ARP» (путь: IP → ARP); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Addresses» (путь: IP → Addresses); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Addresses» (путь: IP → Addresses → New); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Cloud» (путь: IP → Cloud); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «DHCP Client» (путь: IP → DHCP Client); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «DHCP Relay» (путь: IP → DHCP Relay); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «DHCP Server» (путь: IP → DHCP Server); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «DNS» (путь: IP → DNS); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «DNS» (путь: IP → DNS → Static); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules → New); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → NAT); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → NAT → New); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → Mangle); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → Raw); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → Connections); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IP → Firewall → Service Ports); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Hotspot» (путь: IP → Hotspot); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Hotspot» (путь: IP → Hotspot → User Profiles); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Hotspot» (путь: IP → Hotspot → Users); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «IPsec» (путь: IP → IPsec → Policies); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «IPsec» (путь: IP → IPsec → Peers); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «IPsec» (путь: IP → IPsec → Identities); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Kid Control» (путь: IP → Kid Control); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Neighbors» (путь: IP → Neighbors); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Pool» (путь: IP → Pool); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Routes» (путь: IP → Routes); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Routes» (путь: IP → Routes → New); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «SMB» (путь: IP → SMB); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «SNMP» (путь: IP → SNMP); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Services» (путь: IP → Services); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Settings» (путь: IP → Settings); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «TFTP» (путь: IP → TFTP); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «UPnP» (путь: IP → UPnP); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «VRF» (путь: IP → VRF); OCR: | ee al ut.rif
-    «IP» взял из таблицы высот (y=+260), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! не нашёл «Web Proxy» (путь: IP → Web Proxy); OCR: | ee al ut.rif
-    «IPv6» взял из таблицы высот (y=+285), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh “8 MPLS Routing System G Queues
-  !! ipv6: окно пустое (sd=5)
-    «IPv6» взял из таблицы высот (y=+285), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh YE MPLS Routing System G Queues
-  !! не нашёл «Address» (путь: IPv6 → Address); OCR: EEE EEE al ut.rif
-    «IPv6» взял из таблицы высот (y=+285), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh YE MPLS Routing System G Queues
-  !! не нашёл «ND» (путь: IPv6 → ND); OCR: EEE EEE al ut.rif
-    «IPv6» взял из таблицы высот (y=+285), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh YE MPLS Routing System G Queues
-  !! не нашёл «Firewall» (путь: IPv6 → Firewall → Filter Rules); OCR: EEE EEE al ut.rif
-    «IPv6» взял из таблицы высот (y=+285), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh YE MPLS Routing System G Queues
-  !! не нашёл «Routes» (путь: IPv6 → Routes); OCR: EEE EEE al ut.rif
-    «IPv6» взял из таблицы высот (y=+285), OCR дерева: nw ZG Quick Set & WiFi interfaces WireGuard + Bridge 'G) ppp Switch Mesh YE MPLS Routing System G Queues
-  !! не нашёл «Pool» (путь: IPv6 → Pool); OCR: EEE EEE al ut.rif
-  !! не нашёл «MPLS» (путь: MPLS → MPLS); OCR: EEE EEE al ut.rif
-  !! не нашёл «LDP» (путь: MPLS → LDP); OCR: EEE EEE al ut.rif
-  !! не нашёл «Forwarding» (путь: MPLS → Forwarding); OCR: EEE EEE al ut.rif
-  !! не нашёл «L2VPN» (путь: MPLS → L2VPN); OCR: EEE EEE al ut.rif
+  !! не нашёл «ARP» (путь: IP → ARP); OCR: v¥
+  !! не нашёл «Addresses» (путь: IP → Addresses); OCR: v¥
+  !! не нашёл «Addresses» (путь: IP → Addresses → New); OCR: v¥
+  !! не нашёл «Cloud» (путь: IP → Cloud); OCR: v¥
+  !! не нашёл «DHCP Client» (путь: IP → DHCP Client); OCR: v¥
+  !! не нашёл «DHCP Relay» (путь: IP → DHCP Relay); OCR: v¥
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server); OCR: v¥
+  !! не нашёл «DNS» (путь: IP → DNS); OCR: v¥
+  !! не нашёл «DNS» (путь: IP → DNS → Static); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules → New); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → NAT); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → NAT → New); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → Mangle); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → Raw); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → Connections); OCR: v¥
+  !! не нашёл «Firewall» (путь: IP → Firewall → Service Ports); OCR: v¥
+  !! не нашёл «Hotspot» (путь: IP → Hotspot); OCR: v¥
+  !! не нашёл «Hotspot» (путь: IP → Hotspot → User Profiles); OCR: v¥
+  !! не нашёл «Hotspot» (путь: IP → Hotspot → Users); OCR: v¥
+  !! не нашёл «IPsec» (путь: IP → IPsec → Policies); OCR: v¥
+  !! не нашёл «IPsec» (путь: IP → IPsec → Peers); OCR: v¥
+  !! не нашёл «IPsec» (путь: IP → IPsec → Identities); OCR: v¥
+  !! не нашёл «Kid Control» (путь: IP → Kid Control); OCR: v¥
+  !! не нашёл «Neighbors» (путь: IP → Neighbors); OCR: v¥
+  !! не нашёл «Pool» (путь: IP → Pool); OCR: v¥
+  !! не нашёл «Routes» (путь: IP → Routes); OCR: v¥
+  !! не нашёл «Routes» (путь: IP → Routes → New); OCR: v¥
+  !! не нашёл «SMB» (путь: IP → SMB); OCR: v¥
+  !! не нашёл «SNMP» (путь: IP → SNMP); OCR: v¥
+  !! не нашёл «Services» (путь: IP → Services); OCR: v¥
+  !! не нашёл «Settings» (путь: IP → Settings); OCR: v¥
+  !! не нашёл «TFTP» (путь: IP → TFTP); OCR: v¥
+  !! не нашёл «UPnP» (путь: IP → UPnP); OCR: v¥
+  !! не нашёл «VRF» (путь: IP → VRF); OCR: v¥
+  !! не нашёл «Web Proxy» (путь: IP → Web Proxy); OCR: v¥
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Leases); OCR: v¥
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: v¥
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Options); OCR: v¥
+  !! не нашёл «SNTP Client» (путь: IP → SNTP Client); OCR: v¥
+  !! не нашёл «DHCP Client» (путь: IPv6 → DHCP Client); OCR: v¥
+  !! не нашёл «DHCP Server» (путь: IPv6 → DHCP Server); OCR: v¥
+  !! не нашёл «Settings» (путь: IPv6 → Settings); OCR: v¥
+  !! не нашёл «OSPF» (путь: Routing → OSPF → Neighbors); OCR: v¥
+  !! не нашёл «BGP» (путь: Routing → BGP → Sessions); OCR: v¥
+  !! не нашёл «IGMP Proxy» (путь: Routing → IGMP Proxy); OCR: v¥
+  !! не нашёл «BGP» (путь: Routing → BGP → Connections → New); OCR: v¥
+  !! не нашёл «Ports» (путь: System → Ports); OCR: v¥
+  !! не нашёл «Traffic Monitor» (путь: Tools → Traffic Monitor); OCR: v¥
+  !! не нашёл «Traffic Generator» (путь: Tools → Traffic Generator); OCR: v¥
+  снято ipv6: IPv6 (sd=16)
+  !! не нашёл «Address» (путь: IPv6 → Address); OCR: v¥
+  !! не нашёл «ND» (путь: IPv6 → ND); OCR: v¥
+  !! не нашёл «Firewall» (путь: IPv6 → Firewall → Filter Rules); OCR: v¥
+  !! не нашёл «Routes» (путь: IPv6 → Routes); OCR: v¥
+  !! не нашёл «Pool» (путь: IPv6 → Pool); OCR: v¥
+    «MPLS»: после клика пусто, пробую ещё
+  !! не нашёл «MPLS» (путь: MPLS → MPLS); OCR: v¥
+    «MPLS»: после клика пусто, пробую ещё
+  !! не нашёл «LDP» (путь: MPLS → LDP); OCR: v¥
+    «MPLS»: после клика пусто, пробую ещё
+  !! не нашёл «Forwarding» (путь: MPLS → Forwarding); OCR: v¥
+    «MPLS»: после клика пусто, пробую ещё
+  !! не нашёл «L2VPN» (путь: MPLS → L2VPN); OCR: v¥
   снято routing: Routing (sd=8)
-  !! не нашёл «Tables» (путь: Routing → Tables); OCR: ee al ut.rif
-  !! не нашёл «Rules» (путь: Routing → Rules); OCR: ee al ut.rif
-  !! не нашёл «Nexthops» (путь: Routing → Nexthops); OCR: ee al ut.rif
-  !! не нашёл «OSPF» (путь: Routing → OSPF → Networks); OCR: ee al ut.rif
-  !! не нашёл «BGP» (путь: Routing → BGP → Connections); OCR: ee al ut.rif
-  !! не нашёл «RIP» (путь: Routing → RIP → Interfaces); OCR: ee al ut.rif
-  !! не нашёл «Prefix Lists» (путь: Routing → Prefix Lists); OCR: ee al ut.rif
-  !! не нашёл «Settings» (путь: Routing → Settings); OCR: ee al ut.rif
-  !! не нашёл «BFD» (путь: Routing → BFD → Sessions); OCR: ee al ut.rif
+  !! не нашёл «Tables» (путь: Routing → Tables); OCR: v¥
+  !! не нашёл «Rules» (путь: Routing → Rules); OCR: v¥
+  !! не нашёл «Nexthops» (путь: Routing → Nexthops); OCR: v¥
+  !! не нашёл «OSPF» (путь: Routing → OSPF → Networks); OCR: v¥
+  !! не нашёл «BGP» (путь: Routing → BGP → Connections); OCR: v¥
+  !! не нашёл «RIP» (путь: Routing → RIP → Interfaces); OCR: v¥
+  !! не нашёл «Prefix Lists» (путь: Routing → Prefix Lists); OCR: v¥
+  !! не нашёл «Settings» (путь: Routing → Settings); OCR: v¥
+  !! не нашёл «BFD» (путь: Routing → BFD → Sessions); OCR: v¥
   снято system: System (sd=20)
-  !! не нашёл «Identity» (путь: System → Identity); OCR: | ee al ut.rif
-  !! не нашёл «NTP Client» (путь: System → NTP Client); OCR: | ee al ut.rif
-  !! не нашёл «Users» (путь: System → Users); OCR: | ee al ut.rif
-  !! не нашёл «Users» (путь: System → Users → New); OCR: | ee al ut.rif
-  !! не нашёл «Certificates» (путь: System → Certificates); OCR: | ee al ut.rif
-  !! не нашёл «Logging» (путь: System → Logging); OCR: | ee al ut.rif
-  !! не нашёл «Packages» (путь: System → Packages); OCR: | ee al ut.rif
-  !! не нашёл «RouterBOOT» (путь: System → RouterBOOT); OCR: | ee al ut.rif
-  !! не нашёл «Scheduler» (путь: System → Scheduler); OCR: | ee al ut.rif
-  !! не нашёл «Scheduler» (путь: System → Scheduler → New); OCR: | ee al ut.rif
-  !! не нашёл «Scripts» (путь: System → Scripts); OCR: | ee al ut.rif
-  !! не нашёл «Resources» (путь: System → Resources); OCR: | ee al ut.rif
-  !! не нашёл «Health» (путь: System → Health); OCR: | ee al ut.rif
-  !! не нашёл «License» (путь: System → License); OCR: | ee al ut.rif
-  !! не нашёл «History» (путь: System → History); OCR: | ee al ut.rif
-  !! не нашёл «Note» (путь: System → Note); OCR: | ee al ut.rif
-  !! не нашёл «Watchdog» (путь: System → Watchdog); OCR: | ee al ut.rif
-  !! не нашёл «Auto Upgrade» (путь: System → Auto Upgrade); OCR: | ee al ut.rif
-  !! не нашёл «Reset Configuration» (путь: System → Reset Configuration); OCR: | ee al ut.rif
+  !! не нашёл «Identity» (путь: System → Identity); OCR: v¥
+  !! не нашёл «NTP Client» (путь: System → NTP Client); OCR: v¥
+  !! не нашёл «Users» (путь: System → Users); OCR: v¥
+  !! не нашёл «Users» (путь: System → Users → New); OCR: v¥
+  !! не нашёл «Certificates» (путь: System → Certificates); OCR: v¥
+  !! не нашёл «Logging» (путь: System → Logging); OCR: v¥
+  !! не нашёл «Packages» (путь: System → Packages); OCR: v¥
+  !! не нашёл «RouterBOOT» (путь: System → RouterBOOT); OCR: v¥
+  !! не нашёл «Scheduler» (путь: System → Scheduler); OCR: v¥
+  !! не нашёл «Scheduler» (путь: System → Scheduler → New); OCR: v¥
+  !! не нашёл «Scripts» (путь: System → Scripts); OCR: v¥
+  !! не нашёл «Resources» (путь: System → Resources); OCR: v¥
+  !! не нашёл «Health» (путь: System → Health); OCR: v¥
+  !! не нашёл «License» (путь: System → License); OCR: v¥
+  !! не нашёл «History» (путь: System → History); OCR: v¥
+  !! не нашёл «Note» (путь: System → Note); OCR: v¥
+  !! не нашёл «Watchdog» (путь: System → Watchdog); OCR: v¥
+  !! не нашёл «Auto Upgrade» (путь: System → Auto Upgrade); OCR: v¥
+  !! не нашёл «Reset Configuration» (путь: System → Reset Configuration); OCR: v¥
   снято files: Files (sd=111)
   снято backup: Files → Backup (sd=122)
   снято queues: Queues → Simple Queues (sd=120)
   снято simple-new: Queues → Simple Queues → New + New (sd=132)
-  !! не нашёл «Queue Tree» (путь: Queues → Queue Tree); OCR: TA SE x Queues » Simple Interface Queues Queue Types CG New > Enable Disable Remove Comment Q Find Y Filter O Actions # “| Name Target Upload Max Limit
-  снято queue-types: Queues → Queue Types (sd=126)
-  снято queue-iface: Queues → Interface Queues (sd=157)
+  !! не нашёл «Queue Tree» (путь: Queues → Queue Tree); OCR: MA Queues » Simple Interface Queues Queue Types x CG New > Enable Disable * Remove FP Comment Q Find Y Filter O Actions # Name Target Upload Max Limit
+  снято queue-types: Queues → Queue Types (sd=120)
+  снято queue-iface: Queues → Interface Queues (sd=115)
   снято dot1x: Dot1X (sd=129)
   снято log: Log (sd=139)
   снято terminal: New Terminal (sd=168)
   снято radius: RADIUS (sd=107)
-  !! не нашёл «Ping» (путь: Tools → Ping); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Traceroute» (путь: Tools → Traceroute); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Torch» (путь: Tools → Torch); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Netwatch» (путь: Tools → Netwatch); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Sniffer» (путь: Tools → Sniffer); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Profiler» (путь: Tools → Profiler); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Graphing» (путь: Tools → Graphing); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Fetch» (путь: Tools → Fetch); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «IP Scan» (путь: Tools → IP Scan); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Bandwidth Test» (путь: Tools → Bandwidth Test); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «Wake On LAN» (путь: Tools → Wake On LAN); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «RoMON» (путь: Tools → RoMON); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  !! не нашёл «SMS» (путь: Tools → SMS); OCR: | o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO
-  итого: снято 41, не вышло 96: wifi-registration, wifi-wps, wifi-sniffer, iflist, pppoe-client, eoip, ip-arp, ip-address, ip-address-new, ip-cloud, ip-dhcp-client, ip-dhcp-relay, ip-dhcp-server, ip-dns, ip-dns-static, ip-firewall, ip-filter, ip-filter-new, ip-nat, ip-nat-new, ip-mangle, ip-raw, ip-addrlists, ip-connections, ip-service-ports, ip-hotspot, ip-hotspot-profiles, ip-hotspot-users, ip-ipsec, ip-ipsec-peers, ip-ipsec-identities, ip-kidcontrol, ip-neighbors, ip-pool, ip-routes, ip-routes-new, ip-smb, ip-snmp, ip-services, ip-settings, ip-tftp, ip-upnp, ip-vrf, ip-proxy, ipv6, ipv6-address, ipv6-nd, ipv6-firewall, ipv6-routes, ipv6-pool, mpls, mpls-ldp, mpls-forwarding, mpls-l2vpn, routing-tables, routing-rules, routing-nexthops, routing-ospf, routing-bgp, routing-rip, routing-prefix, routing-settings, routing-bfd, identity, system-ntp, users, users-new, certs, logging, packages, routerboot, scheduler, scheduler-new, scripts, resources, health, license, history, note, watchdog, autoupgrade, reset, queue-tree, ping, tool-traceroute, tool-torch, tool-netwatch, tool-sniffer, tool-profiler, tool-graphing, tool-fetch, tool-ipscan, tool-btest, tool-wol, tool-romon, tool-sms
+  !! не нашёл «Ping» (путь: Tools → Ping); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Traceroute» (путь: Tools → Traceroute); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Torch» (путь: Tools → Torch); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Netwatch» (путь: Tools → Netwatch); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Sniffer» (путь: Tools → Sniffer); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Profiler» (путь: Tools → Profiler); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Graphing» (путь: Tools → Graphing); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Fetch» (путь: Tools → Fetch); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «IP Scan» (путь: Tools → IP Scan); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Bandwidth Test» (путь: Tools → Bandwidth Test); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «Wake On LAN» (путь: Tools → Wake On LAN); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «RoMON» (путь: Tools → RoMON); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  !! не нашёл «SMS» (путь: Tools → SMS); OCR: o x P=) Terminal MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM KKKKK RRR RRR OOO 000
+  итого: снято 42, не вышло 109: wifi-registration, wifi-wps, wifi-sniffer, iflist, pppoe-client, eoip, ip-arp, ip-address, ip-address-new, ip-cloud, ip-dhcp-client, ip-dhcp-relay, ip-dhcp-server, ip-dns, ip-dns-static, ip-firewall, ip-filter, ip-filter-new, ip-nat, ip-nat-new, ip-mangle, ip-raw, ip-addrlists, ip-connections, ip-service-ports, ip-hotspot, ip-hotspot-profiles, ip-hotspot-users, ip-ipsec, ip-ipsec-peers, ip-ipsec-identities, ip-kidcontrol, ip-neighbors, ip-pool, ip-routes, ip-routes-new, ip-smb, ip-snmp, ip-services, ip-settings, ip-tftp, ip-upnp, ip-vrf, ip-proxy, ip-dhcp-leases, ip-dhcp-networks, ip-dhcp-options, ip-sntp, ipv6-dhcp-client, ipv6-dhcp-server, ipv6-settings, routing-ospf-neighbors, routing-bgp-sessions, routing-igmp, routing-bgp-new, system-ports, tool-monitor, tool-trafficgen, ipv6-address, ipv6-nd, ipv6-firewall, ipv6-routes, ipv6-pool, mpls, mpls-ldp, mpls-forwarding, mpls-l2vpn, routing-tables, routing-rules, routing-nexthops, routing-ospf, routing-bgp, routing-rip, routing-prefix, routing-settings, routing-bfd, identity, system-ntp, users, users-new, certs, logging, packages, routerboot, scheduler, scheduler-new, scripts, resources, health, license, history, note, watchdog, autoupgrade, reset, queue-tree, ping, tool-traceroute, tool-torch, tool-netwatch, tool-sniffer, tool-profiler, tool-graphing, tool-fetch, tool-ipscan, tool-btest, tool-wol, tool-romon, tool-sms
 === время ===
-Sun Nov  8 06:53:02 UTC 2026
+Sun Nov  8 07:33:47 UTC 2026
 === процессы ===
-runner      3757 39.3  2.1 3150440 349644 ?      Sl   06:26  10:27 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      3809  0.2  0.4 224384 79852 ?        S    06:30   0:02 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      3825  0.5  1.6 1804312 273448 ?      Sl   06:30   0:07 /tmp/wb/winbox/WinBox
+runner      3962 13.0  2.1 3179224 349540 ?      Sl   06:54   5:03 qemu-system-x86_64 -m 1536 -smp 2 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291 -device e1000,netdev=n0 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4028  0.2  0.4 226364 78484 ?        S    06:58   0:05 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4042  0.5  1.6 1803916 270504 ?      Sl   06:59   0:11 /tmp/wb/winbox/WinBox
 === файлы ===
 docs/shots:
-total 3756
--rw-r--r-- 1 runner runner  57276 Nov  8 06:30 00-login.png
--rw-r--r-- 1 runner runner  57875 Nov  8 06:32 03-desktop.png
--rw-r--r-- 1 runner runner   3655 Nov  8 06:25 README.md
--rw-r--r-- 1 runner runner  75922 Nov  8 06:49 backup.png
--rw-r--r-- 1 runner runner  80652 Nov  8 06:33 bonding.png
--rw-r--r-- 1 runner runner  81678 Nov  8 06:35 bridge-filters.png
--rw-r--r-- 1 runner runner  77338 Nov  8 06:35 bridge-hosts.png
--rw-r--r-- 1 runner runner 109292 Nov  8 06:35 bridge-new.png
--rw-r--r-- 1 runner runner  77500 Nov  8 06:34 bridge-ports.png
--rw-r--r-- 1 runner runner  78728 Nov  8 06:35 bridge-vlans.png
--rw-r--r-- 1 runner runner  92710 Nov  8 06:34 bridge.png
--rw-r--r-- 1 runner runner  65205 Nov  8 06:31 dbg-attempt-1.png
--rw-r--r-- 1 runner runner  65218 Nov  8 06:31 debug-field.png
--rw-r--r-- 1 runner runner  73567 Nov  8 06:50 dot1x.png
--rw-r--r-- 1 runner runner  82507 Nov  8 06:33 eth.png
--rw-r--r-- 1 runner runner  79982 Nov  8 06:49 files.png
--rw-r--r-- 1 runner runner  86497 Nov  8 06:33 interfaces.png
-drwxr-xr-x 2 runner runner   4096 Nov  8 06:50 jpg
--rw-r--r-- 1 runner runner  73257 Nov  8 06:36 l2tp-server.png
--rw-r--r-- 1 runner runner  91896 Nov  8 06:50 log.png
--rw-r--r-- 1 runner runner  82969 Nov  8 06:34 lte.png
--rw-r--r-- 1 runner runner   1120 Nov  8 06:50 manifest.txt
--rw-r--r-- 1 runner runner  74661 Nov  8 06:36 mesh.png
--rw-r--r-- 1 runner runner  76219 Nov  8 06:36 ovpn-server.png
--rw-r--r-- 1 runner runner  75121 Nov  8 06:35 ppp-active.png
--rw-r--r-- 1 runner runner  79509 Nov  8 06:35 ppp-profiles.png
--rw-r--r-- 1 runner runner  81289 Nov  8 06:35 ppp-secrets.png
--rw-r--r-- 1 runner runner  85390 Nov  8 06:35 ppp.png
--rw-r--r-- 1 runner runner  78521 Nov  8 06:35 pppoe-server.png
--rw-r--r-- 1 runner runner  73534 Nov  8 06:50 queue-iface.png
--rw-r--r-- 1 runner runner  89845 Nov  8 06:50 queue-types.png
--rw-r--r-- 1 runner runner  82695 Nov  8 06:50 queues.png
--rw-r--r-- 1 runner runner 109148 Nov  8 06:32 quickset.png
--rw-r--r-- 1 runner runner  77062 Nov  8 06:50 radius.png
--rw-r--r-- 1 runner runner  23956 Nov  8 06:53 report.txt
--rw-r--r-- 1 runner runner  66984 Nov  8 06:44 routing.png
--rw-r--r-- 1 runner runner 105709 Nov  8 06:50 simple-new.png
--rw-r--r-- 1 runner runner  82110 Nov  8 06:46 system.png
--rw-r--r-- 1 runner runner  81665 Nov  8 06:50 terminal.png
--rw-r--r-- 1 runner runner  78143 Nov  8 06:33 vlan.png
--rw-r--r-- 1 runner runner  78899 Nov  8 06:34 vrrp.png
--rw-r--r-- 1 runner runner  79910 Nov  8 06:34 vxlan.png
--rw-r--r-- 1 runner runner 109648 Nov  8 06:34 wg-new.png
--rw-r--r-- 1 runner runner  73830 Nov  8 06:34 wg-peers.png
--rw-r--r-- 1 runner runner  77613 Nov  8 06:32 wifi-access-list.png
--rw-r--r-- 1 runner runner 119952 Nov  8 06:32 wifi-new.png
--rw-r--r-- 1 runner runner 133628 Nov  8 06:32 wifi-security.png
--rw-r--r-- 1 runner runner  86858 Nov  8 06:32 wifi.png
--rw-r--r-- 1 runner runner  75829 Nov  8 06:34 wireguard.png
+total 3676
+-rw-r--r-- 1 runner runner  60587 Nov  8 06:59 00-login.png
+-rw-r--r-- 1 runner runner  58000 Nov  8 06:59 03-desktop.png
+-rw-r--r-- 1 runner runner   3655 Nov  8 06:54 README.md
+-rw-r--r-- 1 runner runner  75534 Nov  8 07:29 backup.png
+-rw-r--r-- 1 runner runner  80435 Nov  8 07:01 bonding.png
+-rw-r--r-- 1 runner runner  81496 Nov  8 07:04 bridge-filters.png
+-rw-r--r-- 1 runner runner  76718 Nov  8 07:03 bridge-hosts.png
+-rw-r--r-- 1 runner runner 109082 Nov  8 07:04 bridge-new.png
+-rw-r--r-- 1 runner runner  76930 Nov  8 07:03 bridge-ports.png
+-rw-r--r-- 1 runner runner  78122 Nov  8 07:03 bridge-vlans.png
+-rw-r--r-- 1 runner runner  92004 Nov  8 07:03 bridge.png
+-rw-r--r-- 1 runner runner  72812 Nov  8 07:30 dot1x.png
+-rw-r--r-- 1 runner runner  82053 Nov  8 07:01 eth.png
+-rw-r--r-- 1 runner runner  80162 Nov  8 07:28 files.png
+-rw-r--r-- 1 runner runner  86507 Nov  8 07:01 interfaces.png
+-rw-r--r-- 1 runner runner  67373 Nov  8 07:18 ipv6.png
+drwxr-xr-x 2 runner runner   4096 Nov  8 07:30 jpg
+-rw-r--r-- 1 runner runner  73412 Nov  8 07:05 l2tp-server.png
+-rw-r--r-- 1 runner runner  91865 Nov  8 07:30 log.png
+-rw-r--r-- 1 runner runner  83061 Nov  8 07:02 lte.png
+-rw-r--r-- 1 runner runner   1132 Nov  8 07:30 manifest.txt
+-rw-r--r-- 1 runner runner  74870 Nov  8 07:05 mesh.png
+-rw-r--r-- 1 runner runner  76280 Nov  8 07:05 ovpn-server.png
+-rw-r--r-- 1 runner runner  75354 Nov  8 07:04 ppp-active.png
+-rw-r--r-- 1 runner runner  79491 Nov  8 07:04 ppp-profiles.png
+-rw-r--r-- 1 runner runner  81410 Nov  8 07:04 ppp-secrets.png
+-rw-r--r-- 1 runner runner  85246 Nov  8 07:04 ppp.png
+-rw-r--r-- 1 runner runner  78401 Nov  8 07:05 pppoe-server.png
+-rw-r--r-- 1 runner runner  73522 Nov  8 07:30 queue-iface.png
+-rw-r--r-- 1 runner runner  82077 Nov  8 07:29 queue-types.png
+-rw-r--r-- 1 runner runner  82392 Nov  8 07:29 queues.png
+-rw-r--r-- 1 runner runner 109245 Nov  8 06:59 quickset.png
+-rw-r--r-- 1 runner runner  77122 Nov  8 07:30 radius.png
+-rw-r--r-- 1 runner runner  16278 Nov  8 07:33 report.txt
+-rw-r--r-- 1 runner runner  67561 Nov  8 07:21 routing.png
+-rw-r--r-- 1 runner runner 105544 Nov  8 07:29 simple-new.png
+-rw-r--r-- 1 runner runner  81778 Nov  8 07:24 system.png
+-rw-r--r-- 1 runner runner  80786 Nov  8 07:30 terminal.png
+-rw-r--r-- 1 runner runner  77831 Nov  8 07:01 vlan.png
+-rw-r--r-- 1 runner runner  78953 Nov  8 07:02 vrrp.png
+-rw-r--r-- 1 runner runner  80158 Nov  8 07:02 vxlan.png
+-rw-r--r-- 1 runner runner 109141 Nov  8 07:03 wg-new.png
+-rw-r--r-- 1 runner runner  73599 Nov  8 07:03 wg-peers.png
+-rw-r--r-- 1 runner runner  77715 Nov  8 07:00 wifi-access-list.png
+-rw-r--r-- 1 runner runner 120034 Nov  8 07:00 wifi-new.png
+-rw-r--r-- 1 runner runner 133545 Nov  8 07:00 wifi-security.png
+-rw-r--r-- 1 runner runner  86882 Nov  8 06:59 wifi.png
+-rw-r--r-- 1 runner runner  75683 Nov  8 07:02 wireguard.png
 
 docs/shots/jpg:
-total 1976
--rw-r--r-- 1 runner runner 27142 Nov  8 06:30 00-login.jpg
--rw-r--r-- 1 runner runner 27825 Nov  8 06:32 03-desktop.jpg
--rw-r--r-- 1 runner runner 45475 Nov  8 06:49 backup.jpg
--rw-r--r-- 1 runner runner 44748 Nov  8 06:33 bonding.jpg
--rw-r--r-- 1 runner runner 44976 Nov  8 06:35 bridge-filters.jpg
--rw-r--r-- 1 runner runner 43043 Nov  8 06:35 bridge-hosts.jpg
--rw-r--r-- 1 runner runner 56575 Nov  8 06:35 bridge-new.jpg
--rw-r--r-- 1 runner runner 43932 Nov  8 06:34 bridge-ports.jpg
--rw-r--r-- 1 runner runner 42544 Nov  8 06:35 bridge-vlans.jpg
--rw-r--r-- 1 runner runner 49380 Nov  8 06:34 bridge.jpg
--rw-r--r-- 1 runner runner 39112 Nov  8 06:50 dot1x.jpg
--rw-r--r-- 1 runner runner 47601 Nov  8 06:33 eth.jpg
--rw-r--r-- 1 runner runner 44277 Nov  8 06:49 files.jpg
--rw-r--r-- 1 runner runner 49589 Nov  8 06:33 interfaces.jpg
--rw-r--r-- 1 runner runner 40187 Nov  8 06:36 l2tp-server.jpg
--rw-r--r-- 1 runner runner 52145 Nov  8 06:50 log.jpg
--rw-r--r-- 1 runner runner 46152 Nov  8 06:34 lte.jpg
--rw-r--r-- 1 runner runner 40599 Nov  8 06:36 mesh.jpg
--rw-r--r-- 1 runner runner 41038 Nov  8 06:36 ovpn-server.jpg
--rw-r--r-- 1 runner runner 41667 Nov  8 06:35 ppp-active.jpg
--rw-r--r-- 1 runner runner 46281 Nov  8 06:35 ppp-profiles.jpg
--rw-r--r-- 1 runner runner 43430 Nov  8 06:35 ppp-secrets.jpg
--rw-r--r-- 1 runner runner 46610 Nov  8 06:35 ppp.jpg
--rw-r--r-- 1 runner runner 42697 Nov  8 06:35 pppoe-server.jpg
--rw-r--r-- 1 runner runner 40875 Nov  8 06:50 queue-iface.jpg
--rw-r--r-- 1 runner runner 54376 Nov  8 06:50 queue-types.jpg
--rw-r--r-- 1 runner runner 44518 Nov  8 06:50 queues.jpg
--rw-r--r-- 1 runner runner 55658 Nov  8 06:32 quickset.jpg
--rw-r--r-- 1 runner runner 41679 Nov  8 06:50 radius.jpg
--rw-r--r-- 1 runner runner 31059 Nov  8 06:44 routing.jpg
--rw-r--r-- 1 runner runner 56921 Nov  8 06:50 simple-new.jpg
--rw-r--r-- 1 runner runner 35689 Nov  8 06:46 system.jpg
--rw-r--r-- 1 runner runner 45936 Nov  8 06:50 terminal.jpg
--rw-r--r-- 1 runner runner 44176 Nov  8 06:33 vlan.jpg
--rw-r--r-- 1 runner runner 44847 Nov  8 06:34 vrrp.jpg
--rw-r--r-- 1 runner runner 44547 Nov  8 06:34 vxlan.jpg
--rw-r--r-- 1 runner runner 55346 Nov  8 06:34 wg-new.jpg
--rw-r--r-- 1 runner runner 41075 Nov  8 06:34 wg-peers.jpg
--rw-r--r-- 1 runner runner 43102 Nov  8 06:32 wifi-access-list.jpg
--rw-r--r-- 1 runner runner 63108 Nov  8 06:32 wifi-new.jpg
--rw-r--r-- 1 runner runner 64254 Nov  8 06:32 wifi-security.jpg
--rw-r--r-- 1 runner runner 46859 Nov  8 06:32 wifi.jpg
--rw-r--r-- 1 runner runner 41024 Nov  8 06:34 wireguard.jpg
+total 2008
+-rw-r--r-- 1 runner runner 29338 Nov  8 06:59 00-login.jpg
+-rw-r--r-- 1 runner runner 27891 Nov  8 06:59 03-desktop.jpg
+-rw-r--r-- 1 runner runner 45498 Nov  8 07:29 backup.jpg
+-rw-r--r-- 1 runner runner 44750 Nov  8 07:01 bonding.jpg
+-rw-r--r-- 1 runner runner 44983 Nov  8 07:04 bridge-filters.jpg
+-rw-r--r-- 1 runner runner 43039 Nov  8 07:03 bridge-hosts.jpg
+-rw-r--r-- 1 runner runner 56524 Nov  8 07:04 bridge-new.jpg
+-rw-r--r-- 1 runner runner 43878 Nov  8 07:03 bridge-ports.jpg
+-rw-r--r-- 1 runner runner 42504 Nov  8 07:03 bridge-vlans.jpg
+-rw-r--r-- 1 runner runner 49344 Nov  8 07:03 bridge.jpg
+-rw-r--r-- 1 runner runner 39016 Nov  8 07:30 dot1x.jpg
+-rw-r--r-- 1 runner runner 47564 Nov  8 07:01 eth.jpg
+-rw-r--r-- 1 runner runner 44271 Nov  8 07:28 files.jpg
+-rw-r--r-- 1 runner runner 49593 Nov  8 07:01 interfaces.jpg
+-rw-r--r-- 1 runner runner 31387 Nov  8 07:18 ipv6.jpg
+-rw-r--r-- 1 runner runner 40151 Nov  8 07:05 l2tp-server.jpg
+-rw-r--r-- 1 runner runner 52117 Nov  8 07:30 log.jpg
+-rw-r--r-- 1 runner runner 46148 Nov  8 07:02 lte.jpg
+-rw-r--r-- 1 runner runner 40560 Nov  8 07:05 mesh.jpg
+-rw-r--r-- 1 runner runner 41067 Nov  8 07:05 ovpn-server.jpg
+-rw-r--r-- 1 runner runner 41686 Nov  8 07:04 ppp-active.jpg
+-rw-r--r-- 1 runner runner 46314 Nov  8 07:04 ppp-profiles.jpg
+-rw-r--r-- 1 runner runner 43471 Nov  8 07:04 ppp-secrets.jpg
+-rw-r--r-- 1 runner runner 46707 Nov  8 07:04 ppp.jpg
+-rw-r--r-- 1 runner runner 42802 Nov  8 07:05 pppoe-server.jpg
+-rw-r--r-- 1 runner runner 43625 Nov  8 07:30 queue-iface.jpg
+-rw-r--r-- 1 runner runner 45096 Nov  8 07:29 queue-types.jpg
+-rw-r--r-- 1 runner runner 44421 Nov  8 07:29 queues.jpg
+-rw-r--r-- 1 runner runner 55648 Nov  8 06:59 quickset.jpg
+-rw-r--r-- 1 runner runner 41630 Nov  8 07:30 radius.jpg
+-rw-r--r-- 1 runner runner 31042 Nov  8 07:21 routing.jpg
+-rw-r--r-- 1 runner runner 56813 Nov  8 07:29 simple-new.jpg
+-rw-r--r-- 1 runner runner 35683 Nov  8 07:24 system.jpg
+-rw-r--r-- 1 runner runner 46037 Nov  8 07:30 terminal.jpg
+-rw-r--r-- 1 runner runner 44135 Nov  8 07:01 vlan.jpg
+-rw-r--r-- 1 runner runner 44828 Nov  8 07:02 vrrp.jpg
+-rw-r--r-- 1 runner runner 44565 Nov  8 07:02 vxlan.jpg
+-rw-r--r-- 1 runner runner 55339 Nov  8 07:03 wg-new.jpg
+-rw-r--r-- 1 runner runner 41014 Nov  8 07:03 wg-peers.jpg
+-rw-r--r-- 1 runner runner 43140 Nov  8 07:00 wifi-access-list.jpg
+-rw-r--r-- 1 runner runner 63071 Nov  8 07:00 wifi-new.jpg
+-rw-r--r-- 1 runner runner 64118 Nov  8 07:00 wifi-security.jpg
+-rw-r--r-- 1 runner runner 46912 Nov  8 06:59 wifi.jpg
+-rw-r--r-- 1 runner runner 40995 Nov  8 07:02 wireguard.jpg
