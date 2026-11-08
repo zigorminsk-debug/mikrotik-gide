@@ -33,7 +33,7 @@ jobs:
   shots:
     name: CHR + Winbox 4 + снимки
     runs-on: ubuntu-22.04
-    timeout-minutes: 90
+    timeout-minutes: 150
     env:
       DISPLAY: ':99'
       CHR_VER: '7.24.6'
@@ -69,7 +69,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p /tmp/wb docs/shots
-          rm -f docs/shots/*.png docs/shots/*.txt docs/shots/probe-*.jpg docs/shots/jpg/*.jpg || true
+          rm -f docs/shots/*.png docs/shots/probe-*.jpg || true
           curl -fL --retry 3 -o /tmp/wb/chr.zip "https://download.mikrotik.com/routeros/${CHR_VER}/chr-${CHR_VER}.img.zip"
           curl -fL --retry 3 -o /tmp/wb/winbox.zip "$WINBOX_URL"
           cd /tmp/wb
@@ -100,8 +100,8 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           # CHR под TCG грузится 8-12 минут; точный момент входа проверяет
           # winbox-nav.py — он повторяет попытку, пока не появится дерево меню.
-          sleep 240
-          echo "прошло 4 минуты после старта QEMU" >> docs/shots/report.txt
+          sleep 300
+          echo "прошло 5 минут после старта QEMU" >> docs/shots/report.txt
           tail -c 300 /tmp/wb/serial.log >> docs/shots/report.txt 2>/dev/null || true
 
       - name: Запустить Xvfb и Winbox 4
