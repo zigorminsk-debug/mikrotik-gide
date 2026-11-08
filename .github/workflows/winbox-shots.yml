@@ -145,7 +145,8 @@ jobs:
         if: steps.mode.outputs.mode == 'nav'
         run: |
           cd "$GITHUB_WORKSPACE"
-          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/shot-list.txt || true
+          # tee: вывод и трейсбеки скрипта тоже попадают в отчёт в ветке
+          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/shot-list.txt 2>&1 | tee -a docs/shots/report.txt || true
 
       - name: Снимки в артефакт
         if: always()

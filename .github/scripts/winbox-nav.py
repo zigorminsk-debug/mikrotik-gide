@@ -320,8 +320,10 @@ def restart_winbox(X, Y, W, H):
     """Перезапуск Winbox: за десятки окон он накапливает открытые диалоги,
     и клики по дереву перестают доходить. После перезапуска входим заново."""
     log('  перезапуск Winbox')
-    run(['pkill', '-f', '/WinBox'])
-    time.sleep(3)
+    for wid in run(['xdotool', 'search', '--name', 'WinBox']).stdout.split():
+        run(['xdotool', 'windowkill', wid])
+    run(['bash', '-lc', "pkill -x WinBox || true"])
+    time.sleep(4)
     run(['bash', '-lc',
          'cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software '
          'QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 QT_SCALE_FACTOR=0.75 '
