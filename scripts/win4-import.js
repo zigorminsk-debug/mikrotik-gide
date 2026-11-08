@@ -66,7 +66,9 @@ function readShots() {
       p: appPath || '',
       t: meta[0],
       g: meta[1],
-      d: REVIEW.desc[name + '.jpg'] || meta[2] || '',
+      /* Кадр со стенда подписываем иначе: на нём уже есть данные инструкции. */
+      d: ((EVIDENCE[name] && REVIEW.descLab && REVIEW.descLab[name + '.jpg']) ||
+          REVIEW.desc[name + '.jpg'] || meta[2] || ''),
       src,
       values: (REVIEW.values[name + '.jpg'] || []),
       text: (EVIDENCE[name] && EVIDENCE[name].text) || '',

@@ -32,6 +32,13 @@ module.exports = {
     'bridge-hosts.jpg': 'Bridge → Hosts. Таблица MAC-адресов моста; в учебном CHR записей может не быть.'
   },
 
+  /* Подписи к кадрам, переснятым на настроенном стенде (есть OCR-текст
+     в docs/shots/verified.json). Пока стенд не снят, действует desc ниже. */
+  descLab: {
+    'ip-address.jpg': 'IP → Address на учебном стенде: адреса офиса 192.168.88.1/24 и VLAN на bridge-lan, адрес клиента WireGuard 10.10.10.5/32 на wg-office — те же значения, что в инструкциях.',
+    'wg-peers.jpg': 'WireGuard → Peers на учебном стенде: пир office с Endpoint 203.0.113.20:13231, Allowed Address 10.10.10.0/24 и 192.168.10.0/24, keepalive 25s, и пир phone с 10.10.10.2/32.'
+  },
+
   /* Видимые значения. Добавлять только после просмотра самого jpg. */
   values: {
     'ip-address.jpg': ['10.0.2.15/24', '10.0.2.0', 'ether1'],
