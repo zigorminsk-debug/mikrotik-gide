@@ -307,7 +307,39 @@ DATA.forEach(g => (g.items || []).forEach(a => {
   });
 }));
 
+/* Снимок под шагом обязан совпадать с окном и данными шага. */
+const RULES = require('./win4-step-rules.js');
+const REVIEW = require('./win4-review.js');
+const WIN4 = global.window.WIN4_SHOTS || [];
+const SHOT_STEPS = global.window.SHOT_STEPS || {};
+const shotByFile = new Map(WIN4.map(x => [x.f, x]));
+let verifiedShots = 0;
+for (const x of WIN4) {
+  const name = x.f.replace(/\.jpg$/i, '');
+  if (REVIEW.quarantine[name]) errors.push(`галерея: кадр на карантине ${x.f}`);
+}
+for (const [id, steps] of Object.entries(SHOT_STEPS)) {
+  const group = DATA.find(g => (g.items || []).some(a => a.id === id));
+  const a = group && (group.items || []).find(x => x.id === id);
+  if (!a) { errors.push(`SHOT_STEPS: неизвестная статья ${id}`); continue; }
+  for (const [i, f] of Object.entries(steps)) {
+    if (typeof f !== 'string') { errors.push(`SHOT_STEPS ${id}[${i}]: fallback-объект запрещён`); continue; }
+    const meta = shotByFile.get(f);
+    if (!meta) { errors.push(`SHOT_STEPS ${id}[${i}]: ${f} нет в галерее`); continue; }
+    const st = (a.steps || [])[+i];
+    const sc = (st && st.sc) || (a.scenes || [])[+i];
+    const shot = { f, p: meta.p, values: REVIEW.values[f] || [], quarantined: !!REVIEW.quarantine[f.replace(/\.jpg$/i, '')] };
+    const res = RULES.checkStepShot(st, sc, shot);
+    if (!res.ok) errors.push(`SHOT_STEPS ${id}[${i}] ${f}: ${res.reason}` +
+      (res.missing.length ? ' (нет на снимке: ' + res.missing.join(', ') + ')' : ''));
+    else verifiedShots++;
+  }
+}
+const wgAddr = (SHOT_STEPS['wg-site'] || {})[3];
+if (wgAddr === 'ip-address.jpg') errors.push('wg-site: «Адрес в туннеле» получил чужой ip-address.jpg');
+
 console.log(`Разделов: ${DATA.length}, статей: ${articles}, схем: ${scenes}, подсказок со стрелками: ${notes}`);
+console.log(`Снимков в галерее: ${WIN4.length}, проверенных привязок к шагам: ${verifiedShots}`);
 console.log(`Шагов с собственным окном: ${mappedSteps} из ${totalSteps} (остальным окно подбирается автоматически)`);
 console.log(`Вопросов самопроверки: ${QUIZ.length}` + (QUIZ.length ? ` (ошибок: ${quizBad})` : ''));
 console.log(`Диагностика: симптомов ${DIAG.length}, шагов ${DIAG.reduce((n, d) => n + (d.steps || []).length, 0)}` + (DIAG.length ? ` (ошибок: ${diagBad})` : ''));

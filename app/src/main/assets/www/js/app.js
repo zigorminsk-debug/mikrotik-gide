@@ -2520,7 +2520,9 @@
     html += '<h1 class="art-title">Окна Winbox 4 — настоящие снимки</h1>';
     html += '<div class="hint" style="margin:-6px 0 10px">Эти кадры сделаны автоматически в GitHub Actions: ' +
       'RouterOS 7.24.6 (CHR) в виртуальной машине и Winbox 4.4 на виртуальном экране. Ничего не дорисовано. ' +
-      'Всего снимков: ' + list.length + '. Меню слева — то же, что в вашем Winbox.</div>';
+      'Всего снимков: ' + list.length + '. Меню слева — то же, что в вашем Winbox. ' +
+      'Под шагами статей показываются только кадры, где совпадают и окно, и данные шага; ' +
+      'если такого кадра ещё нет, шаг честно показывает схему с нужными значениями.</div>';
     html += '<div class="chips" id="w4Filter"><button class="chip on" data-w4="*">Все</button>' +
       groups.map(function (g) { return '<button class="chip" data-w4="' + esc(g) + '">' + esc(g) + '</button>'; }).join('') +
       '</div>';
