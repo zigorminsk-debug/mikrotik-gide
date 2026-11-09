@@ -320,6 +320,14 @@ if (fs.existsSync(evPath)) {
   try { EVIDENCE = JSON.parse(fs.readFileSync(evPath, 'utf8')); }
   catch (e) { errors.push('verified.json испорчен: ' + e.message); }
 }
+const ocrDir = path.resolve(__dirname, '../docs/shots/ocr');
+if (fs.existsSync(ocrDir)) {
+  for (const f of fs.readdirSync(ocrDir)) {
+    if (!/\.txt$/i.test(f)) continue;
+    const text = fs.readFileSync(path.join(ocrDir, f), 'utf8');
+    if (text.trim()) EVIDENCE[f.replace(/\.txt$/i, '')] = { text };
+  }
+}
 let verifiedShots = 0;
 for (const x of WIN4) {
   const name = x.f.replace(/\.jpg$/i, '');

@@ -25,6 +25,14 @@ on:
         required: false
         type: boolean
         default: false
+      part:
+        description: 'Часть списка окон (1, 2, 3…; 0 — весь список целиком)'
+        required: false
+        default: '1'
+      part_size:
+        description: 'Сколько окон в одной части'
+        required: false
+        default: '10'
   push:
     paths:
       - 'ci/shots-mode.txt'
@@ -41,8 +49,10 @@ on:
 permissions:
   contents: write
 
+# Части списка идут параллельно и не отменяют друг друга: у каждой своя
+# группа. Внутри одной части новый прогон заменяет незавершённый.
 concurrency:
-  group: winbox-shots-${{ github.ref }}
+  group: winbox-shots-${{ github.ref }}-${{ github.event.inputs.part || '1' }}
   cancel-in-progress: true
 
 jobs:
@@ -69,6 +79,16 @@ jobs:
             echo "mode=$(head -1 ci/shots-mode.txt | tr -d '[:space:]')" >> "$GITHUB_OUTPUT"
           else
             echo "mode=capture" >> "$GITHUB_OUTPUT"
+          fi
+          part='${{ github.event.inputs.part || '1' }}'
+          size='${{ github.event.inputs.part_size || '10' }}'
+          echo "part=$part" >> "$GITHUB_OUTPUT"
+          echo "part_size=$size" >> "$GITHUB_OUTPUT"
+          # Свой отчёт на часть: параллельные прогоны не конфликтуют при rebase.
+          if [ "$part" != "0" ]; then
+            echo "report=docs/shots/report-part$part.txt" >> "$GITHUB_OUTPUT"
+          else
+            echo "report=docs/shots/report.txt" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Проверить скрипт съёмки (нет необъявленных имён)
@@ -151,11 +171,11 @@ jobs:
           # CHR под TCG грузится 8-12 минут; точный момент входа проверяет
           # winbox-nav.py — он повторяет попытку, пока не появится дерево меню.
           sleep 180
-          echo "прошло 3 минуты после старта QEMU" >> docs/shots/report.txt
-          tail -c 600 /tmp/wb/serial.log >> docs/shots/report.txt 2>/dev/null || true
-          echo "=== порты хоста ===" >> docs/shots/report.txt
-          ss -ltnp 2>/dev/null | grep -E '8291|8728' >> docs/shots/report.txt || true
-          ps -p "$(cat /tmp/wb/qemu.pid)" -o pid,etime,rss,cmd >> docs/shots/report.txt || true
+          echo "прошло 3 минуты после старта QEMU" >> ${{ steps.mode.outputs.report }}
+          tail -c 600 /tmp/wb/serial.log >> ${{ steps.mode.outputs.report }} 2>/dev/null || true
+          echo "=== порты хоста ===" >> ${{ steps.mode.outputs.report }}
+          ss -ltnp 2>/dev/null | grep -E '8291|8728' >> ${{ steps.mode.outputs.report }} || true
+          ps -p "$(cat /tmp/wb/qemu.pid)" -o pid,etime,rss,cmd >> ${{ steps.mode.outputs.report }} || true
 
       - name: Запустить Xvfb и Winbox 4
         run: |
@@ -171,7 +191,7 @@ jobs:
           sleep 2
           export QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1
           BIN=$(ls /tmp/wb/winbox/WinBox 2>/dev/null || find /tmp/wb/winbox -maxdepth 2 -name 'WinBox*' -type f -perm -u+x | head -1)
-          echo "BIN=$BIN" >> docs/shots/report.txt
+          echo "BIN=$BIN" >> ${{ steps.mode.outputs.report }}
           chmod +x "$BIN" 2>/dev/null
           for k in 1 2 3; do
             if ! pgrep -f 'WinBox' >/dev/null; then
@@ -179,13 +199,13 @@ jobs:
               sleep 15
             fi
             if pgrep -f 'WinBox' >/dev/null; then
-              echo "Winbox запущен (попытка $k)" >> docs/shots/report.txt; break
+              echo "Winbox запущен (попытка $k)" >> ${{ steps.mode.outputs.report }}; break
             fi
-            echo "Winbox не поднялся (попытка $k), лог:" >> docs/shots/report.txt
-            tail -20 /tmp/wb/winbox.log >> docs/shots/report.txt 2>/dev/null
+            echo "Winbox не поднялся (попытка $k), лог:" >> ${{ steps.mode.outputs.report }}
+            tail -20 /tmp/wb/winbox.log >> ${{ steps.mode.outputs.report }} 2>/dev/null
             sleep 5
           done
-          ps aux | grep -E 'WinBox|Xvfb' | grep -v grep >> docs/shots/report.txt || true
+          ps aux | grep -E 'WinBox|Xvfb' | grep -v grep >> ${{ steps.mode.outputs.report }} || true
 
       - name: Включить API на роутере (через терминал Winbox)
         if: steps.mode.outputs.mode == 'scene'
@@ -194,7 +214,7 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           # На свежем CHR служба api выключена: без этого шага посев стенда
           # не подключается, хотя Winbox входит. Включаем её в терминале.
-          python3 .github/scripts/winbox-nav.py docs/shots --enable-api 2>&1 | tee -a docs/shots/report.txt
+          python3 .github/scripts/winbox-nav.py docs/shots --enable-api 2>&1 | tee -a ${{ steps.mode.outputs.report }}
 
       - name: Настроить учебный стенд (данные из инструкций)
         if: steps.mode.outputs.mode == 'scene'
@@ -204,40 +224,42 @@ jobs:
           # Без этого шага снимки показывают пустой CHR и не совпадают с
           # текстом статей. Строки применяются по одной, отказ виден в логе.
           python3 .github/scripts/ros-api.py 127.0.0.1 8728 admin "" \
-            .github/scripts/lab-setup.rsc 2>&1 | tee -a docs/shots/report.txt
+            .github/scripts/lab-setup.rsc 2>&1 | tee -a ${{ steps.mode.outputs.report }}
 
       - name: Снять окна (настоящий Winbox 4)
         if: steps.mode.outputs.mode != 'nav' && steps.mode.outputs.mode != 'scene'
         run: |
           cd "$GITHUB_WORKSPACE"
           bash .github/scripts/winbox-capture.sh "${{ steps.mode.outputs.mode }}"
-          echo "=== окна X ===" >> docs/shots/report.txt
+          echo "=== окна X ===" >> ${{ steps.mode.outputs.report }}
           for w in $(xdotool search --name '.' 2>/dev/null); do
             xdotool getwindowname "$w" 2>/dev/null || true
-          done | sed '/^$/d' | sort -u >> docs/shots/report.txt
-          tail -40 /tmp/wb/winbox.log >> docs/shots/report.txt || true
+          done | sed '/^$/d' | sort -u >> ${{ steps.mode.outputs.report }}
+          tail -40 /tmp/wb/winbox.log >> ${{ steps.mode.outputs.report }} || true
 
       - name: Снять окна настроенного стенда
         if: steps.mode.outputs.mode == 'scene'
         env:
           NAV_SCENE: '1'
-          NAV_BUDGET: '2700'
+          NAV_PART: ${{ steps.mode.outputs.part }}
+          NAV_PART_SIZE: ${{ steps.mode.outputs.part_size }}
+          NAV_BUDGET: ${{ steps.mode.outputs.part == '0' && '2700' || '1500' }}
         run: |
           set -o pipefail
           cd "$GITHUB_WORKSPACE"
-          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/scene-list.txt 2>&1 | tee -a docs/shots/report.txt
+          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/scene-list.txt 2>&1 | tee -a ${{ steps.mode.outputs.report }}
 
       # Кадры стенда публикуются сразу, не дожидаясь добора остальных окон:
       # иначе таймаут или отмена прогона уносят с собой всю съёмку.
       - name: Опубликовать кадры стенда
-        if: steps.mode.outputs.mode == 'scene'
+        if: ${{ !cancelled() && steps.mode.outputs.mode == 'scene' }}
         run: |
           set -x
           cd "$GITHUB_WORKSPACE"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A docs/shots
-          git commit -m "CI: снимки настроенного стенда Winbox 4 [skip ci]" || { echo "нечего коммитить"; exit 0; }
+          git commit -m "CI: снимки стенда Winbox 4, часть ${{ steps.mode.outputs.part }} [skip ci]" || { echo "нечего коммитить"; exit 0; }
           for i in 1 2 3 4; do
             if git pull --rebase --autostash origin "${{ github.ref_name }}" && \
                git push origin "HEAD:${{ github.ref_name }}"; then exit 0; fi
@@ -246,24 +268,26 @@ jobs:
           echo "push не удался" >&2
           exit 1
 
+      # Добор остальных окон — отдельный режим. В режиме частей он не нужен:
+      # из-за него отменённый прогон не успевал опубликовать снятые кадры.
       - name: Снять окна по названиям пунктов меню
-        if: always() && (steps.mode.outputs.mode == 'nav' || steps.mode.outputs.mode == 'scene')
+        if: ${{ !cancelled() && steps.mode.outputs.mode == 'nav' }}
         env:
           FORCE: ${{ (github.event.inputs.force == true || github.event.inputs.force == 'true') && '1' || '0' }}
-          NAV_BUDGET: ${{ steps.mode.outputs.mode == 'scene' && '1500' || '5400' }}
+          NAV_BUDGET: '5400'
         run: |
           set -o pipefail
           cd "$GITHUB_WORKSPACE"
           # tee: вывод и трейсбеки скрипта тоже попадают в отчёт в ветке.
           # Без «|| true»: NameError/трейсбек должен валить шаг, а не красить
           # job в зелёный. Отчёт всё равно уедет в ветку шагом ниже (always()).
-          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/shot-list.txt 2>&1 | tee -a docs/shots/report.txt
+          python3 .github/scripts/winbox-nav.py docs/shots .github/scripts/shot-list.txt 2>&1 | tee -a ${{ steps.mode.outputs.report }}
 
       - name: Снимки в артефакт
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: winbox-shots
+          name: winbox-shots-${{ steps.mode.outputs.part }}
           path: |
             docs/shots/*.png
             docs/shots/jpg/*.jpg
@@ -280,7 +304,7 @@ jobs:
           cd "$GITHUB_WORKSPACE"
           mkdir -p docs/shots/jpg
           { echo "=== время ==="; date -u; echo "=== процессы ==="; ps aux | grep -Ei 'qemu|winbox|xvfb' | grep -v grep || true;
-            echo "=== файлы ==="; ls -l docs/shots docs/shots/jpg; } >> docs/shots/report.txt
+            echo "=== файлы ==="; ls -l docs/shots docs/shots/jpg; } >> ${{ steps.mode.outputs.report }}
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A docs/shots

@@ -27,12 +27,21 @@ SCENE = os.environ.get('NAV_SCENE', '') == '1'
 # проходу достаётся меньший бюджет, чтобы job не убил таймаут GitHub.
 BUDGET = int(os.environ.get('NAV_BUDGET', '5400'))
 OCR_SCALE = 1.7
+# Съёмка частями: список окон режется на куски по NAV_PART_SIZE, прогон
+# снимает только свою часть. Части идут параллельно, поэтому у каждой свой
+# отчёт и манифест — иначе соседние прогоны конфликтуют при rebase.
+PART = int(os.environ.get('NAV_PART', '0') or 0)
+PART_SIZE = int(os.environ.get('NAV_PART_SIZE', '10') or 10)
+SUFFIX = ('-part%d' % PART) if PART else ''
+# Крайний срок: проверяется перед каждым распознаванием, чтобы одно медленное
+# окно не съело весь бюджет и прогон успел опубликовать снятое.
+DEADLINE = 0
 JPG = os.path.join(OUT, 'jpg')
 TMP = '/tmp/wb/nav'
 for _d in (JPG, TMP, OUT):
     os.makedirs(_d, exist_ok=True)
-REPORT = os.path.join(OUT, 'report.txt')
-MANIFEST = os.path.join(OUT, 'manifest.txt')
+REPORT = os.path.join(OUT, 'report%s.txt' % SUFFIX)
+MANIFEST = os.path.join(OUT, 'manifest%s.txt' % SUFFIX)
 
 # Что реально видно на кадрах: имя → {app: путь в приложении, text: OCR}.
 # Прошлые прогоны тоже учитываем — иначе добор одного окна стёр бы
@@ -139,6 +148,8 @@ def click(x, y, repeat=1):
 # --------------------------------------------------------------- картинки ----
 def ocr(x, y, w, h, tag='ocr'):
     """Слова в области экрана: [(текст, центр_x, центр_y)] в координатах экрана."""
+    if DEADLINE and time.time() > DEADLINE:
+        raise TimeoutError('бюджет съёмки исчерпан')
     full = os.path.join(TMP, 'full.png')
     run(['import', '-window', 'root', full])
     crop = os.path.join(TMP, tag + '.png')
@@ -224,7 +235,13 @@ def shoot(name, X, Y, W, H, app=''):
 
 def save_evidence():
     """verified.json пишется после каждого кадра: таймаут прогона не должен
-    уносить с собой уже добытые доказательства."""
+    уносить с собой уже добытые доказательства.
+
+    В режиме частей общий файл не пишем: параллельные прогоны конфликтовали
+    бы при rebase. Импортёр читает текст прямо из docs/shots/ocr/*.txt.
+    """
+    if PART:
+        return
     import json
     with open(os.path.join(OUT, 'verified.json'), 'w', encoding='utf-8') as f:
         json.dump(EVIDENCE, f, ensure_ascii=False, indent=1)
@@ -562,7 +579,8 @@ def main():
     except Exception as exc:                             # noqa: BLE001
         log('  растяжка окна не удалась: %s' % exc)
     log('окно %dx%d+%d+%d' % (W, H, X, Y))
-    shoot('00-login', X, Y, W, H)
+    if not PART:
+        shoot('00-login', X, Y, W, H)
     if not connect(X, Y, W, H):
         log('!! войти в RouterOS не удалось — снимать нечего')
         return 2
@@ -574,10 +592,18 @@ def main():
         log('  растяжка окна не удалась: %s' % exc)
         X, Y, W, H = geom()
     log('окно после входа: %dx%d+%d+%d' % (W, H, X, Y))
-    shoot('03-desktop', X, Y, W, H)
+    if not PART:
+        shoot('03-desktop', X, Y, W, H)
 
     with open(TASKS, encoding='utf-8') as f:
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
+    if PART:
+        start = (PART - 1) * PART_SIZE
+        tasks = tasks[start:start + PART_SIZE]
+        log('часть %d: окна %d–%d списка' % (PART, start + 1, start + len(tasks)))
+        if not tasks:
+            log('!! часть пуста — список короче, чем номер части')
+            return 0
     log('задач: %d%s' % (len(tasks), ' (настроенный стенд)' if SCENE else ''))
 
     # Продолжение съёмки: уже снятые кадры лежат в docs/shots/jpg из прошлых
@@ -591,6 +617,8 @@ def main():
     # в свой бюджет и последние окна списка не снимаются вовсе.
     restart_every = 20 if SCENE else 40
     ok, fail, skipped, started, streak = 0, [], 0, time.time(), 0
+    global DEADLINE
+    DEADLINE = started + BUDGET
     for i, line in enumerate(tasks):
         if time.time() - started > BUDGET:
             log('!! стоп по времени: снято %d, пропущено %d из %d' % (ok, skipped, len(tasks)))
@@ -621,6 +649,10 @@ def main():
 
         try:
             opened = open_window(parts, want_new, X, Y, W, H)
+        except TimeoutError:
+            log('!! бюджет исчерпан на «%s» — останавливаюсь, чтобы кадры успели '
+                'опубликоваться (снято %d)' % (name, ok))
+            break
         except SystemExit:
             log('!! %s: окно Winbox пропало' % name)
             opened = False

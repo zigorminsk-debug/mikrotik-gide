@@ -26,10 +26,21 @@ const REVIEW = require('./win4-review.js');
 /* Доказательства со съёмки: что реально распознано на каждом кадре.
    Файл пишет .github/scripts/winbox-nav.py (docs/shots/verified.json). */
 const EVIDENCE_PATH = path.join(ROOT, 'docs/shots/verified.json');
+const OCR_DIR = path.join(ROOT, 'docs/shots/ocr');
 let EVIDENCE = {};
 if (fs.existsSync(EVIDENCE_PATH)) {
   try { EVIDENCE = JSON.parse(fs.readFileSync(EVIDENCE_PATH, 'utf8')); }
   catch (e) { console.error('verified.json испорчен: ' + e.message); }
+}
+/* Съёмка идёт частями, и части не пишут общий verified.json (конфликт при
+   rebase). Текст кадра лежит в docs/shots/ocr/<имя>.txt — читаем оттуда. */
+if (fs.existsSync(OCR_DIR)) {
+  for (const f of fs.readdirSync(OCR_DIR)) {
+    if (!/\.txt$/i.test(f)) continue;
+    const name = f.replace(/\.txt$/i, '');
+    const text = fs.readFileSync(path.join(OCR_DIR, f), 'utf8');
+    if (text.trim()) EVIDENCE[name] = Object.assign({}, EVIDENCE[name], { text });
+  }
 }
 const RULES = require('./win4-step-rules.js');
 const DRY = process.argv.indexOf('--dry') >= 0;
