@@ -338,6 +338,7 @@ jobs:
           name: winbox-shots-${{ matrix.part }}
           path: |
             docs/shots/*.png
+            docs/shots/*.jpg
             docs/shots/jpg/*.jpg
             docs/shots/*.txt
             docs/shots/ocr/*.txt

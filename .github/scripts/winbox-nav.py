@@ -69,12 +69,15 @@ TREE_W = 145
 CHEVRON_DX = 133
 PARENT_NODES = {'ip', 'ipv6', 'system', 'tools', 'routing', 'mpls', 'switch'}
 
+# Центры строк измерены по настоящему кадру стенда (окно 1560x1040).
+# Прежняя таблица была смещена на 26–39 px: клик по «IP» попадал в IPv6,
+# клик по «System» — в Queues, и раздел не открывался.
 TREE_Y = {
-    'quick set': 62, 'wifi': 87, 'interfaces': 111, 'wireguard': 135,
-    'bridge': 160, 'ppp': 185, 'switch': 209, 'mesh': 236, 'ip': 260,
-    'ipv6': 285, 'mpls': 310, 'routing': 333, 'system': 358, 'queues': 383,
-    'dot1x': 407, 'files': 432, 'log': 458, 'new terminal': 483,
-    'radius': 508, 'tools': 531,
+    'quick set': 36, 'wifi': 59, 'interfaces': 83, 'wireguard': 106,
+    'bridge': 132, 'ppp': 155, 'switch': 179, 'mesh': 202, 'ip': 226,
+    'ipv6': 249, 'mpls': 273, 'routing': 297, 'system': 320, 'queues': 344,
+    'dot1x': 371, 'files': 398, 'log': 421, 'new terminal': 445,
+    'radius': 469, 'tools': 492,
 }
 
 
@@ -213,6 +216,18 @@ def dbg(name):
          os.path.join(OUT, 'dbg-%s.jpg' % name)])
 
 
+def diag(name, X, Y, W, H):
+    """Кадр для разбора навигации — попадает в ветку (dbg-* игнорируется).
+    Один кадр на имя за прогон: разобраться, что видно после клика."""
+    path = os.path.join(OUT, 'diag-%s%s.jpg' % (name, SUFFIX))
+    if os.path.exists(path):
+        return
+    full = os.path.join(TMP, 'diag.png')
+    run(['import', '-window', 'root', full])
+    run(['convert', full, '-crop', '%dx%d+%d+%d' % (int(W), int(H), int(X), int(Y)),
+         '+repage', '-resize', '1200x', '-quality', '80', path])
+
+
 def ocr_text(image, tag='evidence'):
     """Текст кадра целиком — доказательство того, что видно на снимке.
 
@@ -308,7 +323,9 @@ def find(words, needle, near=None, xmin=None):
 
 # ------------------------------------------------------------------ вход -----
 def tree_words(X, Y, H):
-    return ocr(X, Y + 16, 210, H - 120, 'tree')
+    """Подписи пунктов дерева. Полоса x+30…x+148 — без иконок: иконки
+    сбивали OCR, и «IP» читалось как «У р», а «System» — как «Я mers»."""
+    return ocr(X + 30, Y + 16, 118, H - 120, 'tree')
 
 
 def tree_scroll(X, Y, H, steps=3, down=True):
@@ -501,21 +518,30 @@ def click_root(root, X, Y, W, H):
         for dy in (0, -7, 7, -14, 14):
             cands.append((X + 60, Y + base + dy))
     for cx, cy in cands[:5]:
-        click(cx, cy)
         if parent:
-            if len(tree_words(X, Y, H)) > before + 2:
-                return cx, cy
-            # надпись могла только выделить узел — жмём саму стрелку
-            click(X + CHEVRON_DX, cy)
-            if len(tree_words(X, Y, H)) > before + 2:
-                log('  «%s»: раскрыт стрелкой' % root)
-                return cx, cy
-            log('  «%s»: дерево не раскрылось, пробую ещё' % root)
+            # Узел раскрывается по-разному в зависимости от того, куда попал
+            # клик: надпись, стрелка, двойной клик. Пробуем все и проверяем
+            # результат по дереву И по области содержимого.
+            for how, px, py, rep in (('надпись', cx, cy, 1),
+                                     ('стрелка', X + CHEVRON_DX, cy, 1),
+                                     ('двойной', cx, cy, 2)):
+                click(px, py, repeat=rep)
+                tw = tree_words(X, Y, H)
+                cw = menu_area_words(X, Y, W, H)
+                if len(tw) > before + 2 or len(cw) >= 8:
+                    log('  «%s»: раскрыт (%s), слов в дереве %d→%d'
+                        % (root, how, before, len(tw)))
+                    return cx, cy
+            log('  «%s»: не раскрылся; дерево: %s'
+                % (root, ' '.join(w[0] for w in tree_words(X, Y, H))[:200]))
             continue
+        click(cx, cy)
         words = menu_area_words(X, Y, W, H)
         if len(words) >= 6 or sd_now(X, Y, W, H) > 5:
             return cx, cy
         log('  «%s»: после клика пусто, пробую ещё' % root)
+    if parent:
+        diag('tree-%s' % clean(root).replace(' ', ''), X, Y, W, H)
     return None
 
 

@@ -99,7 +99,7 @@
 /ppp/secret/add name=client01 password=Cl1ent-2026 service=pppoe profile=pppoe-clients comment="кабинет 1"
 /ppp/secret/add name=ivanov password=S3cret-2026 service=l2tp profile=vpn-staff comment="Иванов"
 /interface/l2tp-server/server/set enabled=yes use-ipsec=required ipsec-secret=d83n2-officE-vpn default-profile=vpn-staff authentication=mschap2
-/interface/pppoe-server/server/set numbers=0 service-name=isp interface=bridge-clients default-profile=pppoe-clients disabled=no authentication=mschap2
+/interface/pppoe-server/server/add service-name=isp interface=bridge-clients default-profile=pppoe-clients disabled=no authentication=mschap2
 
 # ------------------------------------------------------------------ очереди ---
 # q-simple#1, q-types#1, q-cake#1
@@ -140,8 +140,8 @@
 # ------------------------------------------------------------------ журнал ----
 # sys-log-remote#1: действие remote → 192.168.10.50:514
 /system/logging/action/set numbers=remote remote=192.168.10.50 remote-port=514
-/system/logging/action/add name=syslog-srv target=remote remote=192.168.88.50 remote-port=514
-/system/logging/add topics=firewall,info action=syslog-srv
+/system/logging/action/add name=syslogsrv target=remote remote=192.168.88.50 remote-port=514
+/system/logging/add topics=firewall,info action=syslogsrv
 /system/logging/add topics=ipsec,error action=memory
 /system/logging/add topics=wireguard action=memory prefix=wg
 
@@ -230,4 +230,4 @@
 
 # Мост-фильтр: if-bridge-nat#1, task-rogue-dhcp#1
 /interface/bridge/filter/add chain=forward in-bridge=bridge-guest action=drop comment="гостевой мост изолирован"
-/interface/bridge/filter/add chain=forward in-interface=ether3 mac-protocol=ip ip-protocol=udp dst-port=67,68 action=drop comment="чужой DHCP"
+/interface/bridge/filter/add chain=forward in-interface=ether3 mac-protocol=ip ip-protocol=udp dst-port=67-68 action=drop comment="чужой DHCP"
