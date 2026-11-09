@@ -1,4 +1,4 @@
-МАЛА 95 — = — nnn о ни
+МАЛА 95 — = — id — a ИВьЯ
 PY auick set
 & WiFi
 fa Interfaces
@@ -8,16 +8,16 @@ fa Interfaces
 St Switch >
 ® Mesh
 У р >
-“2 руб >
-Я р > + Bridge + Bridge Ports VLANs MSTIs_ PortMST Overrides Filters NAT Hosts MDB ou x
-$ system : Ci New »> Enable |! Disable x Remove P Comment Q Find Y Filter aly O Actions
+У руб >
+Я р > + Bridge - Bridge Ports VLANs MSTIs_ PortMST Overrides Filters NAT Hosts MDB o Xx
+$ system : C5 New > Enable 1! Disable Xx Remove P Comment Q Find Y Filter ¥% aly O Actions
 гостевой мост изолирован
-$ соих во drop forward OB о Reset All Counters
-Files
-Ё 5
+$? сонх во drop — forward OB о Reset All Counters
+Files чужой ОНСР
+ё Log а 1 © drop forward ether3 800 (ip) ов 0
 © New Terminal
-& RADIUS
-ЕЁ Tools >
+(© RADIUS
+A Tools >
 я Make Supout.rif
 ET
 

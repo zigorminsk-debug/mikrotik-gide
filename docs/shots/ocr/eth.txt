@@ -12,8 +12,8 @@ St Switch >
 У руб >
 Я р > fa Interfaces ~ Interface Interface List Ethernet EolP Tunnel IP Tunnel GRE Tunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE o Xx
 $ system : > Enable 1! Disable [ Comment Q Find Y Filter Ш Я Аснопз
-GZ cueues P Names Type MTU Actual MTU МТО PoE Out POEVolta.. PoE Pity PoE utc... Tk RK МЫ Я ое
-$ Dot1x R & ether1-wan Ethernet 1500 1500 0 98.4 kbps 6.3 kbps
+GZ cueues P Names Type MTU Actual MTU МТО PoE Out POEVolta.. PoE Prioty PoE ut... Tk о МЫ ое
+$ Dot1x R & ether1-wan Ethernet 1500 1500 0 98.0 kbps 6.3 kbps
 г 5 RS & ether2 Ethernet 1500 1500 0 O bps O bps
 
 RS. & ether3 Ethernet 1500 1500 0 480 bps O bps
