@@ -8,23 +8,22 @@ fa Interfaces
 ‘© ppp
 St Switch >
 ® Mesh
-Яр >
-“2 руб >
+У р >
+У руб >
 $7 wpLs > —
 XC Rout © WireGuard + WireGuard Peers o Xx
 ‘outing >
 C5 New > Enable 1! Disable Xx Remove P Comment Q Find ¥ Filter
 {$ System > : Ш & Actions
 5 rere туннель в офис
-R ©) wg- office WireGuard 1420 1420 13232 ***** SGqcWODc+z5dBZp3wsnss... O bps O bps
+R ©) wg- office WireGuard 1420 1420 13232 ***** EO3Vk57a3TXTSHKxv53M 1z... O bps O bps
 Files VPN
-R < ма-урп WireGuard 1420 1420 13233 ***** KQ+ITe/8J4VY7 JSUPFFFX+m... O bps O bps
-Е 159 g-vp р. р.
+ё Log R < ма-урп WireGuard 1420 1420 13233 ***** /ZA6YwwvpDvyGIZul8G9GD7... O bps O bps
 road warrior
-(5) меи Terminal R 49 00 WireGuard 1420 1420 13231 ***** XtBau6relfVCeqyUdVgr/FWM... O bps O bps
+(5) меи Terminal R 49 00 WireGuard 1420 1420 13231 ***** AQAPBKzPdSRCQJ2q/NJINCK... O bps O bps
 (© RADIUS
 A Tools >
 я Make Supout.rif
 СО
-= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% i 2795.6 MiB / 276.4 MiB / 3072.0 MiB @ 00:03:36 6 2026-11-09 05:54:37
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% i 2790.7 MiB / 281.3 MiB / 3072.0 MiB @ 00:06:15 @ 2026-11-09 06:39:32
 

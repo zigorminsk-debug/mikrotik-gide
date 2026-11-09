@@ -139,3 +139,96 @@ total 2836
 -rw-r--r-- 1 runner runner  64118 Nov  9 05:50 wifi-security.jpg
 -rw-r--r-- 1 runner runner  46912 Nov  9 05:50 wifi.jpg
 -rw-r--r-- 1 runner runner 122087 Nov  9 05:58 wireguard.jpg
+прошло 3 минуты после старта QEMU
+=== порты хоста ===
+LISTEN 0      1          127.0.0.1:8728      0.0.0.0:*    users:(("qemu-system-x86",pid=3848,fd=10))
+LISTEN 0      1          127.0.0.1:8291      0.0.0.0:*    users:(("qemu-system-x86",pid=3848,fd=12))
+    PID     ELAPSED   RSS CMD
+   3848       03:05 142132 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+BIN=/tmp/wb/winbox/WinBox
+Winbox запущен (попытка 1)
+runner      3911  0.3  0.4 223708 80016 ?        S    06:36   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3939  1.6  0.5 925160 90740 ?        Sl   06:36   0:00 /tmp/wb/winbox/WinBox
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    ввод #1: в поле ''
+  ввод #1: в поле ''
+    ввод #2: в поле ''
+  ввод #2: в поле ''
+    ввод #3: в поле ''
+  ввод #3: в поле ''
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход выполнен (попытка 5)
+  вход выполнен (попытка 5)
+  терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+    терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+  перезапуск Winbox
+    перезапуск Winbox
+  !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+    !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+  после перезапуска: 4657 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4658 ./WinBox
+4695 bash -lc pgrep -af WinBox | head -3
+    после перезапуска: 4657 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4658 ./WinBox
+4695 bash -lc pgrep -af WinBox | head -3
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 1)
+  вход через Neighbors (попытка 1)
+  Winbox перезапущен после терминала: ок
+    Winbox перезапущен после терминала: ок
+API готов (попытка 1)
+роутер: 7.24.6 (long-term) CHR QEMU Standard PC (i440FX + PIIX, 1996), плата 3m28s
+!! /interface/pppoe-server/server/set numbers=0 service-name=isp interface=bridge-clients default-profile=pppoe-clients disabled=no authentication=mschap2 → message=no such item
+!! /system/logging/action/add name=syslog-srv target=remote remote=192.168.88.50 remote-port=514 → message=failure: action name can contain only letters and numbers
+!! /system/logging/add topics=firewall,info action=syslog-srv → message=input does not match any value of action
+!! /interface/bridge/filter/add chain=forward in-interface=ether3 mac-protocol=ip ip-protocol=udp dst-port=67,68 action=drop comment="чужой DHCP" → message=invalid value 67,68 for min, an integer required
+стенд: применено 135 строк, отказов 4
+окно 1560x1040+22+60
+  окно 1560x1040+22+60
+вход выполнен (попытка 1)
+  вход выполнен (попытка 1)
+окно после входа: 1560x1040+22+60
+  окно после входа: 1560x1040+22+60
+часть 1: окна 1–10 списка
+  часть 1: окна 1–10 списка
+  задач: 10 (настроенный стенд)
+задач: 10 (настроенный стенд)
+!! не нашёл «Addresses» (путь: IP → Addresses); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Addresses» (путь: IP → Addresses); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+!! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+!! не нашёл «Routes» (путь: IP → Routes); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Routes» (путь: IP → Routes); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  снято bridge: Bridge (sd=155)
+снято bridge: Bridge (sd=155)
+  снято bridge-vlans: Bridge → VLANs (sd=150)
+снято bridge-vlans: Bridge → VLANs (sd=150)
+!! не нашёл «Pool» (путь: IP → Pool); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Pool» (путь: IP → Pool); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  снято ppp-profiles: PPP → Profiles (sd=154)
+снято ppp-profiles: PPP → Profiles (sd=154)
+  снято queues: Queues → Simple Queues (sd=148)
+снято queues: Queues → Simple Queues (sd=148)
+  снято wireguard: WireGuard (sd=153)
+снято wireguard: WireGuard (sd=153)
+  «IP»: дерево не раскрылось, пробую ещё
+    «IP»: дерево не раскрылось, пробую ещё
+  «IP»: дерево не раскрылось, пробую ещё
+    «IP»: дерево не раскрылось, пробую ещё
+  «IP»: дерево не раскрылось, пробую ещё
+    «IP»: дерево не раскрылось, пробую ещё
+  «IP»: дерево не раскрылось, пробую ещё
+    «IP»: дерево не раскрылось, пробую ещё
+  «IP»: дерево не раскрылось, пробую ещё
+    «IP»: дерево не раскрылось, пробую ещё
+!! раздел «IP» не открылся
+  !! раздел «IP» не открылся
+итого: снято 5, уже было 0, не вышло 5: ip-address, ip-filter, ip-routes, ip-pool, ip-nat
+  итого: снято 5, уже было 0, не вышло 5: ip-address, ip-filter, ip-routes, ip-pool, ip-nat

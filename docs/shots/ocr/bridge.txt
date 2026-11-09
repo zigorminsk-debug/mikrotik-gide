@@ -27,5 +27,5 @@ LAN офиса
 A Tools >
 я Make Supout.rif
 EO
-= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% i 2795.9 MiB / 276.1 MiB / 3072.0 MiB @ 00:02:22 6 2026-11-09 05:53:23
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% i 2790.9 MiB / 281.1 MiB / 3072.0 MiB @ 00:04:58 @ 2026-11-09 06:38:15
 
