@@ -23,5 +23,5 @@ A Tools >
 я Make Supout.rif
 
 4
-= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 4% ЕЕ 2796.3 MiB / 275.7 MiB / 3072.0 MiB @ 00:01:27 @ 2026-11-09 05:52:28
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 2% ЕЕ 2790.9 MiB / 281.1 MiB / 3072.0 MiB @ 00:04:01 6 2026-11-09 06:37:17
 
