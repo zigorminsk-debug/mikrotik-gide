@@ -161,3 +161,82 @@ total 3420
 -rw-r--r-- 1 runner runner  64118 Nov  9 06:32 wifi-security.jpg
 -rw-r--r-- 1 runner runner  46912 Nov  9 06:32 wifi.jpg
 -rw-r--r-- 1 runner runner 122087 Nov  9 06:32 wireguard.jpg
+прошло 3 минуты после старта QEMU
+=== порты хоста ===
+LISTEN 0      1          127.0.0.1:8728      0.0.0.0:*    users:(("qemu-system-x86",pid=3977,fd=10))
+LISTEN 0      1          127.0.0.1:8291      0.0.0.0:*    users:(("qemu-system-x86",pid=3977,fd=12))
+    PID     ELAPSED   RSS CMD
+   3977       03:06 145836 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+BIN=/tmp/wb/winbox/WinBox
+Winbox запущен (попытка 1)
+runner      4034  0.6  0.4 223700 77764 ?        S    06:55   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4067  2.2  0.5 925160 90340 ?        Sl   06:55   0:00 /tmp/wb/winbox/WinBox
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    ввод #1: в поле ''
+  ввод #1: в поле ''
+    ввод #2: в поле ''
+  ввод #2: в поле ''
+  ввод #3: в поле ''
+    ввод #3: в поле ''
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 4)
+  вход через Neighbors (попытка 4)
+  терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+    терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+  перезапуск Winbox
+    перезапуск Winbox
+  !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+    !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+  после перезапуска: 4720 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4721 ./WinBox
+4750 bash -lc pgrep -af WinBox | head -3
+    после перезапуска: 4720 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4721 ./WinBox
+4750 bash -lc pgrep -af WinBox | head -3
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+  вход через Neighbors (попытка 1)
+вход через Neighbors (попытка 1)
+  Winbox перезапущен после терминала: ок
+    Winbox перезапущен после терминала: ок
+API готов (попытка 1)
+роутер: 7.24.6 (long-term) CHR QEMU Standard PC (i440FX + PIIX, 1996), плата 3m33s
+стенд: применено 139 строк, отказов 0
+окно 1560x1040+22+60
+  окно 1560x1040+22+60
+вход выполнен (попытка 1)
+  вход выполнен (попытка 1)
+окно после входа: 1560x1040+22+60
+  окно после входа: 1560x1040+22+60
+часть 5: окна 41–46 списка
+  часть 5: окна 41–46 списка
+  задач: 6 (настроенный стенд)
+задач: 6 (настроенный стенд)
+  «IP»: раскрыт (надпись), слов в дереве 24→24
+    «IP»: раскрыт (надпись), слов в дереве 24→24
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  «IP»: раскрыт (надпись), слов в дереве 24→24
+    «IP»: раскрыт (надпись), слов в дереве 24→24
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server → Options); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Options); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  «IP»: раскрыт (надпись), слов в дереве 24→24
+    «IP»: раскрыт (надпись), слов в дереве 24→24
+!! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  снято queue-tree: Queues → Queue Tree (sd=147)
+снято queue-tree: Queues → Queue Tree (sd=147)
+  «Routing»: раскрыт (надпись), слов в дереве 24→24
+    «Routing»: раскрыт (надпись), слов в дереве 24→24
+!! не нашёл «Tables» (путь: Routing → Tables); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Tables» (путь: Routing → Tables); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  снято interfaces: Interfaces (sd=160)
+снято interfaces: Interfaces (sd=160)
+итого: снято 2, уже было 0, не вышло 4: ip-dhcp-networks, ip-dhcp-options, ip-addrlists, routing-tables
+  итого: снято 2, уже было 0, не вышло 4: ip-dhcp-networks, ip-dhcp-options, ip-addrlists, routing-tables
