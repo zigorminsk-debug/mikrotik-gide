@@ -1,0 +1,31 @@
+“LY ~ м
+PY auick set
+& WiFi
+fa Interfaces
+© WireGuard
+НЫ Bridge
+‘© ppp
+yt Switch >
+® Mesh
+У р >
+У руб >
+Я р > wz Queues ~ Simple Queues Interface Queues Queue Tree Queue Types o Xx
+$ sy ten : Q Find ¥ Filter
+$ Dot1x bridge-clients no-queue no-queue
+г 5 bridge-guest no-queue no-queue
+bridge-lan no-queue no-queue
+в Log etherl-wan only -hardware- queue only -hardware- queue
+2 New Terminal ether2 only -hardware-queue only -hardware-queue
+& RADIUS ether3 only -hardware- queue only -hardware-queue
+ЕЁ Tools > ether4 only -hardware- queue only -hardware- queue
+я Make Supout.rif etherS only -hardware- queue only -hardware- queue
+lo no-queue no-queue
+vian10- office no-queue no-queue
+verp-lan no-queue no-queue
+vxlan-10 no-queue no-queue
+wg- office no-queue no-queue
+м9-урп по-диеие по-диеие
+№90 no-queue no-queue
+О
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 0% i 2797.2 MiB / 274.8 MiB / 3072.0 MiB @ 00:01:11 @ 2026-11-09 05:52:07
+

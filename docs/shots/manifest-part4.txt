@@ -1,0 +1,5 @@
+queue-iface|1|Queues → Interface Queues
+iflist|1|Interfaces → Interface List
+eth|1|Interfaces → Ethernet
+bridge-filters|1|Bridge → Filters
+wg-peers|1|WireGuard → Peers

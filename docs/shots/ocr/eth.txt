@@ -1,0 +1,27 @@
+МАЛА 95 — = — TEU aE — a
+
+PY auick set
+& WiFi
+fa Interfaces
+© WireGuard
+НЫ Bridge
+‘© ppp
+St Switch >
+® Mesh
+У р >
+У руб >
+Я р > fa Interfaces ~ Interface Interface List Ethernet EolP Tunnel IP Tunnel GRE Tunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE o Xx
+$ system : > Enable 1! Disable [ Comment Q Find Y Filter Ш Я Аснопз
+GZ cueues P Names Type MTU Actual MTU МТО PoE Out POEVolta.. PoE Prioty PoE utc... Tx о МЫ ое
+$ Dot1x R & ether1-wan Ethernet 1500 1500 0 92.5 kbps 6.3 kbps
+г 5 RS & ether2 Ethernet 1500 1500 0 O bps O bps
+
+RS & ether3 Ethernet 1500 1500 0 O bps O bps
+в Log RS. & ether4 Ethernet 1500 1500 0 O bps O bps
+C5) New Terminal RS. & ethers Ethernet 1500 1500 0 0 bps 0 bps
+& RADIUS
+A Tools >
+я Make Supout.rif
+
+С
+
