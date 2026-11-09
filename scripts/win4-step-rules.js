@@ -22,6 +22,9 @@ function normPath(p) {
 /* Явные алиасы одного и того же окна. Префикс родителя НЕ считается совпадением. */
 const ALIASES = {
   'IP → Addresses': 'IP → Address',
+  /* Одно и то же окно, названное по-разному в статьях и в списке съёмки. */
+  'WireGuard → WireGuard': 'WireGuard',
+  'System → Files': 'Files',
   'Interfaces → Interface': 'Interfaces',
   'Interfaces → WireGuard': 'WireGuard',
   'Interfaces → WireGuard → Peers': 'WireGuard → Peers',

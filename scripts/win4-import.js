@@ -20,6 +20,9 @@ const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'docs/shots/jpg');
 const DST = path.join(ROOT, 'app/src/main/assets/www/img/shots');
 const LIST = path.join(ROOT, '.github/scripts/shot-list.txt');
+/* Окна стенда снимаются по отдельному списку: часть имён есть только в нём
+   (например logging-actions). Читаем оба, иначе снятый кадр не импортируется. */
+const SCENE_LIST = path.join(ROOT, '.github/scripts/scene-list.txt');
 const WWW = path.join(ROOT, 'app/src/main/assets/www');
 const TITLES = require('./win4-titles.js');
 const REVIEW = require('./win4-review.js');
@@ -87,8 +90,9 @@ function readShots() {
       quarantineReason: q || ''
     });
   };
-  if (fs.existsSync(LIST)) {
-    for (const line of fs.readFileSync(LIST, 'utf8').split('\n')) {
+  for (const list of [LIST, SCENE_LIST]) {
+    if (!fs.existsSync(list)) continue;
+    for (const line of fs.readFileSync(list, 'utf8').split('\n')) {
       if (!line.trim() || line.trim().startsWith('#')) continue;
       const f = line.split('|');
       add(f[0].trim(), (f[3] || '').trim());
