@@ -1,0 +1,24 @@
+МАЛА 95 — = — TEU aE — a
+PY auick set
+& WiFi
+fa Interfaces
+© WireGuard
+НЫ Bridge
+‘© ppp
+St Switch >
+® Mesh
+У р >
+У руб >
+Я р > fal intertaces > Interface Interface List Ethernet EolP Tunnel IP Tunnel GRE Tunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE o Xx
+$ system : C5 New > Enable 1! Disable Xx Remove P Comment Q Find ¥ Filter
+пм ом мы ам reset СА ву Coup Aaory Ate. Pond TK :
+No IPv4 address!
+$ соих I « vrrp-lan VRRP 1500 bridge-lan 10 200 попе попе жк 0 bps
+Files
+Ё 5
+© New Terminal
+(© RADIUS
+A Tools >
+я Make Supout.rif
+Ce
+

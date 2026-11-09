@@ -1243,9 +1243,16 @@ total 1996
 -rw-r--r-- 1 runner runner 40995 Nov  8 20:32 wireguard.jpg
     Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
     Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
-    Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
     ввод #1: в поле ''
     ввод #2: в поле ''
     ввод #3: в поле ''
-  вход по кнопке Connect (попытка 3)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    ввод #1: в поле ''
+    ввод #2: в поле ''
+    ввод #3: в поле ''
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+  вход выполнен (попытка 8)
     терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
