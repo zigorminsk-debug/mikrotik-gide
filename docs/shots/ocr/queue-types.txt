@@ -8,25 +8,26 @@ fa Interfaces
 yt Switch >
 ® Mesh
 У р >
-“2 руб >
+У руб >
 $7 wpLs > —
-x мт wz Queues ~ Simple Queues Interface Queues Queue Tree Queue Types o Xx
+x — wz Queues ~ Simple Queues Interface Queues Queue Tree Queue Types o Xx
 ‘outing >
 $ system 5 C5 New > Enable 1! Disable Xx Remove P Comment Q Find Y Filter & Actions
 #
+Reset Counters
 
 WAN upload
-$? сонх = total-up... global 90M —Obps ов OB Reset All Counters
+$ соих = total-up... global 90M —Obps ов ов Reset All Counters
 Files WAN
 ё Log — = мап-ир etherl-wan 90M O bps ов ов
 
 телефония
 9 Су азия = voip wan-up voip 10M O bps ов ов
 & RADIUS
-ЕЁ Tools >
+A Tools >
 я Make Supout.rif
 
-ов [о pacts used
+en ase packets uve
 
-= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) 8 0% ЕЕ 2789.6 MiB / 282.4 MiB / 3072.0 MiB @ 00:06:57 @ 2026-11-09 06:40:13
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) 8 0% ЕЕ 2792.5 MiB / 279.5 MiB / 3072.0 MiB @ 00:06:53 6 2026-11-09 06:59:23
 
