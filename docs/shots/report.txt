@@ -1241,3 +1241,4 @@ total 1996
 -rw-r--r-- 1 runner runner 64118 Nov  8 20:32 wifi-security.jpg
 -rw-r--r-- 1 runner runner 46912 Nov  8 20:32 wifi.jpg
 -rw-r--r-- 1 runner runner 40995 Nov  8 20:32 wireguard.jpg
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
