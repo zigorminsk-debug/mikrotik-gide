@@ -1,0 +1,154 @@
+# Что снимаем: имя|путь в меню Winbox 4|New|путь в приложении (для привязки)
+# Меню читается по экрану через OCR, поэтому координаты не нужны.
+# «new» в третьем поле — после открытия окна нажать кнопку New.
+ip-arp|IP → ARP||IP → ARP
+ip-address|IP → Addresses||IP → Address
+ip-address-new|IP → Addresses → New|new|IP → Address → New
+ip-cloud|IP → Cloud||IP → Cloud
+ip-dhcp-client|IP → DHCP Client||IP → DHCP Client
+ip-dhcp-relay|IP → DHCP Relay||IP → DHCP Relay
+ip-dhcp-server|IP → DHCP Server||IP → DHCP Server
+ip-dns|IP → DNS||IP → DNS
+ip-dns-static|IP → DNS → Static||IP → DNS → Static
+ip-firewall|IP → Firewall||IP → Firewall → Filter Rules
+ip-filter|IP → Firewall → Filter Rules||IP → Firewall → Filter Rules
+ip-filter-new|IP → Firewall → Filter Rules → New|new|IP → Firewall → Filter Rules → New
+ip-nat|IP → Firewall → NAT||IP → Firewall → NAT
+ip-nat-new|IP → Firewall → NAT → New|new|IP → Firewall → NAT → New
+ip-mangle|IP → Firewall → Mangle||IP → Firewall → Mangle
+ip-raw|IP → Firewall → Raw||IP → Firewall → Raw
+ip-addrlists|IP → Firewall → Address Lists||IP → Firewall → Address Lists
+ip-connections|IP → Firewall → Connections||IP → Firewall → Connections
+ip-service-ports|IP → Firewall → Service Ports||IP → Firewall → Service Ports
+ip-hotspot|IP → Hotspot||IP → Hotspot
+ip-hotspot-profiles|IP → Hotspot → User Profiles||IP → Hotspot → User Profiles
+ip-hotspot-users|IP → Hotspot → Users||IP → Hotspot → Users
+ip-ipsec|IP → IPsec → Policies||IP → IPsec → Policies
+ip-ipsec-peers|IP → IPsec → Peers||IP → IPsec → Peers
+ip-ipsec-identities|IP → IPsec → Identities||IP → IPsec → Identities
+ip-kidcontrol|IP → Kid Control||IP → Kid Control
+ip-neighbors|IP → Neighbors||IP → Neighbor Discovery
+ip-pool|IP → Pool||IP → Pool
+ip-routes|IP → Routes||IP → Routes
+ip-routes-new|IP → Routes → New|new|IP → Routes → New
+ip-smb|IP → SMB||IP → SMB
+ip-snmp|IP → SNMP||IP → SNMP
+ip-services|IP → Services||IP → Services
+ip-settings|IP → Settings||IP → Settings
+ip-tftp|IP → TFTP||IP → TFTP
+ip-upnp|IP → UPnP||IP → UPnP
+ip-vrf|IP → VRF||IP → VRF
+ip-proxy|IP → Web Proxy||IP → Web Proxy
+ip-dhcp-leases|IP → DHCP Server → Leases||IP → DHCP Server → Leases
+ip-dhcp-networks|IP → DHCP Server → Networks||IP → DHCP Server → Networks
+ip-dhcp-options|IP → DHCP Server → Options||IP → DHCP Server → Options
+ip-sntp|IP → SNTP Client||IP → SNTP Client
+ipv6-dhcp-client|IPv6 → DHCP Client||IPv6 → DHCP Client
+ipv6-dhcp-server|IPv6 → DHCP Server||IPv6 → DHCP Server
+ipv6-settings|IPv6 → Settings||IPv6 → Settings
+routing-ospf-neighbors|Routing → OSPF → Neighbors||Routing → OSPF → Neighbors
+routing-bgp-sessions|Routing → BGP → Sessions||Routing → BGP → Sessions
+routing-igmp|Routing → IGMP Proxy||Routing → IGMP Proxy
+routing-bgp-new|Routing → BGP → Connections → New|new|Routing → BGP → Connections → New
+system-ports|System → Ports||System → Ports
+tool-monitor|Tools → Traffic Monitor||Tools → Traffic Monitor
+tool-trafficgen|Tools → Traffic Generator||Tools → Traffic Generator
+ipv6|IPv6||IPv6 → Address
+ipv6-address|IPv6 → Address||IPv6 → Address
+ipv6-nd|IPv6 → ND||IPv6 → ND
+ipv6-firewall|IPv6 → Firewall → Filter Rules||IPv6 → Firewall → Filter Rules
+ipv6-routes|IPv6 → Routes||IPv6 → Routes
+ipv6-pool|IPv6 → Pool||IPv6 → Pool
+mpls|MPLS → MPLS||MPLS → MPLS
+mpls-ldp|MPLS → LDP||MPLS → LDP
+mpls-forwarding|MPLS → Forwarding||MPLS → Forwarding
+mpls-l2vpn|MPLS → L2VPN||MPLS → L2VPN
+routing-tables|Routing → Tables||Routing → Tables
+routing-rules|Routing → Rules||Routing → Rules
+routing-nexthops|Routing → Nexthops||Routing → Nexthops
+routing-ospf|Routing → OSPF → Networks||Routing → OSPF → Networks
+routing-bgp|Routing → BGP → Connections||Routing → BGP → Connections
+routing-rip|Routing → RIP → Interfaces||Routing → RIP → Interfaces
+routing-prefix|Routing → Prefix Lists||Routing → Prefix Lists
+routing-settings|Routing → Settings||Routing → Settings
+routing-bfd|Routing → BFD → Sessions||Routing → BFD → Sessions
+identity|System → Identity||System → Identity
+system-ntp|System → NTP Client||System → NTP Client
+users|System → Users||System → Users
+users-new|System → Users → New|new|System → Users → New
+certs|System → Certificates||System → Certificates
+logging|System → Logging||System → Logging
+packages|System → Packages||System → Packages
+routerboot|System → RouterBOOT||System → RouterBOOT
+scheduler|System → Scheduler||System → Scheduler
+scheduler-new|System → Scheduler → New|new|System → Scheduler → New
+scripts|System → Scripts||System → Scripts
+resources|System → Resources||System → Resources
+health|System → Health||System → Health
+license|System → License||System → License
+history|System → History||System → History
+note|System → Note||System → Note
+watchdog|System → Watchdog||System → Watchdog
+autoupgrade|System → Auto Upgrade||System → Auto Upgrade
+reset|System → Reset Configuration||System → Reset Configuration
+ping|Tools → Ping||Tools → Ping
+tool-traceroute|Tools → Traceroute||Tools → Traceroute
+tool-torch|Tools → Torch||Tools → Torch
+tool-netwatch|Tools → Netwatch||Tools → Netwatch
+tool-sniffer|Tools → Sniffer||Tools → Sniffer
+tool-profiler|Tools → Profiler||Tools → Profiler
+tool-graphing|Tools → Graphing||Tools → Graphing
+tool-fetch|Tools → Fetch||Tools → Fetch
+tool-ipscan|Tools → IP Scan||Tools → IP Scan
+tool-btest|Tools → Bandwidth Test||Tools → Bandwidth Test
+tool-wol|Tools → Wake On LAN||Tools → Wake on LAN
+tool-romon|Tools → RoMON||Tools → RoMON
+tool-sms|Tools → SMS||Tools → SMS
+quickset|Quick Set||Quick Set
+wifi|WiFi||WiFi → WiFi
+wifi-new|WiFi → New|new|WiFi → WiFi → New
+wifi-security|WiFi → Security||WiFi → Security
+wifi-access-list|WiFi → Access List||WiFi → Access List
+wifi-registration|WiFi → Registration||WiFi → Registration
+wifi-wps|WiFi → WPS||WiFi → WPS
+wifi-sniffer|WiFi → Sniffer||WiFi → Sniffer
+interfaces|Interfaces||Interfaces → Interface
+eth|Interfaces → Ethernet||Interfaces → Ethernet
+vlan|Interfaces → VLAN||Interfaces → VLAN
+bonding|Interfaces → Bonding||Interfaces → Bonding
+iflist|Interfaces → Interface List||Interfaces → Interface List
+pppoe-client|Interfaces → PPPoE Client||Interfaces → PPPoE Client
+vrrp|Interfaces → VRRP||Interfaces → VRRP
+lte|Interfaces → LTE||Interfaces → LTE
+vxlan|Interfaces → VXLAN||Interfaces → VXLAN
+eoip|Interfaces → EoIP Tunnel||Interfaces → EoIP Tunnel
+wireguard|WireGuard||Interfaces → WireGuard
+wg-peers|WireGuard → Peers||Interfaces → WireGuard → Peers
+wg-new|WireGuard → Peers → New|new|Interfaces → WireGuard → Peers → New
+bridge|Bridge||Bridge → Bridge
+bridge-ports|Bridge → Ports||Bridge → Ports
+bridge-vlans|Bridge → VLANs||Bridge → VLANs
+bridge-hosts|Bridge → Hosts||Bridge → Hosts
+bridge-filters|Bridge → Filters||Bridge → Filters
+bridge-new|Bridge → New|new|Bridge → Bridge → New
+ppp|PPP||PPP → Interfaces
+ppp-profiles|PPP → Profiles||PPP → Profiles
+ppp-secrets|PPP → Secrets||PPP → Secrets
+ppp-active|PPP → Active Connections||PPP → Active Connections
+pppoe-server|PPP → PPPoE Servers||PPP → PPPoE Server
+l2tp-server|PPP → L2TP Secrets||PPP → L2TP Server
+ovpn-server|PPP → OVPN Servers||PPP → OVPN Server
+mesh|Mesh||Mesh
+routing|Routing||Routing → Settings
+system|System||System → Identity
+files|Files||Files
+backup|Files → Backup||Files → Backup
+queues|Queues → Simple Queues||Queues → Simple Queues
+simple-new|Queues → Simple Queues → New|new|Queues → Simple Queues → New
+queue-tree|Queues → Queue Tree||Queues → Queue Tree
+queue-types|Queues → Queue Types||Queues → Queue Types
+queue-iface|Queues → Interface Queues||Queues → Interface Queues
+dot1x|Dot1X||Dot1X
+log|Log||Log
+terminal|New Terminal||New Terminal
+radius|RADIUS||RADIUS

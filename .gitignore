@@ -30,3 +30,10 @@ dist/
 
 # ресурсы Windows-сборки (генерируются в CI из windows/icon.ico)
 *.syso
+
+# Python-кэш скриптов CI
+__pycache__/
+*.pyc
+
+# отладочные кадры съёмки Winbox (пустой экран при неудачном клике)
+docs/shots/dbg-*.jpg

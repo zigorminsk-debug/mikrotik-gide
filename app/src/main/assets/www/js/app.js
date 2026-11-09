@@ -553,8 +553,10 @@
         (withShots ? '<div class="hint" style="margin:-4px 0 10px">Под каждым шагом — окно Winbox 4 ' +
           'с красными номерами на кнопках и полях, а под окном — расшифровка: что нажимать в порядке ' +
           '1, 2, 3 … Номера на картинке и в списке совпадают. Тап по окну открывает его на весь экран. ' +
-          'Где окно подписано «Скриншот настоящего Winbox 4» — это живой снимок программы, ' +
-          'а «Схема окна Winbox 4» — точная схема того же окна с подписями.</div>' : '') +
+          'Под шагами — снимки настоящего Winbox 4, сделанные на живом RouterOS: ' +
+          'где окно шага ещё не снято, показано окно того же раздела меню, и это прямо ' +
+          'написано в подписи. Схема с подписью «Схема окна Winbox 4» осталась только ' +
+          'для окон, которых в снимках нет.</div>' : '') +
         '<ol class="steps">' +
         a.steps.map(function (s, i) {
           if (typeof s === 'string') {
@@ -1336,25 +1338,70 @@
 
     bindNotes(a);
 
-    /* окно под каждым шагом инструкции */
+    /* Окно под шагом инструкции. Одно и то же окно не повторяем под каждым
+       шагом: раньше статья с одной схемой показывала пять одинаковых
+       картинок подряд («почему все скрины одинаковые»). Теперь повтор
+       заменяется короткой отсылкой к тому шагу, где окно уже показано. */
     const shots = content.querySelectorAll('.step-shot');
+    const shown = Object.create(null);
     Array.prototype.forEach.call(shots, function (host) {
       const i = parseInt(host.getAttribute('data-si'), 10);
       /* Сначала настоящий снимок Winbox 4 (data/photos.js), потом схема окна. */
       const map = (window.SHOT_STEPS && window.SHOT_STEPS[a.id]) || null;
       const photo = map ? map[i] : null;
-      if (photo) {
+      /* Значение бывает строкой (точное окно шага) и объектом { f, w } —
+         живой снимок того же раздела, когда точного окна ещё нет. */
+      const file = typeof photo === 'string' ? photo : (photo && photo.f);
+      const winName = photo && typeof photo === 'object' ? photo.w : '';
+      if (file) {
+        if (shown['foto:' + file] != null) {
+          host.innerHTML = '<div class="shot-same">Снимок этого окна — в шаге ' +
+            (shown['foto:' + file] + 1) + ' выше.</div>';
+          return;
+        }
+        shown['foto:' + file] = i;
         host.innerHTML = '<figure class="w4-step">' +
-          '<a href="img/shots/' + esc(photo) + '" target="_blank" rel="noopener">' +
-          '<img loading="lazy" src="img/shots/' + esc(photo) + '" alt="Окно Winbox 4"></a>' +
-          '<figcaption>Скриншот настоящего Winbox 4 — снят в CI на живом RouterOS. ' +
+          '<a href="img/shots/' + esc(file) + '" class="shot-link" data-title="Окно Winbox 4" aria-label="Открыть снимок на весь экран">' +
+          '<img loading="lazy" src="img/shots/' + esc(file) + '" alt="Окно Winbox 4"></a>' +
+          '<figcaption>Скриншот настоящего Winbox 4 — снят в CI на живом RouterOS' +
+          (winName ? ', окно «' + esc(winName) + '»: это тот же раздел меню, окно шага ещё не снято'
+            : '') + '. ' +
           '<a href="#/win4">Все окна Winbox 4</a></figcaption></figure>';
         return;
       }
       const pick = stepSceneFor(a, i);
       if (!pick) return;
+      /* Одно окно раздела — одна картинка на статью. Свои схемы шага
+         (src === 'own') не трогаем: они нарисованы под конкретный шаг. */
+      const winKey = 'win:' + (pick.spec.path || pick.spec.win || '');
+      if (pick.src !== 'own' && shown[winKey] != null) {
+        host.innerHTML = '<div class="shot-same">Окно «' +
+          esc(pick.spec.win || pick.spec.path || a.title || 'Winbox') +
+          '» то же, что в шаге ' + (shown[winKey] + 1) + ' выше.</div>';
+        return;
+      }
+      const sign = 'scene:' + JSON.stringify(pick.spec);
+      if (shown[sign] != null) {
+        host.innerHTML = '<div class="shot-same">Окно «' +
+          esc(pick.spec.win || pick.spec.path || a.title || 'Winbox') +
+          '» то же, что в шаге ' + (shown[sign] + 1) + ' выше.</div>';
+        return;
+      }
+      shown[sign] = i;
+      if (pick.src !== 'own') shown[winKey] = i;
+      host.setAttribute('data-win', pick.spec.path || pick.spec.win || '');
       host.insertAdjacentHTML('afterbegin', '<div class="shot-tag">Схема окна Winbox 4</div>');
       Scene.mount(host, [pick.spec], { compact: true });
+      /* Спеки могут отличаться только подсветкой, а выглядеть одинаково —
+         сравниваем то, что действительно нарисовано. */
+      const drawn = 'drawn:' + host.textContent.replace(/\s+/g, ' ').trim();
+      if (shown[drawn] != null && shown[drawn] !== i) {
+        host.innerHTML = '<div class="shot-same">Окно «' +
+          esc(pick.spec.win || pick.spec.path || a.title || 'Winbox') +
+          '» то же, что в шаге ' + (shown[drawn] + 1) + ' выше.</div>';
+      } else {
+        shown[drawn] = i;
+      }
     });
 
     const checkHost = $('#checkHost');
@@ -2512,13 +2559,15 @@
     html += '<h1 class="art-title">Окна Winbox 4 — настоящие снимки</h1>';
     html += '<div class="hint" style="margin:-6px 0 10px">Эти кадры сделаны автоматически в GitHub Actions: ' +
       'RouterOS 7.24.6 (CHR) в виртуальной машине и Winbox 4.4 на виртуальном экране. Ничего не дорисовано. ' +
-      'Всего снимков: ' + list.length + '. Меню слева — то же, что в вашем Winbox.</div>';
+      'Всего снимков: ' + list.length + '. Меню слева — то же, что в вашем Winbox. ' +
+      'Под шагами статей показываются только кадры, где совпадают и окно, и данные шага; ' +
+      'если такого кадра ещё нет, шаг честно показывает схему с нужными значениями.</div>';
     html += '<div class="chips" id="w4Filter"><button class="chip on" data-w4="*">Все</button>' +
       groups.map(function (g) { return '<button class="chip" data-w4="' + esc(g) + '">' + esc(g) + '</button>'; }).join('') +
       '</div>';
     html += '<div class="w4-grid" id="w4Grid">' + list.map(function (x) {
       return '<figure class="w4-fig" data-w4g="' + esc(x.g) + '">' +
-        '<a href="img/shots/' + esc(x.f) + '" target="_blank" rel="noopener">' +
+        '<a href="img/shots/' + esc(x.f) + '" class="shot-link" data-title="' + esc(x.t) + '" aria-label="Открыть снимок на весь экран">' +
         '<img loading="lazy" src="img/shots/' + esc(x.f) + '" alt="' + esc(x.t) + '"></a>' +
         '<figcaption><b>' + esc(x.t) + '</b><span>' + esc(x.d) + '</span></figcaption></figure>';
     }).join('') + '</div></div>';
@@ -5709,6 +5758,12 @@
   }
 
   function goBack() {
+    /* Снимок Winbox 4 открыт поверх статьи: «Назад» закрывает его,
+       а не уводит в предыдущий экран (раньше — в «О программе»). */
+    if (window.ShotView && window.ShotView.isOpen()) {
+      window.ShotView.close();
+      return;
+    }
     if (navTrail.length) {
       popping = true;
       const target = navTrail.pop();
@@ -5948,6 +6003,20 @@
     }
     btn.textContent = 'скопировано';
     setTimeout(function () { btn.textContent = 'копировать'; }, 1400);
+  });
+
+  /* Снимки Winbox 4 открываем своим полноэкранным слоем, а не target=_blank:
+     иначе WebView уводит на файл картинки, «Назад» возвращает не в статью,
+     и нет ни крестика, ни нормального масштаба. */
+  document.addEventListener('click', function (e) {
+    const t = e.target;
+    if (!t || !t.closest) return;
+    const a = t.closest('a.shot-link');
+    if (!a || !window.ShotView) return;
+    e.preventDefault();
+    window.ShotView.open(a.getAttribute('href'), {
+      title: a.getAttribute('data-title') || 'Снимок Winbox 4'
+    });
   });
 
   /* ---------------- init ---------------- */

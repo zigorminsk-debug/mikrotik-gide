@@ -1,0 +1,3032 @@
+{
+  "kept": 1,
+  "removed": 1200,
+  "audit": [
+    {
+      "article": "task-wan-failover",
+      "step": 2,
+      "path": "Interfaces → Interface",
+      "candidate": "interfaces.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ether1",
+        "wan-pppoe",
+        "ether5",
+        "lte1",
+        "ether",
+        "1500",
+        "yes",
+        "lte"
+      ]
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 3,
+      "path": "IP → DHCP Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 4,
+      "path": "PPP → Interfaces",
+      "candidate": "ppp.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wan2-pppoe",
+        "ether5",
+        "pppoe-out",
+        "1480",
+        "yes",
+        "login-ot-provaydera",
+        "••••••••"
+      ]
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 5,
+      "path": "IP → Routes",
+      "candidate": "ip-routes.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "lte1",
+        "0.0.0.0/0",
+        "AS",
+        "203.0.113.1"
+      ]
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 6,
+      "path": "IP → Routes",
+      "candidate": "ip-routes.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "0.0.0.0/0",
+        "AS",
+        "203.0.113.1",
+        "main",
+        "S",
+        "lte1"
+      ]
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 7,
+      "path": "Routing → Table",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 8,
+      "path": "IP → Firewall → Mangle",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 9,
+      "path": "IP → Firewall → Mangle",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 10,
+      "path": "IP → Firewall → Mangle",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 11,
+      "path": "System → Scripts",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 12,
+      "path": "System → Scheduler",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 13,
+      "path": "Log",
+      "candidate": "log.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        ":execute wan-failover",
+        "wan-failover",
+        "nov/07 09:14:02",
+        "script,info",
+        "wan-failover: основной канал устойчив — вернулся на него",
+        "nov/07 09:12:48",
+        "script,warning",
+        "wan-failover: основной канал не отвечает — включён резервный"
+      ]
+    },
+    {
+      "article": "task-wan-failover",
+      "step": 14,
+      "path": "Log",
+      "candidate": "log.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "nov/07 10:03:11",
+        "script,info",
+        "wan-failover: основной канал устойчив — вернулся на него",
+        "nov/07 10:01:08",
+        "script,warning",
+        "wan-failover: основной канал не отвечает — включён резервный"
+      ]
+    },
+    {
+      "article": "wg-server",
+      "step": 2,
+      "path": "WireGuard → WireGuard",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wg-server",
+      "step": 3,
+      "path": "IP → Address",
+      "candidate": "ip-address.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "10.10.10.1/24",
+        "wg0",
+        "10.10.10.2",
+        "10.10.10.3",
+        "10.10.10.0",
+        "192.168.88.1/24",
+        "192.168.88.0",
+        "bridge-lan"
+      ]
+    },
+    {
+      "article": "wg-server",
+      "step": 4,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wg-server",
+      "step": 5,
+      "path": "WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "phone",
+        "wg0",
+        "10.10.10.2/32",
+        "Nv7tR2xQ…9dKp=",
+        "12s ago",
+        "x7LmR2…2QpE="
+      ]
+    },
+    {
+      "article": "wg-server",
+      "step": 6,
+      "path": "WireGuard → Peers → Client Config",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wg-server",
+      "step": 7,
+      "path": "WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "pc",
+        "wg0",
+        "10.10.10.3/32",
+        "10.10.10.1",
+        "phone",
+        "10.10.10.2/32",
+        "1.2 MiB",
+        "8.4 MiB"
+      ]
+    },
+    {
+      "article": "wg-server",
+      "step": 8,
+      "path": "IP → DNS",
+      "candidate": "ip-dns.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "0.0.0.0/0",
+        "chain=srcnat action=masquerade",
+        "wg0",
+        "Servers",
+        "1.1.1.1, 8.8.8.8",
+        "Dynamic Servers",
+        "203.0.113.1",
+        "Allow Remote Requests"
+      ]
+    },
+    {
+      "article": "wg-server",
+      "step": 9,
+      "path": "WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "phone",
+        "ping 10.10.10.1",
+        "ping 192.168.88.1",
+        "192.168.88.1",
+        "wg0",
+        "10.10.10.2/32",
+        "1.2 MiB",
+        "8.4 MiB"
+      ]
+    },
+    {
+      "article": "wg-client-config",
+      "step": 2,
+      "path": "WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "phone",
+        "wg0",
+        "10.10.10.2/32",
+        "never"
+      ]
+    },
+    {
+      "article": "wg-client-config",
+      "step": 3,
+      "path": "WireGuard → Peers → Client Config",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wg-site",
+      "step": 2,
+      "path": "WireGuard → WireGuard",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wg-site",
+      "step": 3,
+      "path": "WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wg-office",
+        "203.0.113.20:13231",
+        "10.10.10.0/24, 192.168.10.0/24",
+        "25s",
+        "office",
+        "q3Jd9kLm2WvT8pR4sXc1hYn6aQe0bFz=",
+        "8s ago"
+      ]
+    },
+    {
+      "article": "wg-site",
+      "step": 4,
+      "path": "IP → Address",
+      "candidate": "ip-address.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "10.10.10.5/32",
+        "wg-office",
+        "/32",
+        "10.10.10.5"
+      ]
+    },
+    {
+      "article": "wg-site",
+      "step": 5,
+      "path": "IP → Routes",
+      "candidate": "ip-routes.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "192.168.10.0/24",
+        "wg-office",
+        "AS",
+        "0.0.0.0/0",
+        "203.0.113.1"
+      ]
+    },
+    {
+      "article": "wg-site",
+      "step": 6,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wg-site",
+      "step": 7,
+      "path": "WireGuard → WireGuard",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wg-site",
+      "step": 8,
+      "path": "WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "office",
+        "ping 10.10.10.1",
+        "ping 192.168.10.1",
+        "wg-office",
+        "203.0.113.20:13231",
+        "4.1 MiB",
+        "1.7 MiB",
+        "8s ago"
+      ]
+    },
+    {
+      "article": "ppp-l2tp-server",
+      "step": 2,
+      "path": "IP → Pool",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-l2tp-server",
+      "step": 3,
+      "path": "PPP → Profiles",
+      "candidate": "ppp-profiles.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "vpn-staff",
+        "10.99.0.1",
+        "vpn-pool",
+        "192.168.88.1"
+      ]
+    },
+    {
+      "article": "ppp-l2tp-server",
+      "step": 4,
+      "path": "PPP → Secrets",
+      "candidate": "ppp-secrets.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ivanov",
+        "vpn-staff",
+        "l2tp",
+        "vpn-pool",
+        "S3cret-2026"
+      ]
+    },
+    {
+      "article": "ppp-l2tp-server",
+      "step": 5,
+      "path": "PPP → L2TP Server",
+      "candidate": "l2tp-server.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "no",
+        "d83n2-officE-vpn",
+        "vpn-staff",
+        "yes",
+        "required"
+      ]
+    },
+    {
+      "article": "ppp-l2tp-server",
+      "step": 6,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-l2tp-server",
+      "step": 7,
+      "path": "IP → Firewall → NAT",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-l2tp-server",
+      "step": 10,
+      "path": "PPP → Active Connections",
+      "candidate": "ppp-active.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ivanov",
+        "l2tp",
+        "10.99.0.100",
+        "00:12:44",
+        "203.0.113.77",
+        "petrova",
+        "10.99.0.101",
+        "00:02:10"
+      ]
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 2,
+      "path": "System → Packages",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 3,
+      "path": "System → Certificates",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 4,
+      "path": "System → Certificates",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 5,
+      "path": "System → Certificates",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 6,
+      "path": "System → Certificates",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 7,
+      "path": "Files",
+      "candidate": "files.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ovpn-ca",
+        "cert_export_ovpn-ca.crt",
+        "cli-phone",
+        "cert_export_cli-phone.crt",
+        ".key",
+        "certificate",
+        "1.9 KiB",
+        "nov/07 19:02"
+      ]
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 8,
+      "path": "PPP → Profiles",
+      "candidate": "ppp-profiles.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ovpn-clients",
+        "10.98.0.1",
+        "10.98.0.100",
+        "10.98.0.100-10.98.0.150"
+      ]
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 9,
+      "path": "PPP → OVPN Server",
+      "candidate": "ovpn-server.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "1194",
+        "tap",
+        "ovpn-server",
+        "ovpn-clients",
+        "yes"
+      ]
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 10,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-ovpn-server",
+      "step": 12,
+      "path": "System → Certificates",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wg-interface",
+      "step": 1,
+      "path": "Interfaces → WireGuard",
+      "candidate": "wireguard.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wg-vpn",
+        "13231",
+        "1420",
+        "kQ2v…8hY="
+      ]
+    },
+    {
+      "article": "wg-peers",
+      "step": 1,
+      "path": "Interfaces → WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wg-vpn",
+        "10.99.0.2/32",
+        "192.168.20.0/24",
+        "pX4r…7bQ=",
+        "198.51.100.7:51820"
+      ]
+    },
+    {
+      "article": "wg-troubleshoot",
+      "step": 1,
+      "path": "Interfaces → WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "pX4r…7bQ=",
+        "10.99.0.2/32",
+        "198.51.100.7:51820",
+        "18s ago"
+      ]
+    },
+    {
+      "article": "start-first-login",
+      "step": 1,
+      "path": "Winbox 4 → Neighbors",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-first-login",
+      "step": 2,
+      "path": "System → Users",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-first-login",
+      "step": 3,
+      "path": "Winbox 4 → Connect",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-first-login",
+      "step": 4,
+      "path": "IP → Services",
+      "candidate": "ip-services.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "winbox",
+        "8291",
+        "192.168.88.0/24",
+        "ssh"
+      ]
+    },
+    {
+      "article": "start-first-login",
+      "step": 5,
+      "path": "Files",
+      "candidate": "files.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "backups/first-config.backup",
+        "backup",
+        "24.1 KiB",
+        "nov/03/2026 09:12",
+        "config-2026-11-03.rsc",
+        "script",
+        "12.6 KiB",
+        "nov/03/2026 03:30"
+      ]
+    },
+    {
+      "article": "start-base-setup",
+      "step": 1,
+      "path": "IP → Address",
+      "candidate": "ip-address.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "WAN",
+        "LAN1…LAN4",
+        "192.168.88.1/24",
+        "100.71.14.9/24"
+      ]
+    },
+    {
+      "article": "start-base-setup",
+      "step": 2,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-base-setup",
+      "step": 3,
+      "path": "Interfaces → Interface",
+      "candidate": "interfaces.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "WAN",
+        "ether",
+        "1500",
+        "1.2 Gbps",
+        "210 Mbps",
+        "LAN1",
+        "340 Mbps",
+        "890 Mbps"
+      ]
+    },
+    {
+      "article": "start-base-setup",
+      "step": 4,
+      "path": "Bridge → Bridge",
+      "candidate": "bridge.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bridge-lan",
+        "802.1Q",
+        "no",
+        "rstp"
+      ]
+    },
+    {
+      "article": "start-base-setup",
+      "step": 5,
+      "path": "IP → DHCP Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-base-setup",
+      "step": 6,
+      "path": "IP → DHCP Server → DHCP Setup",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-base-setup",
+      "step": 7,
+      "path": "IP → DNS",
+      "candidate": "ip-dns.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "1.1.1.1, 8.8.8.8",
+        "4096",
+        "2048 KiB"
+      ]
+    },
+    {
+      "article": "start-base-setup",
+      "step": 8,
+      "path": "IP → Firewall → NAT → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-base-setup",
+      "step": 9,
+      "path": "Files",
+      "candidate": "files.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "backups/first-config.backup",
+        "backup",
+        "24.1 KiB",
+        "nov/03/2026 09:12",
+        "config-2026-11-03.rsc",
+        "script",
+        "12.6 KiB",
+        "nov/03/2026 03:30"
+      ]
+    },
+    {
+      "article": "start-menu-map",
+      "step": 1,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-backup",
+      "step": 1,
+      "path": "Files",
+      "candidate": "files.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "backups/2026-11-02",
+        ".backup",
+        "backups/2026-11-02.backup"
+      ]
+    },
+    {
+      "article": "start-backup",
+      "step": 2,
+      "path": "Files → Backup",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-upgrade",
+      "step": 1,
+      "path": "System → Packages",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-upgrade",
+      "step": 2,
+      "path": "System → RouterBOOT",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-safe",
+      "step": 1,
+      "path": "System → Reset Configuration",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-safe",
+      "step": 2,
+      "path": "Safe Mode",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-chr",
+      "step": 1,
+      "path": "System → Resources",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-rollback",
+      "step": 1,
+      "path": "Log",
+      "candidate": "log.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "input: in:WAN out:(unknown 0), src:203.0.113.44 dst:100.71.14.9, proto TCP (SYN), len:60"
+      ]
+    },
+    {
+      "article": "start-winbox4",
+      "step": 1,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "start-passwords",
+      "step": 1,
+      "path": "IP → Services",
+      "candidate": "ip-services.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "winbox",
+        "8291",
+        "192.168.10.0/24"
+      ]
+    },
+    {
+      "article": "start-remote-access",
+      "step": 1,
+      "path": "IP → Services",
+      "candidate": "ip-services.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "winbox",
+        "192.168.10.0/24,10.99.0.0/24"
+      ]
+    },
+    {
+      "article": "if-list",
+      "step": 1,
+      "path": "Interfaces → Interface",
+      "candidate": "interfaces.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "R",
+        "X"
+      ]
+    },
+    {
+      "article": "if-ethernet",
+      "step": 1,
+      "path": "Interfaces → Ethernet",
+      "candidate": "eth.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "WAN",
+        "1Gbps",
+        "ether5",
+        "100Mbps"
+      ]
+    },
+    {
+      "article": "if-vlan",
+      "step": 1,
+      "path": "Interfaces → VLAN",
+      "candidate": "vlan.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "vlan10-office",
+        "bridge-lan",
+        "1500",
+        "enabled",
+        "false"
+      ]
+    },
+    {
+      "article": "if-bonding",
+      "step": 1,
+      "path": "Interfaces → Bonding",
+      "candidate": "bonding.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bond-wan",
+        "802.3ad",
+        "ether1, ether2",
+        "1sec",
+        "layer-2-and-3",
+        "yes"
+      ]
+    },
+    {
+      "article": "if-bridge",
+      "step": 1,
+      "path": "Bridge → Bridge",
+      "candidate": "bridge.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bridge-lan"
+      ]
+    },
+    {
+      "article": "if-bridge",
+      "step": 2,
+      "path": "Bridge → Ports",
+      "candidate": "bridge-ports.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ether2",
+        "yes",
+        "wifi1"
+      ]
+    },
+    {
+      "article": "if-bridge-ports",
+      "step": 1,
+      "path": "Bridge → Ports",
+      "candidate": "bridge-ports.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ether4",
+        "yes"
+      ]
+    },
+    {
+      "article": "if-bridge-vlan",
+      "step": 1,
+      "path": "Bridge → VLANs",
+      "candidate": "bridge-vlans.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bridge-lan"
+      ]
+    },
+    {
+      "article": "if-bridge-vlan",
+      "step": 2,
+      "path": "Bridge → Bridge",
+      "candidate": "bridge.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bridge-lan",
+        "yes",
+        "rstp",
+        "no",
+        "true"
+      ]
+    },
+    {
+      "article": "if-bridge-hosts",
+      "step": 1,
+      "file": "bridge-hosts.jpg",
+      "status": "verified"
+    },
+    {
+      "article": "if-pppoe-client",
+      "step": 1,
+      "path": "Interfaces → PPPoE Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "if-vrrp",
+      "step": 1,
+      "path": "Interfaces → VRRP",
+      "candidate": "vrrp.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "vrrp-lan",
+        "200",
+        "MASTER"
+      ]
+    },
+    {
+      "article": "if-detect",
+      "step": 1,
+      "path": "Interfaces → Interface List",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "if-lte",
+      "step": 1,
+      "path": "Interfaces → LTE",
+      "candidate": "lte.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "lte1",
+        "1500",
+        "internet",
+        "connected"
+      ]
+    },
+    {
+      "article": "if-lists",
+      "step": 1,
+      "path": "Interfaces → Interface List",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "if-vxlan",
+      "step": 1,
+      "path": "Interfaces → VXLAN",
+      "candidate": "vxlan.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "vxlan-10",
+        "10.99.0.1",
+        "10.99.0.2",
+        "4789",
+        "1450"
+      ]
+    },
+    {
+      "article": "if-ethernet-tune",
+      "step": 1,
+      "path": "Interfaces → Ethernet",
+      "candidate": "eth.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ether1-wan",
+        "1G-baseT-full",
+        "yes",
+        "auto"
+      ]
+    },
+    {
+      "article": "if-bridge-nat",
+      "step": 1,
+      "path": "Bridge → Filters",
+      "candidate": "bridge-filters.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bridge-guest",
+        "forward",
+        "drop"
+      ]
+    },
+    {
+      "article": "sw-switch",
+      "step": 1,
+      "path": "Switch → Switch",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sw-vlan",
+      "step": 1,
+      "path": "Switch → VLANs",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sw-rules",
+      "step": 1,
+      "path": "Switch → Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sw-hw-offload",
+      "step": 1,
+      "path": "Bridge → Settings",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sw-storm",
+      "step": 1,
+      "path": "Bridge → Ports",
+      "candidate": "bridge-ports.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "rstp",
+        "ether3",
+        "bridge-lan",
+        "yes"
+      ]
+    },
+    {
+      "article": "sw-hosts",
+      "step": 1,
+      "path": "Switch → Hosts",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sw-mirror",
+      "step": 1,
+      "path": "Switch → Settings",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-address",
+      "step": 1,
+      "path": "IP → Address",
+      "candidate": "ip-address.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "192.168.88.1/24",
+        "bridge-lan"
+      ]
+    },
+    {
+      "article": "ip-address",
+      "step": 2,
+      "path": "IP → Address → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-routes",
+      "step": 1,
+      "path": "IP → Routes",
+      "candidate": "ip-routes.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "AS",
+        "0.0.0.0/0",
+        "203.0.113.1 reachable"
+      ]
+    },
+    {
+      "article": "ip-routes",
+      "step": 2,
+      "path": "IP → Routes → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-routes",
+      "step": 3,
+      "path": "Tools → Netwatch",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dns",
+      "step": 1,
+      "path": "IP → DNS",
+      "candidate": "ip-dns.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "1.1.1.1, 8.8.8.8",
+        "10.20.0.1",
+        "yes",
+        "4096",
+        "2048 KiB",
+        "1w",
+        "2s"
+      ]
+    },
+    {
+      "article": "ip-dns",
+      "step": 2,
+      "path": "IP → DNS → Static",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dns",
+      "step": 3,
+      "path": "IP → Routes → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dhcp-client",
+      "step": 1,
+      "path": "IP → DHCP Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dhcp-server",
+      "step": 1,
+      "path": "IP → DHCP Server",
+      "candidate": "ip-dhcp-server.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "dhcp-lan",
+        "bridge-lan"
+      ]
+    },
+    {
+      "article": "ip-dhcp-server",
+      "step": 2,
+      "path": "IP → DHCP Server → Networks",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dhcp-server",
+      "step": 3,
+      "path": "IP → DHCP Server → DHCP Setup",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dhcp-server",
+      "step": 4,
+      "path": "IP → DHCP Server → Leases",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dhcp-server",
+      "step": 5,
+      "path": "IP → DHCP Server → Options",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dhcp-relay",
+      "step": 1,
+      "path": "IP → DHCP Relay",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-arp",
+      "step": 1,
+      "path": "IP → ARP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-filter",
+      "step": 1,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-filter",
+      "step": 2,
+      "path": "IP → Firewall → Filter Rules → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-nat",
+      "step": 1,
+      "path": "IP → Firewall → NAT",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-nat",
+      "step": 2,
+      "path": "IP → Firewall → NAT → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-mangle",
+      "step": 1,
+      "path": "IP → Firewall → Mangle",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-raw",
+      "step": 1,
+      "path": "IP → Firewall → Raw",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-connections",
+      "step": 1,
+      "path": "IP → Firewall → Connections",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-addresslists",
+      "step": 1,
+      "path": "IP → Firewall → Address Lists",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-firewall-serviceports",
+      "step": 1,
+      "path": "IP → Firewall → Service Ports",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-cloud",
+      "step": 1,
+      "path": "IP → Cloud",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-services",
+      "step": 1,
+      "path": "IP → Services",
+      "candidate": "ip-services.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "192.168.88.0/24",
+        "telnet",
+        "true"
+      ]
+    },
+    {
+      "article": "ip-services",
+      "step": 2,
+      "path": "IP → Services",
+      "candidate": "ip-services.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "winbox",
+        "8291",
+        "192.168.88.0/24",
+        "ssh"
+      ]
+    },
+    {
+      "article": "ip-neighbor",
+      "step": 1,
+      "path": "IP → Neighbor Discovery",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-pool",
+      "step": 1,
+      "path": "IP → Pool",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-hotspot",
+      "step": 1,
+      "path": "IP → Hotspot",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-hotspot",
+      "step": 2,
+      "path": "IP → Hotspot → User Profiles",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-kidcontrol",
+      "step": 1,
+      "path": "IP → Kid Control",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-sntp",
+      "step": 1,
+      "path": "IP → SNTP Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-settings",
+      "step": 1,
+      "path": "IP → Settings",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-smb",
+      "step": 1,
+      "path": "IP → SMB",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-upnp",
+      "step": 1,
+      "path": "IP → UPnP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-vrf",
+      "step": 1,
+      "path": "IP → VRF",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-webproxy",
+      "step": 1,
+      "path": "IP → Web Proxy",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-misc",
+      "step": 1,
+      "path": "IP → TFTP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-arp-modes",
+      "step": 1,
+      "path": "IP → ARP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-dhcp-options",
+      "step": 1,
+      "path": "IP → DHCP Server → Leases",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ip-ssh-tftp",
+      "step": 1,
+      "path": "IP → Services",
+      "candidate": "ip-services.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "192.168.10.0/24",
+        "ssh"
+      ]
+    },
+    {
+      "article": "ip-secondary-address",
+      "step": 1,
+      "path": "IP → Address",
+      "candidate": "ip-address.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "192.168.20.1/24",
+        "bridge-lan",
+        "192.168.10.1/24",
+        "192.168.10.0"
+      ]
+    },
+    {
+      "article": "ip-tftp-pxe",
+      "step": 1,
+      "path": "IP → DHCP Server → Options",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-address",
+      "step": 1,
+      "path": "IPv6 → Address",
+      "candidate": "ipv6.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "2a01:db8:1::1/64",
+        "bridge-lan"
+      ]
+    },
+    {
+      "article": "ipv6-dhcp-client",
+      "step": 1,
+      "path": "IPv6 → DHCP Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-dhcp-server",
+      "step": 1,
+      "path": "IPv6 → DHCP Server",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-nd",
+      "step": 1,
+      "path": "IPv6 → ND",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-firewall",
+      "step": 1,
+      "path": "IPv6 → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-routes",
+      "step": 1,
+      "path": "IPv6 → Routes",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-pd",
+      "step": 1,
+      "path": "IPv6 → DHCP Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-dualstack-check",
+      "step": 1,
+      "path": "IPv6 → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-pool",
+      "step": 1,
+      "path": "IPv6 → Pool",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ipv6-settings",
+      "step": 1,
+      "path": "IPv6 → Settings",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-profiles",
+      "step": 1,
+      "path": "PPP → Profiles",
+      "candidate": "ppp-profiles.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "pppoe-clients",
+        "10.255.0.1",
+        "pool-pppoe",
+        "1.1.1.1,8.8.8.8"
+      ]
+    },
+    {
+      "article": "ppp-secrets",
+      "step": 1,
+      "path": "PPP → Secrets",
+      "candidate": "ppp-secrets.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "client01",
+        "pppoe",
+        "pppoe-clients"
+      ]
+    },
+    {
+      "article": "ppp-pppoe-server",
+      "step": 1,
+      "path": "PPP → PPPoE Server",
+      "candidate": "pppoe-server.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "isp",
+        "bridge-clients"
+      ]
+    },
+    {
+      "article": "ppp-pppoe-client",
+      "step": 1,
+      "path": "PPP → Interfaces → PPPoE Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-l2tp-client",
+      "step": 1,
+      "path": "PPP → Interfaces → L2TP Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-pptp-server",
+      "step": 1,
+      "path": "PPP → PPTP Server",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-sstp-server",
+      "step": 1,
+      "path": "PPP → SSTP Server",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-aaa-radius",
+      "step": 1,
+      "path": "RADIUS",
+      "candidate": "radius.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "10.10.0.5",
+        "общий секрет",
+        "••••••••",
+        "1812",
+        "1813",
+        "2s"
+      ]
+    },
+    {
+      "article": "ppp-limits",
+      "step": 1,
+      "path": "PPP → Profiles",
+      "candidate": "ppp-profiles.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "staff",
+        "10.99.0.1",
+        "10.99.0.100",
+        "10M/10M"
+      ]
+    },
+    {
+      "article": "ppp-active",
+      "step": 1,
+      "path": "PPP → Active Connections",
+      "candidate": "ppp-active.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "client01",
+        "pppoe",
+        "10.255.0.55"
+      ]
+    },
+    {
+      "article": "ppp-addresses",
+      "step": 1,
+      "path": "IP → Pool",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "ppp-ipv6",
+      "step": 1,
+      "path": "IPv6 → Address",
+      "candidate": "ipv6.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "2001:db8:10::1/64",
+        "bridge-lan",
+        "yes"
+      ]
+    },
+    {
+      "article": "ppp-keepalive-mtu",
+      "step": 1,
+      "path": "IP → Firewall → Mangle",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-wireguard",
+      "step": 1,
+      "path": "Interfaces → WireGuard",
+      "candidate": "wireguard.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wg0",
+        "13231"
+      ]
+    },
+    {
+      "article": "vpn-wireguard",
+      "step": 2,
+      "path": "Interfaces → WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "10.10.10.1/24",
+        "wg0",
+        "x7Lm…2QpE=",
+        "10.10.10.2/32",
+        "12s ago"
+      ]
+    },
+    {
+      "article": "vpn-wireguard",
+      "step": 3,
+      "path": "Interfaces → WireGuard → Peers → New",
+      "candidate": "wg-new.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "10.10.10.2/32",
+        "203.0.113.77:13231",
+        "wg0",
+        "pQ8k…Xr2A=",
+        "10.10.10.2/32, 192.168.50.0/24",
+        "198.51.100.7:51820",
+        "25s"
+      ]
+    },
+    {
+      "article": "vpn-ipsec-ikev2",
+      "step": 1,
+      "path": "IP → IPsec → Peers",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-tunnels",
+      "step": 1,
+      "path": "Interfaces → EoIP Tunnel",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-zerotier",
+      "step": 1,
+      "path": "ZeroTier → ZeroTier",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-choose",
+      "step": 1,
+      "path": "PPP → L2TP Server",
+      "candidate": "l2tp-server.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "yes",
+        "••••••••",
+        "vpn-staff",
+        "mschap2",
+        "30s"
+      ]
+    },
+    {
+      "article": "vpn-ipsec-policy",
+      "step": 1,
+      "path": "IP → IPsec → Policies",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-ipsec-keys",
+      "step": 1,
+      "path": "IP → IPsec → Identities",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-pptp",
+      "step": 1,
+      "path": "PPP → PPTP Server",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-sstp",
+      "step": 1,
+      "path": "PPP → SSTP Server",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-openvpn",
+      "step": 1,
+      "path": "PPP → OVPN Server",
+      "candidate": "ovpn-server.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "yes",
+        "1194",
+        "ovpn-server",
+        "aes256-cbc",
+        "ovpn-clients"
+      ]
+    },
+    {
+      "article": "vpn-site2site",
+      "step": 1,
+      "path": "Interfaces → WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wg-site",
+        "192.168.20.0/24",
+        "203.0.113.10:13231"
+      ]
+    },
+    {
+      "article": "vpn-firewall",
+      "step": 1,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "vpn-split-tunnel",
+      "step": 1,
+      "path": "PPP → Profiles",
+      "candidate": "ppp-profiles.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "10.99.0.1",
+        "10.99.0.100",
+        "vpn-staff"
+      ]
+    },
+    {
+      "article": "vpn-troubleshoot",
+      "step": 1,
+      "path": "System → Logging",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "mpls-basics",
+      "step": 1,
+      "path": "MPLS → MPLS",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "mpls-basics",
+      "step": 2,
+      "path": "MPLS → MPLS",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "mpls-basics",
+      "step": 3,
+      "path": "IP → Routes → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "mpls-ldp",
+      "step": 1,
+      "path": "MPLS → LDP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "mpls-vpls",
+      "step": 1,
+      "path": "MPLS → L2VPN",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "mpls-troubleshoot",
+      "step": 1,
+      "path": "MPLS → Forwarding",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wifi-interface",
+      "step": 1,
+      "path": "WiFi → WiFi",
+      "candidate": "wifi.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wifi-qcom",
+        "wifi-qcom-ac",
+        "wifi1",
+        "radio1 (5GHz)",
+        "Office"
+      ]
+    },
+    {
+      "article": "wifi-interface",
+      "step": 2,
+      "path": "WiFi → WiFi → New",
+      "candidate": "wifi-new.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "radio1",
+        "Office",
+        "sec-office",
+        "wifi-office",
+        "wifi1",
+        "20/40/80mhz"
+      ]
+    },
+    {
+      "article": "wifi-security",
+      "step": 1,
+      "path": "WiFi → Security",
+      "candidate": "wifi-security.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "sec-office",
+        "wpa2-psk, wpa3-psk"
+      ]
+    },
+    {
+      "article": "wifi-accesslist",
+      "step": 1,
+      "path": "WiFi → Access List",
+      "candidate": "wifi-access-list.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wifi1",
+        "D4:CA:6D:77:01:2E",
+        "accept",
+        "reject"
+      ]
+    },
+    {
+      "article": "wifi-capsman",
+      "step": 1,
+      "path": "WiFi → CAPsMAN → Remote CAP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wifi-legacy",
+      "step": 1,
+      "path": "Wireless → Wireless",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wifi-roaming",
+      "step": 1,
+      "path": "WiFi → WiFi",
+      "candidate": "wifi.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "Office",
+        "sec-office",
+        "5GHz-ax",
+        "yes"
+      ]
+    },
+    {
+      "article": "wifi-slow",
+      "step": 1,
+      "path": "WiFi → Registration",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wifi-wps",
+      "step": 1,
+      "path": "WiFi → WPS",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "wifi-sniffer",
+      "step": 1,
+      "path": "WiFi → Sniffer",
+      "candidate": "wifi-sniffer.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wifi1",
+        "wifi-sniff.pcap",
+        "mac: A4:5E:60:11:22:33",
+        "10 MiB"
+      ]
+    },
+    {
+      "article": "wifi-channels",
+      "step": 1,
+      "path": "WiFi → WiFi",
+      "candidate": "wifi.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "5GHz-ax",
+        "40MHz",
+        "enabled",
+        "17 dBm"
+      ]
+    },
+    {
+      "article": "rt-tables",
+      "step": 1,
+      "path": "Routing → Tables",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-rules",
+      "step": 1,
+      "path": "Routing → Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-ospf",
+      "step": 1,
+      "path": "Routing → OSPF → Neighbors",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-bgp",
+      "step": 1,
+      "path": "Routing → BGP → Connections",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-bgp",
+      "step": 2,
+      "path": "Routing → BGP → Connections → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-rip",
+      "step": 1,
+      "path": "Routing → RIP → Interfaces",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-filters",
+      "step": 1,
+      "path": "Routing → Prefix Lists",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-bfd",
+      "step": 1,
+      "path": "Routing → BFD → Sessions",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-ecmp",
+      "step": 1,
+      "path": "IP → Routes",
+      "candidate": "ip-routes.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "0.0.0.0/0",
+        "ether1-wan",
+        "lte1",
+        "AS"
+      ]
+    },
+    {
+      "article": "rt-ospf-areas",
+      "step": 1,
+      "path": "Routing → OSPF → Networks",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-nexthops",
+      "step": 1,
+      "path": "Routing → Nexthops",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-prefix-lists",
+      "step": 1,
+      "path": "Routing → Prefix Lists",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-bgp-templates",
+      "step": 1,
+      "path": "Routing → BGP → Connections",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-igmp-proxy",
+      "step": 1,
+      "path": "Routing → IGMP Proxy",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "rt-settings",
+      "step": 1,
+      "path": "Routing → Settings",
+      "candidate": "routing.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "10.255.255.1",
+        "yes",
+        "L3"
+      ]
+    },
+    {
+      "article": "q-simple",
+      "step": 1,
+      "path": "Queues → Simple Queues",
+      "candidate": "queues.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "guest-limit",
+        "10.20.0.0/24",
+        "20M/20M"
+      ]
+    },
+    {
+      "article": "q-simple",
+      "step": 2,
+      "path": "Queues → Simple Queues → New",
+      "candidate": "simple-new.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "guest-limit",
+        "192.168.20.0/24",
+        "10M",
+        "30M",
+        "40M"
+      ]
+    },
+    {
+      "article": "q-tree",
+      "step": 1,
+      "path": "Queues → Queue Tree",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "q-types",
+      "step": 1,
+      "path": "Queues → Queue Types",
+      "candidate": "queue-types.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "cake-bulk",
+        "cake",
+        "100M"
+      ]
+    },
+    {
+      "article": "q-interface",
+      "step": 1,
+      "path": "Queues → Interface Queues",
+      "candidate": "queue-iface.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ether1",
+        "ethernet-default"
+      ]
+    },
+    {
+      "article": "q-cake",
+      "step": 1,
+      "path": "Queues → Simple Queues",
+      "candidate": "queues.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "fq-codel",
+        "cake",
+        "lan-shape",
+        "192.168.10.0/24",
+        "95M/95M",
+        "cake-upload/cake-download"
+      ]
+    },
+    {
+      "article": "q-burst",
+      "step": 1,
+      "path": "Queues → Simple Queues",
+      "candidate": "queues.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "15M/15M",
+        "8M/8M",
+        "8s",
+        "10M/10M"
+      ]
+    },
+    {
+      "article": "sys-identity",
+      "step": 1,
+      "path": "System → Identity",
+      "candidate": "system.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "office-gw-01"
+      ]
+    },
+    {
+      "article": "sys-clock",
+      "step": 1,
+      "path": "System → NTP Client",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-users",
+      "step": 1,
+      "path": "System → Users",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-users",
+      "step": 2,
+      "path": "System → Users → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-users",
+      "step": 3,
+      "path": "IP → Services",
+      "candidate": "ip-services.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "winbox",
+        "8291",
+        "192.168.88.0/24",
+        "ssh"
+      ]
+    },
+    {
+      "article": "sys-certificates",
+      "step": 1,
+      "path": "System → Certificates",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-files",
+      "step": 1,
+      "path": "System → Files",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-logging",
+      "step": 1,
+      "path": "System → Logging",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-packages",
+      "step": 1,
+      "path": "System → Packages",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-routerboard",
+      "step": 1,
+      "path": "System → RouterBOOT",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-scheduler",
+      "step": 1,
+      "path": "System → Scheduler",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-scheduler",
+      "step": 2,
+      "path": "System → Scheduler → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-scripts",
+      "step": 1,
+      "path": "System → Scripts",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-backup-menu",
+      "step": 1,
+      "path": "Files → Backup",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-resources",
+      "step": 1,
+      "path": "System → Resources",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-health",
+      "step": 1,
+      "path": "System → Health",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-watchdog",
+      "step": 1,
+      "path": "System → Watchdog",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-autoupgrade",
+      "step": 1,
+      "path": "System → Auto Upgrade",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-license",
+      "step": 1,
+      "path": "System → License",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-note-leds",
+      "step": 1,
+      "path": "System → Note",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-history",
+      "step": 1,
+      "path": "System → History",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-lets-encrypt",
+      "step": 1,
+      "path": "System → Certificates",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-log-remote",
+      "step": 1,
+      "path": "System → Logging",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-ports",
+      "step": 1,
+      "path": "System → Ports",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-reboot",
+      "step": 1,
+      "path": "System → Scheduler",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "sys-user-policy",
+      "step": 1,
+      "path": "System → Users",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-ping",
+      "step": 1,
+      "path": "Tools → Ping",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-traceroute",
+      "step": 1,
+      "path": "Tools → Traceroute",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-torch",
+      "step": 1,
+      "path": "Tools → Torch",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-profiler",
+      "step": 1,
+      "path": "Tools → Profiler",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-sniffer",
+      "step": 1,
+      "path": "Tools → Sniffer",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-netwatch",
+      "step": 1,
+      "path": "Tools → Netwatch",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-graphing",
+      "step": 1,
+      "path": "Tools → Graphing",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-bwtest",
+      "step": 1,
+      "path": "Tools → Bandwidth Test",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-trafficgen",
+      "step": 1,
+      "path": "Tools → Traffic Generator",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-email-wol",
+      "step": 1,
+      "path": "Tools → Wake on LAN",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-romon",
+      "step": 1,
+      "path": "Tools → RoMON",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-fetch",
+      "step": 1,
+      "path": "Tools → Fetch",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-netwatch-script",
+      "step": 1,
+      "path": "Tools → Netwatch",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-latency-monitor",
+      "step": 1,
+      "path": "Tools → Graphing",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-ipscan",
+      "step": 1,
+      "path": "Tools → IP Scan",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-traffic-monitor",
+      "step": 1,
+      "path": "Tools → Traffic Monitor",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "tool-sms",
+      "step": 1,
+      "path": "Tools → SMS",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-lan-internet",
+      "step": 1,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-port-forward",
+      "step": 1,
+      "path": "IP → Firewall → NAT",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-port-forward",
+      "step": 2,
+      "path": "IP → Firewall → NAT → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-port-forward",
+      "step": 3,
+      "path": "IP → Firewall → NAT → Action",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-guest-wifi",
+      "step": 1,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-guest-wifi",
+      "step": 2,
+      "path": "WiFi → WiFi",
+      "candidate": "wifi.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wifi-guest",
+        "radio1",
+        "Office-Guest",
+        "sec-guest",
+        "vlan-id=20"
+      ]
+    },
+    {
+      "article": "task-vlan-office",
+      "step": 1,
+      "path": "Bridge → VLANs",
+      "candidate": "bridge-vlans.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bridge-lan",
+        "ether2, ether3"
+      ]
+    },
+    {
+      "article": "task-failover",
+      "step": 1,
+      "path": "IP → Routes",
+      "candidate": "ip-routes.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "AS",
+        "0.0.0.0/0",
+        "203.0.113.1 reachable",
+        "S"
+      ]
+    },
+    {
+      "article": "task-failover",
+      "step": 2,
+      "path": "Tools → Netwatch",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-failover",
+      "step": 3,
+      "path": "IP → Routes → New",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-pcc",
+      "step": 1,
+      "path": "IP → Firewall → Mangle",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-qos",
+      "step": 1,
+      "path": "Queues → Queue Tree",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-wg-site",
+      "step": 1,
+      "path": "Interfaces → WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wg-branch",
+        "x7Lm…2QpE=",
+        "10.10.10.2/32, 192.168.50.0/24",
+        "25s"
+      ]
+    },
+    {
+      "article": "task-wg-site",
+      "step": 2,
+      "path": "IP → Routes",
+      "candidate": "ip-routes.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "AS",
+        "192.168.50.0/24",
+        "wg-branch"
+      ]
+    },
+    {
+      "article": "task-l2tp-vpn",
+      "step": 1,
+      "path": "PPP → L2TP Server",
+      "candidate": "l2tp-server.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "yes",
+        "vpn-staff",
+        "••••••••••••",
+        "mschap2"
+      ]
+    },
+    {
+      "article": "task-pppoe-isp",
+      "step": 1,
+      "path": "PPP → PPPoE Server",
+      "candidate": "pppoe-server.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bridge-clients",
+        "isp",
+        "pppoe-clients"
+      ]
+    },
+    {
+      "article": "task-hotspot-vouchers",
+      "step": 1,
+      "path": "IP → Hotspot → Users",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-capsman",
+      "step": 1,
+      "path": "WiFi → CAPsMAN → Remote CAP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-lte-backup",
+      "step": 1,
+      "path": "Interfaces → LTE",
+      "candidate": "lte.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "lte1",
+        "default",
+        "internet.operator.by",
+        "ipv4",
+        "****",
+        "registered"
+      ]
+    },
+    {
+      "article": "task-protect-router",
+      "step": 1,
+      "path": "IP → Firewall → Address Lists",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-tenants",
+      "step": 1,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-monitoring",
+      "step": 1,
+      "path": "IP → SNMP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-backup-automation",
+      "step": 1,
+      "path": "System → Scheduler",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-recover-access",
+      "step": 1,
+      "path": "System → Reset Configuration",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-bgp-multihome",
+      "step": 1,
+      "path": "Routing → BGP → Sessions",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-iptv",
+      "step": 1,
+      "path": "Routing → IGMP Proxy",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-dns-security",
+      "step": 1,
+      "path": "IP → DNS",
+      "candidate": "ip-dns.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "https://cloudflare-dns.com/dns-query",
+        "1.1.1.1, 8.8.8.8",
+        "yes",
+        "4096 KiB",
+        "1d"
+      ]
+    },
+    {
+      "article": "task-rogue-dhcp",
+      "step": 1,
+      "path": "Bridge → Filters",
+      "candidate": "bridge-filters.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "forward",
+        "ether3, ether4, ether5",
+        "udp",
+        "drop"
+      ]
+    },
+    {
+      "article": "task-vpn-hub",
+      "step": 1,
+      "path": "Interfaces → WireGuard → Peers",
+      "candidate": "wg-peers.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "10.200.0.1/24",
+        "10.200.0.N/32",
+        "brA…k=",
+        "10.200.0.11/32, 192.168.11.0/24",
+        "198.51.100.11:13231"
+      ]
+    },
+    {
+      "article": "task-audit-checkup",
+      "step": 1,
+      "path": "System → Resources",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-office-from-scratch",
+      "step": 1,
+      "path": "IP → Firewall → Filter Rules",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-office-from-scratch",
+      "step": 2,
+      "path": "New Terminal",
+      "candidate": "terminal.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "ether1",
+        "ether2-ether5"
+      ]
+    },
+    {
+      "article": "task-office-from-scratch",
+      "step": 3,
+      "path": "Files",
+      "candidate": "files.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "backups/first-config.backup",
+        "backup",
+        "24.1 KiB",
+        "nov/03/2026 09:12",
+        "config-2026-11-03.rsc",
+        "script",
+        "12.6 KiB",
+        "nov/03/2026 03:30"
+      ]
+    },
+    {
+      "article": "task-guest-iot-vlan",
+      "step": 1,
+      "path": "Bridge → VLANs",
+      "candidate": "bridge-vlans.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "bridge-lan",
+        "ether2,ether5"
+      ]
+    },
+    {
+      "article": "task-snmp-zabbix",
+      "step": 1,
+      "path": "IP → SNMP",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-snmp-zabbix",
+      "step": 2,
+      "path": "Tools → Netwatch",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-config-versioning",
+      "step": 1,
+      "path": "System → Scheduler",
+      "candidate": null,
+      "status": "no-shot",
+      "missing": []
+    },
+    {
+      "article": "task-corp-wifi-8021x",
+      "step": 1,
+      "path": "WiFi → Security",
+      "candidate": "wifi-security.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "wireless",
+        "wpa2-eap, wpa3-eap",
+        "peap",
+        "allowed",
+        "192.168.10.60"
+      ]
+    },
+    {
+      "article": "task-migration",
+      "step": 1,
+      "path": "Files",
+      "candidate": "files.jpg",
+      "status": "data-mismatch",
+      "missing": [
+        "/export file=old-full",
+        "old-full.rsc",
+        "script",
+        "14.8 KiB",
+        "nov/03/2026 03:30:10"
+      ]
+    }
+  ]
+}

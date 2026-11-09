@@ -1,0 +1,9 @@
+quickset|1|Quick Set
+wifi|1|WiFi
+wifi-new|1|WiFi → New
+wifi-security|1|WiFi → Security
+wifi-access-list|1|WiFi → Access List
+interfaces|1|Interfaces
+eth|1|Interfaces → Ethernet
+vlan|1|Interfaces → VLAN
+bonding|1|Interfaces → Bonding

@@ -1321,3 +1321,56 @@ html[data-fs="7"] .grid2, html[data-fs="7"] .tools-grid{gap:10px}
 .w4-step figcaption{padding:7px 10px;font-size:calc(12px * var(--fsm,1));color:var(--mute)}
 .w4-step figcaption a{color:var(--accent)}
 .shot-tag{font-size:calc(11px * var(--fsm,1));text-transform:uppercase;letter-spacing:.04em;color:var(--mute);opacity:.8;margin:8px 0 2px}
+/* Повтор того же окна не рисуем второй раз — отсылка к первому шагу. */
+.shot-same{font-size:calc(12px * var(--fsm,1));color:var(--mute);opacity:.85;margin:6px 0 2px;padding:6px 10px;border-left:2px solid var(--line,rgba(255,255,255,.14))}
+
+/* Полноэкранный просмотр снимка: свой слой, крестик, масштаб 1:1.
+   Ссылка больше не уводит WebView на файл картинки. */
+.shot-link{display:block;cursor:zoom-in}
+.shot-link img{image-rendering:auto}
+.shot-layer{
+  position:fixed;inset:0;z-index:140;background:#070b10;
+  display:flex;flex-direction:column;
+  width:100%;height:100%;
+}
+.shot-head{
+  display:flex;align-items:center;gap:8px;padding:8px 10px;
+  padding-top:calc(8px + env(safe-area-inset-top));
+  background:#0d141c;border-bottom:1px solid #1e2a37;color:#cfe3f7;flex:0 0 auto;
+}
+.shot-head .title{
+  font-size:calc(13px * var(--fsm,1));font-weight:600;flex:1;min-width:0;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.shot-close{
+  flex:0 0 auto;min-width:40px;height:36px;padding:0 10px;border:1px solid #2a3a4d;border-radius:9px;
+  background:#131c26;color:#e6edf3;font-size:calc(14px * var(--fsm,1));font-weight:700;
+  cursor:pointer;line-height:1;white-space:nowrap;
+}
+.shot-close:active{background:#1e2a37}
+.shot-stage{
+  flex:1;position:relative;overflow:auto;-webkit-overflow-scrolling:touch;
+  background:#070b10;touch-action:none;overscroll-behavior:contain;
+  cursor:grab;
+}
+.shot-stage.grabbing{cursor:grabbing}
+.shot-canvas{position:relative;width:100%;height:100%}
+.shot-box{position:absolute;left:0;top:0}
+.shot-img{
+  display:block;max-width:none;max-height:none;
+  box-shadow:0 14px 44px rgba(0,0,0,.65);border-radius:6px;
+  image-rendering:auto;-webkit-user-select:none;user-select:none;
+}
+.shot-tip{
+  font-size:calc(11.5px * var(--fsm,1));color:#8b9bad;
+  padding:6px 10px calc(6px + env(safe-area-inset-bottom));
+  background:#0d141c;border-top:1px solid #1e2a37;text-align:center;flex:0 0 auto;
+}
+.shot-cap{margin-top:4px;color:#9fb2c6}
+@media (max-width:520px){
+  .shot-head{gap:6px;padding:6px 8px;padding-top:calc(6px + env(safe-area-inset-top))}
+  .shot-head .title{font-size:calc(12px * var(--fsm,1))}
+  .shot-close{min-width:44px;height:40px;padding:0 8px}
+  .shot-close-txt{display:none}
+  .shot-tip{font-size:calc(10.5px * var(--fsm,1))}
+}
