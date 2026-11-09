@@ -25,6 +25,8 @@ const ALIASES = {
   /* Одно и то же окно, названное по-разному в статьях и в списке съёмки. */
   'WireGuard → WireGuard': 'WireGuard',
   'System → Files': 'Files',
+  'Routing → Table': 'Routing → Tables',
+  'Interfaces → Ethernet': 'Interfaces → Ethernet',
   'Interfaces → Interface': 'Interfaces',
   'Interfaces → WireGuard': 'WireGuard',
   'Interfaces → WireGuard → Peers': 'WireGuard → Peers',

@@ -62,6 +62,13 @@ QT_ENV = ('QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software '
 
 # Высоты пунктов дерева относительно окна — на случай, если OCR не разобрал
 # дерево. Измерены по снимкам прошлых прогонов.
+# Левая колонка дерева: ширина и положение стрелки раскрытия. Узел со
+# стрелкой (IP, System, Tools…) окна не открывает — он раскрывает список
+# детей в той же колонке, поэтому успех проверяется по росту дерева.
+TREE_W = 145
+CHEVRON_DX = 133
+PARENT_NODES = {'ip', 'ipv6', 'system', 'tools', 'routing', 'mpls', 'switch'}
+
 TREE_Y = {
     'quick set': 62, 'wifi': 87, 'interfaces': 111, 'wireguard': 135,
     'bridge': 160, 'ppp': 185, 'switch': 209, 'mesh': 236, 'ip': 260,
@@ -294,6 +301,18 @@ def tree_words(X, Y, H):
     return ocr(X, Y + 16, 210, H - 120, 'tree')
 
 
+def tree_scroll(X, Y, H, steps=3, down=True):
+    """Прокрутить левую колонку дерева.
+
+    У раскрытого узла (Tools, System) дети уходят за нижний край окна, и
+    последних пунктов в OCR просто нет — раньше такие окна терялись.
+    """
+    run(['xdotool', 'mousemove', str(int(X + 70)), str(int(Y + H // 2))])
+    run(['xdotool', 'click', '--repeat', str(steps), '--delay', '120',
+         '5' if down else '4'])
+    time.sleep(0.8)
+
+
 def logged_in(X, Y, H):
     """Вошли, если в дереве есть пункты меню (на экране входа их нет)."""
     words = tree_words(X, Y, H)
@@ -454,7 +473,15 @@ def menu_area_words(X, Y, W, H, tag='menu'):
 
 
 def click_root(root, X, Y, W, H):
-    """Открыть раздел из дерева: по OCR, затем по таблице высот."""
+    """Открыть раздел из дерева: по OCR, затем по таблице высот.
+
+    Узел со стрелкой (IP, System, Tools, IPv6…) не открывает окно: он
+    раскрывает детей в левой колонке. Раньше успех проверялся по области
+    содержимого — там оставалось окно Terminal от включения API, проверка
+    проходила сразу, дети не раскрывались и всё «IP → …» терялось.
+    """
+    parent = clean(root) in PARENT_NODES
+    before = len(tree_words(X, Y, H)) if parent else 0
     cands = []
     hit = find(tree_words(X, Y, H), root)
     if hit:
@@ -465,6 +492,16 @@ def click_root(root, X, Y, W, H):
             cands.append((X + 60, Y + base + dy))
     for cx, cy in cands[:5]:
         click(cx, cy)
+        if parent:
+            if len(tree_words(X, Y, H)) > before + 2:
+                return cx, cy
+            # надпись могла только выделить узел — жмём саму стрелку
+            click(X + CHEVRON_DX, cy)
+            if len(tree_words(X, Y, H)) > before + 2:
+                log('  «%s»: раскрыт стрелкой' % root)
+                return cx, cy
+            log('  «%s»: дерево не раскрылось, пробую ещё' % root)
+            continue
         words = menu_area_words(X, Y, W, H)
         if len(words) >= 6 or sd_now(X, Y, W, H) > 5:
             return cx, cy
@@ -493,6 +530,24 @@ def open_window(parts, want_new, X, Y, W, H):
             if cand and cand[2] > cur[1] - 6:
                 hit = cand
                 log('  подменю дерева: «%s» найден в левой колонке' % part)
+            else:
+                # узел мог не раскрыться с первого клика — жмём стрелку
+                click(X + CHEVRON_DX, cur[1])
+                time.sleep(1.0)
+                tw = tree_words(X, Y, H)
+                cand = find(tw, part, near=(X + 70, cur[1] + 24))
+                if cand and cand[2] > cur[1] - 6:
+                    hit = cand
+                    log('  подменю дерева: «%s» найден после стрелки' % part)
+                else:
+                    # дети могли не влезть в окно — прокручиваем колонку
+                    for _ in range(4):
+                        tree_scroll(X, Y, H)
+                        cand = find(tree_words(X, Y, H), part)
+                        if cand:
+                            hit = cand
+                            log('  подменю дерева: «%s» найден прокруткой' % part)
+                            break
         if not hit and W < 1300:
             # узкое окно: вкладки не помещаются в полосу — открываем список
             # пунктов из заголовка окна (рядом с названием есть «▾»)
@@ -553,6 +608,14 @@ def enable_api(X, Y, W, H):
     text = ' '.join(w[0] for w in words)
     log('  терминал после включения API: %s' % text[:300])
     escape(2)
+    # Окно Terminal не закрывается по Escape и перекрывает содержимое: из-за
+    # него съёмка видела «Terminal» вместо окон роутера. Перезапуск даёт
+    # чистый стол; служба API на роутере уже включена и переживёт его.
+    try:
+        good, _, _, _, _ = restart_winbox(X, Y, W, H)
+        log('  Winbox перезапущен после терминала: %s' % ('ок' if good else 'не вошёл'))
+    except Exception as exc:                             # noqa: BLE001
+        log('  !! перезапуск после терминала не удался: %s' % exc)
     return True
 
 

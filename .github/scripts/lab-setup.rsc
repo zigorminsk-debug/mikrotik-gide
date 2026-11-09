@@ -68,8 +68,8 @@
 /ip/route/add dst-address=192.168.10.0/24 gateway=wg-office distance=1 comment="сеть офиса"
 /ip/route/add dst-address=8.8.8.8/32 gateway=10.0.2.2 distance=1 comment="проба канала"
 /ip/route/add dst-address=1.1.1.1/32 gateway=10.0.2.2 distance=1 comment="проба канала"
-/routing/table/add name=probe-wan1 fib
-/routing/table/add name=probe-wan2 fib
+/routing/table/add name=probe-wan1 fib=yes
+/routing/table/add name=probe-wan2 fib=yes
 
 # --------------------------------------------------------------------- DNS ----
 # task-dns-security#1: DoH, свои серверы, кеш 4096 KiB, max TTL 1d
@@ -99,14 +99,14 @@
 /ppp/secret/add name=client01 password=Cl1ent-2026 service=pppoe profile=pppoe-clients comment="кабинет 1"
 /ppp/secret/add name=ivanov password=S3cret-2026 service=l2tp profile=vpn-staff comment="Иванов"
 /interface/l2tp-server/server/set enabled=yes use-ipsec=required ipsec-secret=d83n2-officE-vpn default-profile=vpn-staff authentication=mschap2
-/interface/pppoe-server/server/set service-name=isp interface=bridge-clients default-profile=pppoe-clients enabled=yes authentication=mschap2
+/interface/pppoe-server/server/set numbers=0 service-name=isp interface=bridge-clients default-profile=pppoe-clients disabled=no authentication=mschap2
 
 # ------------------------------------------------------------------ очереди ---
 # q-simple#1, q-types#1, q-cake#1
 /queue/type/add name=cake-bulk kind=cake cake-bandwidth=100M
-/queue/type/add name=cake-upload kind=cake cake-flowmode=besteffort
-/queue/type/add name=cake-download kind=cake cake-flowmode=besteffort
-/queue/simple/add name=guest-limit target=10.20.0.0/24 max-limit=20M/20M burst-limit=40M/40M priority=8/8 comment="гости"
+/queue/type/add name=cake-upload kind=cake cake-flowmode=dual-srchost
+/queue/type/add name=cake-download kind=cake cake-flowmode=dual-dsthost
+/queue/simple/add name=guest-limit target=10.20.0.0/24 max-limit=20M/20M burst-limit=40M/40M burst-threshold=30M/30M burst-time=10s/10s priority=8/8 comment="гости"
 /queue/simple/add name=voip-prio target=192.168.88.40/32 max-limit=10M/10M priority=1/1 comment="телефония"
 /queue/simple/add name=lan-shape target=192.168.10.0/24 max-limit=95M/95M queue=cake-upload/cake-download comment="офис"
 
@@ -114,7 +114,7 @@
 # if-vrrp#1, if-vxlan#1
 /interface/vrrp/add name=vrrp-lan interface=bridge-lan vrid=10 priority=200
 /interface/vxlan/add name=vxlan-10 vni=10 port=4789 mtu=1450
-/interface/vxlan/vteps/add remote-ip=10.99.0.2
+/interface/vxlan/vteps/add interface=vxlan-10 remote-ip=10.99.0.2
 
 # -------------------------------------------------------------- пользователи --
 # sys-users#1, sys-user-policy#1
@@ -131,7 +131,7 @@
 /system/script/add name=failover-up policy=read,write,test source=":log info \"wan-failover: основной канал устойчив — вернулся на него\""
 /system/script/add name=failover-down policy=read,write,test source=":log warning \"wan-failover: основной канал не отвечает — включён резервный\""
 /system/script/add name=wan-failover policy=read,write,test source=":local wan1If \"ether1-wan\"\n:local fails 2\n:log info \"wan-failover: проверка каналов\""
-/system/scheduler/add name=nightly-backup start-time=03:00:00 interval=1d on-event="/system backup save name=backups/auto" comment="ночной бэкап"
+/system/scheduler/add name=nightly-backup start-time=03:00:00 interval=1d on-event="/system backup save name=auto" comment="ночной бэкап"
 /system/scheduler/add name=nightly-reboot start-time=04:00:00 interval=7d on-event="/system reboot" comment="перезагрузка"
 /system/scheduler/add name=nightly start-time=03:30:00 interval=1d on-event="/system script run backup-send"
 /system/scheduler/add name=daily-export start-time=03:30:00 interval=1d on-event="/system script run export-daily"
@@ -139,8 +139,8 @@
 
 # ------------------------------------------------------------------ журнал ----
 # sys-log-remote#1: действие remote → 192.168.10.50:514
-/system/logging/action/set remote remote-address=192.168.10.50 remote-port=514
-/system/logging/action/add name=syslog-srv target=remote remote-address=192.168.88.50 remote-port=514
+/system/logging/action/set numbers=remote remote=192.168.10.50 remote-port=514
+/system/logging/action/add name=syslog-srv target=remote remote=192.168.88.50 remote-port=514
 /system/logging/add topics=firewall,info action=syslog-srv
 /system/logging/add topics=ipsec,error action=memory
 /system/logging/add topics=wireguard action=memory prefix=wg
@@ -151,8 +151,8 @@
 
 # ------------------------------------------------------------------ файлы -----
 # start-backup#1, task-migration#1: настоящие файлы бэкапа и экспорта
-/system/backup/save name=backups/2026-11-02
-/system/backup/save name=backups/first-config
+/system/backup/save name=office-2026-11-02
+/system/backup/save name=first-config
 /export file=config-2026-11-03
 /export file=old-full
 
@@ -169,6 +169,47 @@
 /ip/firewall/nat/add chain=dstnat protocol=tcp dst-port=8080 in-interface-list=WAN action=dst-nat to-addresses=192.168.88.50 to-ports=80 comment="camera web"
 /ip/firewall/nat/add chain=srcnat protocol=tcp dst-port=80 src-address=192.168.88.0/24 action=masquerade comment=hairpin
 
+# ------------------------------------------------- вторая волна окон стенда ---
+# Окна, которых не хватало шагам: IP → Services, ARP, DNS → Static,
+# DHCP → Networks/Options, Queue Tree, Routing → Tables, Address Lists.
+# Службы: в address оставляем и сеть стенда 10.0.2.0/24 — иначе Winbox и API
+# из QEMU потеряли бы доступ посреди съёмки.
+/ip/service/set winbox port=8291 address=192.168.88.0/24,10.0.2.0/24
+/ip/service/set ssh address=192.168.88.0/24,10.0.2.0/24 disabled=no
+/ip/service/set telnet disabled=yes
+/ip/service/set ftp disabled=yes
+/ip/service/set www disabled=no port=80
+
+# ip-arp#1, ip-arp-modes#1: статические записи ARP на офисном мосту
+/ip/arp/add address=192.168.10.1 mac-address=DC:2C:6E:A1:4F:22 interface=bridge-lan comment="шлюз VLAN"
+/ip/arp/add address=192.168.88.10 mac-address=D4:3A:2C:11:01:AA interface=bridge-lan comment=nas
+/ip/arp/add address=192.168.88.11 mac-address=9C:B6:54:7A:22:1B interface=bridge-lan comment=printer
+
+# ip-dns#2: статические записи DNS из инструкции
+/ip/dns/static/add name=nas.lan address=192.168.88.10 ttl=1h comment="NAS офиса"
+/ip/dns/static/add name=printer.lan address=192.168.88.11 ttl=1h comment="принтер"
+
+# ip-dhcp-server#5, ip-tftp-pxe#1: опции DHCP
+/ip/dhcp-server/option/add name=ntp code=42 value="'192.168.88.1'"
+/ip/dhcp-server/option/add name=pxe-boot code=66 value="'192.168.88.10'"
+/ip/dhcp-server/option/add name=pxe-server code=67 value="'pxelinux.0'"
+
+# ip-firewall-addresslists#1, task-protect-router#1: списки адресов
+/ip/firewall/address-list/add list=admin-allow address=203.0.113.5 comment="доступ к управлению"
+/ip/firewall/address-list/add list=blacklist address=198.51.100.0/24 comment="заблокированная сеть"
+/ip/firewall/address-list/add list=blacklist address=45.148.10.7 timeout=1d comment="подбор пароля"
+
+# q-tree#1, task-qos#1: дерево очередей
+/queue/tree/add name=total-upload parent=global max-limit=90M comment="WAN upload"
+/queue/tree/add name=wan-up parent=ether1-wan max-limit=90M comment=WAN
+/queue/tree/add name=voip parent=wan-up packet-mark=voip max-limit=10M priority=1 comment="телефония"
+
+# rt-tables#1: таблица маршрутизации для VPN
+/routing/table/add name=via-vpn fib=yes comment="маршруты через туннель"
+
+# if-list#1, task-wan-failover#2: PPPoE-клиент на резервном порту
+/interface/pppoe-client/add name=wan-pppoe interface=ether5 user=isp-user password=1sp-2026 disabled=no add-default-route=no comment="резервный канал"
+
 # ---------------------------------------------------------------- firewall ----
 # Ставится последним. Первое правило — разрешить управляющую сеть стенда,
 # иначе правило «drop all from WAN» оборвёт и Winbox, и API посреди съёмки.
@@ -180,7 +221,7 @@
 /ip/firewall/filter/add chain=input protocol=tcp dst-port=8291 action=accept comment="winbox from LAN"
 /ip/firewall/filter/add chain=input protocol=udp dst-port=500 action=accept comment="ipsec ike"
 /ip/firewall/filter/add chain=input protocol=udp dst-port=4500 action=accept comment="ipsec nat-t"
-/ip/firewall/filter/add chain=input protocol=esp action=accept comment="ipsec esp"
+/ip/firewall/filter/add chain=input protocol=ipsec-esp action=accept comment="ipsec esp"
 /ip/firewall/filter/add chain=input protocol=tcp dst-port=1194 action=accept comment=openvpn
 /ip/firewall/filter/add chain=forward in-interface=wg-office action=accept comment="from office tunnel"
 /ip/firewall/filter/add chain=forward out-interface=wg-office action=accept comment="to office tunnel"
@@ -188,5 +229,5 @@
 /ip/firewall/filter/add chain=forward in-interface=bridge-guest out-interface=bridge-lan action=drop comment="гости не видят офис"
 
 # Мост-фильтр: if-bridge-nat#1, task-rogue-dhcp#1
-/interface/bridge/filter/add chain=forward bridge=bridge-guest action=drop comment="гостевой мост изолирован"
-/interface/bridge/filter/add chain=forward in-interface=ether3 protocol=udp dst-port=67,68 action=drop comment="чужой DHCP"
+/interface/bridge/filter/add chain=forward in-bridge=bridge-guest action=drop comment="гостевой мост изолирован"
+/interface/bridge/filter/add chain=forward in-interface=ether3 mac-protocol=ip ip-protocol=udp dst-port=67,68 action=drop comment="чужой DHCP"

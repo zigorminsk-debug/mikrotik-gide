@@ -45,3 +45,16 @@ eth|Interfaces → Ethernet||Interfaces → Ethernet
 bridge-filters|Bridge → Filters||Bridge → Filters
 resources|System → Resources||System → Resources
 wg-peers|WireGuard → Peers||Interfaces → WireGuard → Peers
+
+# ------------------------------------------------ вторая волна (окна шагов) ---
+# Порядок тот же: сверху самое ценное для инструкций.
+ip-services|IP → Services||IP → Services
+ip-dhcp-client|IP → DHCP Client||IP → DHCP Client
+ip-arp|IP → ARP||IP → ARP
+ip-dns-static|IP → DNS → Static||IP → DNS → Static
+ip-dhcp-networks|IP → DHCP Server → Networks||IP → DHCP Server → Networks
+ip-dhcp-options|IP → DHCP Server → Options||IP → DHCP Server → Options
+ip-addrlists|IP → Firewall → Address Lists||IP → Firewall → Address Lists
+queue-tree|Queues → Queue Tree||Queues → Queue Tree
+routing-tables|Routing → Tables||Routing → Tables
+interfaces|Interfaces||Interfaces

@@ -248,6 +248,11 @@ jobs:
 
       - name: Включить API на роутере (через терминал Winbox)
         if: steps.mode.outputs.mode == 'scene'
+        env:
+          # Без своего номера часть писала бы в общий report.txt — соседние
+          # части конфликтовали бы на нём при rebase.
+          NAV_PART: ${{ matrix.part }}
+          NAV_PART_SIZE: ${{ steps.mode.outputs.part_size }}
         run: |
           set -o pipefail
           cd "$GITHUB_WORKSPACE"
