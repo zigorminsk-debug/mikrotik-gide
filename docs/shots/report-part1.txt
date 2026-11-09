@@ -480,3 +480,80 @@ runner      3845  1.6  0.5 925156 90636 ?        Sl   06:55   0:00 /tmp/wb/winbo
     Neighbors: нашёл '127.0.0.1', двойной щелчок
 !! входа нет — API включить нельзя
   !! входа нет — API включить нельзя
+=== время ===
+Mon Nov  9 07:25:02 UTC 2026
+=== процессы ===
+runner      3754 35.9  2.2 5001604 368164 ?      Sl   06:52  11:42 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      3815  0.1  0.5 236272 89408 ?        S    06:55   0:01 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3845  0.0  0.5 895524 95068 ?        Sl   06:55   0:00 /tmp/wb/winbox/WinBox
+=== файлы ===
+docs/shots:
+total 504
+-rw-r--r-- 1 runner runner 10790 Nov  9 06:51 README.md
+-rw-r--r-- 1 runner runner 37902 Nov  9 06:56 dbg-attempt-1.jpg
+-rw-r--r-- 1 runner runner 37902 Nov  9 06:56 dbg-attempt-2.jpg
+-rw-r--r-- 1 runner runner 44890 Nov  9 07:23 dbg-field.jpg
+drwxr-xr-x 2 runner runner  4096 Nov  9 07:25 jpg
+-rw-r--r-- 1 runner runner   272 Nov  9 06:51 manifest-part1.txt
+-rw-r--r-- 1 runner runner   188 Nov  9 07:25 manifest-part2.txt
+-rw-r--r-- 1 runner runner   417 Nov  9 07:25 manifest-part3.txt
+-rw-r--r-- 1 runner runner   534 Nov  9 07:25 manifest-part4.txt
+-rw-r--r-- 1 runner runner   118 Nov  9 07:25 manifest-part5.txt
+-rw-r--r-- 1 runner runner   245 Nov  9 06:51 manifest.txt
+drwxr-xr-x 2 runner runner  4096 Nov  9 07:25 ocr
+-rw-r--r-- 1 runner runner 36549 Nov  9 07:25 report-part1.txt
+-rw-r--r-- 1 runner runner 33531 Nov  9 07:25 report-part2.txt
+-rw-r--r-- 1 runner runner 41980 Nov  9 07:25 report-part3.txt
+-rw-r--r-- 1 runner runner 41358 Nov  9 07:25 report-part4.txt
+-rw-r--r-- 1 runner runner 26264 Nov  9 07:25 report-part5.txt
+-rw-r--r-- 1 runner runner 78815 Nov  9 06:51 report.txt
+-rw-r--r-- 1 runner runner 66350 Nov  9 06:51 step-audit.json
+
+docs/shots/jpg:
+total 3676
+-rw-r--r-- 1 runner runner  26448 Nov  9 06:51 00-login.jpg
+-rw-r--r-- 1 runner runner  19888 Nov  9 06:51 03-desktop.jpg
+-rw-r--r-- 1 runner runner  45498 Nov  9 06:51 backup.jpg
+-rw-r--r-- 1 runner runner  44750 Nov  9 06:51 bonding.jpg
+-rw-r--r-- 1 runner runner 115291 Nov  9 07:25 bridge-filters.jpg
+-rw-r--r-- 1 runner runner  43039 Nov  9 06:51 bridge-hosts.jpg
+-rw-r--r-- 1 runner runner  56524 Nov  9 06:51 bridge-new.jpg
+-rw-r--r-- 1 runner runner 132884 Nov  9 07:25 bridge-ports.jpg
+-rw-r--r-- 1 runner runner 105320 Nov  9 06:51 bridge-vlans.jpg
+-rw-r--r-- 1 runner runner 127307 Nov  9 06:51 bridge.jpg
+-rw-r--r-- 1 runner runner  39016 Nov  9 06:51 dot1x.jpg
+-rw-r--r-- 1 runner runner 134368 Nov  9 07:25 eth.jpg
+-rw-r--r-- 1 runner runner 119781 Nov  9 07:25 files.jpg
+-rw-r--r-- 1 runner runner 179568 Nov  9 07:25 iflist.jpg
+-rw-r--r-- 1 runner runner 179289 Nov  9 07:25 interfaces.jpg
+-rw-r--r-- 1 runner runner  31387 Nov  9 06:51 ipv6.jpg
+-rw-r--r-- 1 runner runner  40151 Nov  9 06:51 l2tp-server.jpg
+-rw-r--r-- 1 runner runner  52117 Nov  9 06:51 log.jpg
+-rw-r--r-- 1 runner runner  46148 Nov  9 06:51 lte.jpg
+-rw-r--r-- 1 runner runner  40560 Nov  9 06:51 mesh.jpg
+-rw-r--r-- 1 runner runner  41067 Nov  9 06:51 ovpn-server.jpg
+-rw-r--r-- 1 runner runner  41686 Nov  9 06:51 ppp-active.jpg
+-rw-r--r-- 1 runner runner 124088 Nov  9 06:51 ppp-profiles.jpg
+-rw-r--r-- 1 runner runner 117150 Nov  9 07:25 ppp-secrets.jpg
+-rw-r--r-- 1 runner runner  46707 Nov  9 06:51 ppp.jpg
+-rw-r--r-- 1 runner runner 117801 Nov  9 07:25 pppoe-server.jpg
+-rw-r--r-- 1 runner runner 141927 Nov  9 07:25 queue-iface.jpg
+-rw-r--r-- 1 runner runner 116723 Nov  9 07:25 queue-tree.jpg
+-rw-r--r-- 1 runner runner 116774 Nov  9 07:25 queue-types.jpg
+-rw-r--r-- 1 runner runner 117320 Nov  9 06:51 queues.jpg
+-rw-r--r-- 1 runner runner  55648 Nov  9 06:51 quickset.jpg
+-rw-r--r-- 1 runner runner  41630 Nov  9 06:51 radius.jpg
+-rw-r--r-- 1 runner runner  31042 Nov  9 06:51 routing.jpg
+-rw-r--r-- 1 runner runner  56813 Nov  9 06:51 simple-new.jpg
+-rw-r--r-- 1 runner runner  35683 Nov  9 06:51 system.jpg
+-rw-r--r-- 1 runner runner  46037 Nov  9 06:51 terminal.jpg
+-rw-r--r-- 1 runner runner 113484 Nov  9 07:25 vlan.jpg
+-rw-r--r-- 1 runner runner 114567 Nov  9 07:25 vrrp.jpg
+-rw-r--r-- 1 runner runner 112807 Nov  9 07:25 vxlan.jpg
+-rw-r--r-- 1 runner runner  55339 Nov  9 06:51 wg-new.jpg
+-rw-r--r-- 1 runner runner 116844 Nov  9 07:25 wg-peers.jpg
+-rw-r--r-- 1 runner runner  43140 Nov  9 06:51 wifi-access-list.jpg
+-rw-r--r-- 1 runner runner  63071 Nov  9 06:51 wifi-new.jpg
+-rw-r--r-- 1 runner runner  64118 Nov  9 06:51 wifi-security.jpg
+-rw-r--r-- 1 runner runner  46912 Nov  9 06:51 wifi.jpg
+-rw-r--r-- 1 runner runner 122470 Nov  9 06:51 wireguard.jpg
