@@ -3,73 +3,69 @@
 LISTEN 0      1          127.0.0.1:8291      0.0.0.0:*    users:(("qemu-system-x86",pid=4243,fd=12))
 LISTEN 0      1          127.0.0.1:8728      0.0.0.0:*    users:(("qemu-system-x86",pid=4243,fd=10))
     PID     ELAPSED   RSS CMD
-   4243       03:05 145812 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+   4243       03:06 143740 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
 BIN=/tmp/wb/winbox/WinBox
 Winbox запущен (попытка 1)
-runner      4294  0.5  0.4 223700 77884 ?        S    05:49   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      4322  1.8  0.5 925124 90680 ?        Sl   05:49   0:00 /tmp/wb/winbox/WinBox
+runner      4299  0.5  0.4 223700 77724 ?        S    05:54   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4326  2.0  0.5 925132 90092 ?        Sl   05:54   0:00 /tmp/wb/winbox/WinBox
   Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
-=== время ===
-Mon Nov  9 05:50:02 UTC 2026
-=== процессы ===
-runner      4243  198  0.8 4841780 145812 ?      Sl   05:46   7:44 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
-runner      4294  0.3  0.5 233400 82780 ?        S    05:49   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
-runner      4322  0.7  0.5 928184 94208 ?        Sl   05:49   0:00 /tmp/wb/winbox/WinBox
-runner      4344  0.2  0.0  19520 12088 ?        S    05:49   0:00 python3 .github/scripts/winbox-nav.py docs/shots --enable-api
-=== файлы ===
-docs/shots:
-total 208
--rw-r--r-- 1 runner runner 10423 Nov  9 05:45 README.md
--rw-r--r-- 1 runner runner 37883 Nov  9 05:49 dbg-attempt-1.jpg
-drwxr-xr-x 2 runner runner  4096 Nov  9 05:45 jpg
--rw-r--r-- 1 runner runner   245 Nov  9 05:45 manifest.txt
--rw-r--r-- 1 runner runner  2308 Nov  9 05:50 report-part1.txt
--rw-r--r-- 1 runner runner 77378 Nov  9 05:49 report.txt
--rw-r--r-- 1 runner runner 66350 Nov  9 05:45 step-audit.json
-
-docs/shots/jpg:
-total 1996
--rw-r--r-- 1 runner runner 26448 Nov  9 05:45 00-login.jpg
--rw-r--r-- 1 runner runner 19888 Nov  9 05:45 03-desktop.jpg
--rw-r--r-- 1 runner runner 45498 Nov  9 05:45 backup.jpg
--rw-r--r-- 1 runner runner 44750 Nov  9 05:45 bonding.jpg
--rw-r--r-- 1 runner runner 44983 Nov  9 05:45 bridge-filters.jpg
--rw-r--r-- 1 runner runner 43039 Nov  9 05:45 bridge-hosts.jpg
--rw-r--r-- 1 runner runner 56524 Nov  9 05:45 bridge-new.jpg
--rw-r--r-- 1 runner runner 43878 Nov  9 05:45 bridge-ports.jpg
--rw-r--r-- 1 runner runner 42504 Nov  9 05:45 bridge-vlans.jpg
--rw-r--r-- 1 runner runner 49344 Nov  9 05:45 bridge.jpg
--rw-r--r-- 1 runner runner 39016 Nov  9 05:45 dot1x.jpg
--rw-r--r-- 1 runner runner 47564 Nov  9 05:45 eth.jpg
--rw-r--r-- 1 runner runner 44271 Nov  9 05:45 files.jpg
--rw-r--r-- 1 runner runner 49593 Nov  9 05:45 interfaces.jpg
--rw-r--r-- 1 runner runner 31387 Nov  9 05:45 ipv6.jpg
--rw-r--r-- 1 runner runner 40151 Nov  9 05:45 l2tp-server.jpg
--rw-r--r-- 1 runner runner 52117 Nov  9 05:45 log.jpg
--rw-r--r-- 1 runner runner 46148 Nov  9 05:45 lte.jpg
--rw-r--r-- 1 runner runner 40560 Nov  9 05:45 mesh.jpg
--rw-r--r-- 1 runner runner 41067 Nov  9 05:45 ovpn-server.jpg
--rw-r--r-- 1 runner runner 41686 Nov  9 05:45 ppp-active.jpg
--rw-r--r-- 1 runner runner 46314 Nov  9 05:45 ppp-profiles.jpg
--rw-r--r-- 1 runner runner 43471 Nov  9 05:45 ppp-secrets.jpg
--rw-r--r-- 1 runner runner 46707 Nov  9 05:45 ppp.jpg
--rw-r--r-- 1 runner runner 42802 Nov  9 05:45 pppoe-server.jpg
--rw-r--r-- 1 runner runner 43625 Nov  9 05:45 queue-iface.jpg
--rw-r--r-- 1 runner runner 45096 Nov  9 05:45 queue-types.jpg
--rw-r--r-- 1 runner runner 44421 Nov  9 05:45 queues.jpg
--rw-r--r-- 1 runner runner 55648 Nov  9 05:45 quickset.jpg
--rw-r--r-- 1 runner runner 41630 Nov  9 05:45 radius.jpg
--rw-r--r-- 1 runner runner 31042 Nov  9 05:45 routing.jpg
--rw-r--r-- 1 runner runner 56813 Nov  9 05:45 simple-new.jpg
--rw-r--r-- 1 runner runner 35683 Nov  9 05:45 system.jpg
--rw-r--r-- 1 runner runner 46037 Nov  9 05:45 terminal.jpg
--rw-r--r-- 1 runner runner 44135 Nov  9 05:45 vlan.jpg
--rw-r--r-- 1 runner runner 44828 Nov  9 05:45 vrrp.jpg
--rw-r--r-- 1 runner runner 44565 Nov  9 05:45 vxlan.jpg
--rw-r--r-- 1 runner runner 55339 Nov  9 05:45 wg-new.jpg
--rw-r--r-- 1 runner runner 41014 Nov  9 05:45 wg-peers.jpg
--rw-r--r-- 1 runner runner 43140 Nov  9 05:45 wifi-access-list.jpg
--rw-r--r-- 1 runner runner 63071 Nov  9 05:45 wifi-new.jpg
--rw-r--r-- 1 runner runner 64118 Nov  9 05:45 wifi-security.jpg
--rw-r--r-- 1 runner runner 46912 Nov  9 05:45 wifi.jpg
--rw-r--r-- 1 runner runner 40995 Nov  9 05:45 wireguard.jpg
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+  ввод #1: в поле ''
+  ввод #2: в поле ''
+  ввод #3: в поле ''
+вход по кнопке Connect (попытка 3)
+  терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+API готов (попытка 1)
+роутер: 7.24.6 (long-term) CHR QEMU Standard PC (i440FX + PIIX, 1996), плата 1m12s
+!! /routing/table/add name=probe-wan1 fib → message=unknown parameter numbers
+!! /routing/table/add name=probe-wan2 fib → message=unknown parameter numbers
+!! /interface/pppoe-server/server/set service-name=isp interface=bridge-clients default-profile=pppoe-clients enabled=yes authentication=mschap2 → message=unknown parameter enabled
+!! /queue/type/add name=cake-upload kind=cake cake-flowmode=besteffort → message=input does not match any value of cake-flowmode
+!! /queue/type/add name=cake-download kind=cake cake-flowmode=besteffort → message=input does not match any value of cake-flowmode
+!! /queue/simple/add name=guest-limit target=10.20.0.0/24 max-limit=20M/20M burst-limit=40M/40M priority=8/8 comment="гости" → message=failure: no download-burst-time
+!! /queue/simple/add name=lan-shape target=192.168.10.0/24 max-limit=95M/95M queue=cake-upload/cake-download comment="офис" → message=input does not match any value of upload-queue
+!! /interface/vxlan/vteps/add remote-ip=10.99.0.2 → message=missing =interface=
+!! /system/logging/action/set remote remote-address=192.168.10.50 remote-port=514 → message=unknown parameter remote-address
+!! /system/logging/action/add name=syslog-srv target=remote remote-address=192.168.88.50 remote-port=514 → message=unknown parameter remote-address
+!! /system/logging/add topics=firewall,info action=syslog-srv → message=input does not match any value of action
+!! /system/backup/save name=backups/2026-11-02 → message=failure: invalid file name
+!! /system/backup/save name=backups/first-config → message=failure: invalid file name
+!! /ip/firewall/mangle/add chain=output dst-address=1.1.1.1 action=mark-routing new-routing-mark=probe-wan1 passthrough=no comment="wan-failover probe 1" → message=input does not match any value of new-routing-mark
+!! /ip/firewall/mangle/add chain=output dst-address=8.8.8.8 action=mark-routing new-routing-mark=probe-wan2 passthrough=no comment="wan-failover probe 2" → message=input does not match any value of new-routing-mark
+!! /ip/firewall/filter/add chain=input protocol=esp action=accept comment="ipsec esp" → message=input does not match any value of protocol
+!! /interface/bridge/filter/add chain=forward bridge=bridge-guest action=drop comment="гостевой мост изолирован" → message=unknown parameter bridge
+!! /interface/bridge/filter/add chain=forward in-interface=ether3 protocol=udp dst-port=67,68 action=drop comment="чужой DHCP" → message=unknown parameter protocol
+стенд: применено 100 строк, отказов 18
+окно 1560x1040+22+60
+  окно 1560x1040+22+60
+вход выполнен (попытка 1)
+  вход выполнен (попытка 1)
+окно после входа: 1560x1040+22+60
+  окно после входа: 1560x1040+22+60
+часть 1: окна 1–10 списка
+  часть 1: окна 1–10 списка
+  задач: 10 (настроенный стенд)
+задач: 10 (настроенный стенд)
+!! не нашёл «Addresses» (путь: IP → Addresses); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+  !! не нашёл «Addresses» (путь: IP → Addresses); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+!! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+  !! не нашёл «Firewall» (путь: IP → Firewall → Filter Rules); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+!! не нашёл «Routes» (путь: IP → Routes); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+  !! не нашёл «Routes» (путь: IP → Routes); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+  снято bridge: Bridge (sd=155)
+снято bridge: Bridge (sd=155)
+  снято bridge-vlans: Bridge → VLANs (sd=150)
+снято bridge-vlans: Bridge → VLANs (sd=150)
+!! не нашёл «Pool» (путь: IP → Pool); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+  !! не нашёл «Pool» (путь: IP → Pool); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+  снято ppp-profiles: PPP → Profiles (sd=154)
+снято ppp-profiles: PPP → Profiles (sd=154)
+снято queues: Queues → Simple Queues (sd=147)
+  снято queues: Queues → Simple Queues (sd=147)
+  снято wireguard: WireGuard (sd=152)
+снято wireguard: WireGuard (sd=152)
+!! не нашёл «Firewall» (путь: IP → Firewall → NAT); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+  !! не нашёл «Firewall» (путь: IP → Firewall → NAT); OCR: (5) Terminal x MMMM KKK KKK MMM MMMM MMM KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III
+итого: снято 5, уже было 0, не вышло 5: ip-address, ip-filter, ip-routes, ip-pool, ip-nat
+  итого: снято 5, уже было 0, не вышло 5: ip-address, ip-filter, ip-routes, ip-pool, ip-nat

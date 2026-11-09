@@ -1,0 +1,31 @@
+eel — рр — id a | ET
++
+ZG Quick Set
+& WiFi
+fa Interfaces
+© WireGuard
+Hf Bridge
+‘© РРР
+St Switch >
+® Mesh
+У р >
+У руб >
+$7 wpLs > —<—<—
+XC Rout + Bridge - Bridge Ports VLANs MSTIs_ PortMST Overrides Filters NAT Hosts MDB o Xx
+‘outing >
+C5 New > Enable 1! Disable Xx Remove P Comment Q Find Y Filter
+{$ System > : О © Configuration
+Ba Р (Name Сл ActualMTU 12 МТУ MAC Address DHCP Snooping DHCP Agent Circu... DHCP Agent Remo... DHCPv6 Snooping DHCPvé6 Agent Cir... DHCPv6 Agent Re =
+G& Queues Settings
+клиенты РРРоЕ
+$ соих R 3 bridge-clients 1500 — 65535 52:54:00:12:34:58 по по
+& Files гостевой сегмент
+ё Log R 3£ bridge-guest 1500 65535 52:54:00:12:34:5А по по
+LAN офиса
+(5) меи Terminal R 3 bridge-lan 1500 — 65535 52:54:00:12:34:57 по по
+& RADIUS
+A Tools >
+я Make Supout.rif
+EO
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% i 2795.9 MiB / 276.1 MiB / 3072.0 MiB @ 00:02:22 6 2026-11-09 05:53:23
+
