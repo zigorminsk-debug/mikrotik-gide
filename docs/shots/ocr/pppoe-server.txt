@@ -30,5 +30,5 @@ A Tools >
 
 О ОО
 
-= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) 8 0% ЕЕ 2789.5 MiB / 282.5 MiB / 3072.0 MiB @ 00:09:04 6 2026-11-09 06:42:14
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) 8 0% ЕЕ 2790.4 MiB / 281.6 MiB / 3072.0 MiB @ 00:09:07 6 2026-11-09 07:01:42
 

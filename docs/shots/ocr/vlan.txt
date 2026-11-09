@@ -13,7 +13,7 @@ St Switch >
 $ system : C5 New > Enable 1! Disable Xx Remove P Comment Q Find ¥ Filter
 Gomes Mme ype MTU AcINTUL2MTU О о
 офис
-$ соих R « vlan10-office VLAN 1500 1500 65531 10. bridge-lan 0 bps 0 bps о о
+= Dott R « vlan10-office VLAN 1500 1500 65531 10. bridge-lan 0 bps 0 bps о о
 Files
 Ё 5
 © New Terminal
