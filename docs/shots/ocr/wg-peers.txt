@@ -12,7 +12,7 @@ St Switch >
 Я mers * | Owirecuard - wirecuard Peers o x
 $ Seen : C5 New > Enable 1! Disable Xx Remove P Comment Q Find ¥ Filter
 GZ cueues P Name Interface ube Key Endpoint Endpoint. Alowed Address __Perslston...CurrentEndpo.. CurrentEndpo... Re о
-% Dott ome реег1 wg-office SZgf5J5G/mNrOSTIRenGHJO... 203.0.113.20 13231 10.10.10.0/24, 192.1... 00:00:25 203.0.113.20 13231 ов 2368 В
+% Dott ome реег1 wg-office SZgf5J5G/mNrOSTIRenGHJO... 203.0.113.20 13231 10.10.10.0/24, 192.1... 00:00:25 203.0.113.20 13231 ов 2960 В
 № Files phone
 ё Log peer2 wgO /O6uETOaxyvDrZc1SjobXtufte... 10.10.10.2/32 0 ов ов
 © New Terminal

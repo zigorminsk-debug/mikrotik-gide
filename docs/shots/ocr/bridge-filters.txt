@@ -1,4 +1,4 @@
-МАЛА 95 — рр — и — нии
+МАЛА 95 — = — nnn о ни
 PY auick set
 & WiFi
 fa Interfaces
@@ -7,17 +7,17 @@ fa Interfaces
 ‘© ppp
 St Switch >
 ® Mesh
-Яр >
-У руб >
-Я р > Hf Bridge > Bridge Ports VLANs MSTIs Port MST Overrides “Filters NAT Hosts MDB o Xx
-$ system : CS New > Enable |! Disable x Remove / Comment Q Find Y Filter % al» O Actions
-GZ cueues # + P Action Chain Interfaces... ntrfaces... Sr. MAG Aderess... Det. MAC Adcress.. MAC Proto.. Bytes Packets Я
-& Dotix Reset All Counters
+У р >
+“2 руб >
+Я р > + Bridge + Bridge Ports VLANs MSTIs_ PortMST Overrides Filters NAT Hosts MDB ou x
+$ system : Ci New »> Enable |! Disable x Remove P Comment Q Find Y Filter aly O Actions
+гостевой мост изолирован
+$ соих во drop forward OB о Reset All Counters
 Files
 Ё 5
 © New Terminal
-(© RADIUS
-A Tools >
+& RADIUS
+ЕЁ Tools >
 я Make Supout.rif
-CS
+ET
 

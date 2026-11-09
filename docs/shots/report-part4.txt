@@ -133,3 +133,112 @@ total 2484
 -rw-r--r-- 1 runner runner  64118 Nov  9 05:50 wifi-security.jpg
 -rw-r--r-- 1 runner runner  46912 Nov  9 05:50 wifi.jpg
 -rw-r--r-- 1 runner runner  40995 Nov  9 05:50 wireguard.jpg
+прошло 3 минуты после старта QEMU
+=== порты хоста ===
+LISTEN 0      1          127.0.0.1:8291      0.0.0.0:*    users:(("qemu-system-x86",pid=3755,fd=12))
+LISTEN 0      1          127.0.0.1:8728      0.0.0.0:*    users:(("qemu-system-x86",pid=3755,fd=10))
+    PID     ELAPSED   RSS CMD
+   3755       03:05 147844 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+BIN=/tmp/wb/winbox/WinBox
+Winbox запущен (попытка 1)
+runner      3811  0.3  0.4 223708 79936 ?        S    06:36   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3840  1.6  0.5 925160 90848 ?        Sl   06:36   0:00 /tmp/wb/winbox/WinBox
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  ввод #1: в поле ''
+    ввод #1: в поле ''
+    ввод #2: в поле ''
+  ввод #2: в поле ''
+    ввод #3: в поле ''
+  ввод #3: в поле ''
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 4)
+  вход через Neighbors (попытка 4)
+  терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+    терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+  перезапуск Winbox
+    перезапуск Winbox
+  !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+    !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+  после перезапуска: 4503 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4504 ./WinBox
+4666 bash -lc pgrep -af WinBox | head -3
+    после перезапуска: 4503 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4504 ./WinBox
+4666 bash -lc pgrep -af WinBox | head -3
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 1)
+  вход через Neighbors (попытка 1)
+  Winbox перезапущен после терминала: ок
+    Winbox перезапущен после терминала: ок
+API готов (попытка 1)
+роутер: 7.24.6 (long-term) CHR QEMU Standard PC (i440FX + PIIX, 1996), плата 3m25s
+!! /interface/pppoe-server/server/set numbers=0 service-name=isp interface=bridge-clients default-profile=pppoe-clients disabled=no authentication=mschap2 → message=no such item
+!! /system/logging/action/add name=syslog-srv target=remote remote=192.168.88.50 remote-port=514 → message=failure: action name can contain only letters and numbers
+!! /system/logging/add topics=firewall,info action=syslog-srv → message=input does not match any value of action
+!! /interface/bridge/filter/add chain=forward in-interface=ether3 mac-protocol=ip ip-protocol=udp dst-port=67,68 action=drop comment="чужой DHCP" → message=invalid value 67,68 for min, an integer required
+стенд: применено 135 строк, отказов 4
+окно 1560x1040+22+60
+  окно 1560x1040+22+60
+вход выполнен (попытка 1)
+  вход выполнен (попытка 1)
+окно после входа: 1560x1040+22+60
+  окно после входа: 1560x1040+22+60
+часть 4: окна 31–40 списка
+  часть 4: окна 31–40 списка
+  задач: 10 (настроенный стенд)
+задач: 10 (настроенный стенд)
+  снято queue-iface: Queues → Interface Queues (sd=152)
+снято queue-iface: Queues → Interface Queues (sd=152)
+  снято iflist: Interfaces → Interface List (sd=160)
+снято iflist: Interfaces → Interface List (sd=160)
+  снято eth: Interfaces → Ethernet (sd=156)
+снято eth: Interfaces → Ethernet (sd=156)
+  снято bridge-filters: Bridge → Filters (sd=152)
+снято bridge-filters: Bridge → Filters (sd=152)
+  «System»: дерево не раскрылось, пробую ещё
+    «System»: дерево не раскрылось, пробую ещё
+  «System»: дерево не раскрылось, пробую ещё
+    «System»: дерево не раскрылось, пробую ещё
+  «System»: дерево не раскрылось, пробую ещё
+    «System»: дерево не раскрылось, пробую ещё
+  «System»: дерево не раскрылось, пробую ещё
+    «System»: дерево не раскрылось, пробую ещё
+  «System»: дерево не раскрылось, пробую ещё
+    «System»: дерево не раскрылось, пробую ещё
+!! раздел «System» не открылся
+  !! раздел «System» не открылся
+  снято wg-peers: WireGuard → Peers (sd=152)
+снято wg-peers: WireGuard → Peers (sd=152)
+!! не нашёл «Services» (путь: IP → Services); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Services» (путь: IP → Services); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+!! не нашёл «DHCP Client» (путь: IP → DHCP Client); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «DHCP Client» (путь: IP → DHCP Client); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+!! не нашёл «ARP» (путь: IP → ARP); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «ARP» (путь: IP → ARP); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+!! не нашёл «DNS» (путь: IP → DNS → Static); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «DNS» (путь: IP → DNS → Static); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  четыре неудачи подряд — перезапускаем Winbox
+    четыре неудачи подряд — перезапускаем Winbox
+  перезапуск Winbox
+    перезапуск Winbox
+  !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+    !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+  после перезапуска: 6697 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+6698 ./WinBox
+6732 bash -lc pgrep -af WinBox | head -3
+    после перезапуска: 6697 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+6698 ./WinBox
+6732 bash -lc pgrep -af WinBox | head -3
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 1)
+  вход через Neighbors (попытка 1)
+итого: снято 5, уже было 0, не вышло 5: resources, ip-services, ip-dhcp-client, ip-arp, ip-dns-static
+  итого: снято 5, уже было 0, не вышло 5: resources, ip-services, ip-dhcp-client, ip-arp, ip-dns-static
