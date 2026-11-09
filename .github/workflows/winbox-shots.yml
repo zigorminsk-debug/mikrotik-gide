@@ -26,9 +26,9 @@ on:
         type: boolean
         default: false
       part:
-        description: 'Часть списка окон (1, 2, 3…; 0 — весь список целиком)'
+        description: 'Пусто — все части параллельно; N — только часть N; 0 — весь список одним заданием'
         required: false
-        default: '1'
+        default: ''
       part_size:
         description: 'Сколько окон в одной части'
         required: false
@@ -49,15 +49,54 @@ on:
 permissions:
   contents: write
 
-# Части списка идут параллельно и не отменяют друг друга: у каждой своя
-# группа. Внутри одной части новый прогон заменяет незавершённый.
+# Один прогон = все части списка параллельно (матрица ниже). Новый пуш
+# заменяет незавершённый набор частей: группа одна на весь набор.
 concurrency:
   group: winbox-shots-${{ github.ref }}-${{ github.event.inputs.part || '1' }}
   cancel-in-progress: true
 
 jobs:
+  # Список окон режется на части заранее: каждая часть — отдельное задание
+  # со своим CHR и Winbox. Так съёмка не упирается в лимит одного job.
+  plan:
+    name: План съёмки
+    runs-on: ubuntu-22.04
+    outputs:
+      parts: ${{ steps.p.outputs.parts }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Нарезать список окон
+        id: p
+        run: |
+          set -eu
+          if [ -n "${{ github.event.inputs.mode }}" ]; then
+            mode='${{ github.event.inputs.mode }}'
+          elif [ -f ci/shots-mode.txt ]; then
+            mode=$(head -1 ci/shots-mode.txt | tr -d '[:space:]')
+          else
+            mode=capture
+          fi
+          size='${{ github.event.inputs.part_size || '10' }}'
+          one='${{ github.event.inputs.part || '' }}'
+          if [ -n "$one" ] && [ "$one" != "0" ]; then
+            parts="[$one]"
+          elif [ "$mode" = "scene" ]; then
+            n=$(grep -cvE '^[[:space:]]*(#|$)' .github/scripts/scene-list.txt)
+            parts=$(python3 -c "import math,json;print(json.dumps(list(range(1,math.ceil($n/$size)+1))))")
+            echo "окон $n, размер части $size"
+          else
+            parts='[0]'
+          fi
+          echo "parts=$parts" >> "$GITHUB_OUTPUT"
+          echo "части: $parts"
+
   shots:
-    name: CHR + Winbox 4 + снимки
+    name: CHR + Winbox 4, часть ${{ matrix.part }}
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        part: ${{ fromJSON(needs.plan.outputs.parts) }}
     runs-on: ubuntu-22.04
     timeout-minutes: 150
     env:
@@ -80,7 +119,7 @@ jobs:
           else
             echo "mode=capture" >> "$GITHUB_OUTPUT"
           fi
-          part='${{ github.event.inputs.part || '1' }}'
+          part='${{ matrix.part }}'
           size='${{ github.event.inputs.part_size || '10' }}'
           echo "part=$part" >> "$GITHUB_OUTPUT"
           echo "part_size=$size" >> "$GITHUB_OUTPUT"
@@ -241,9 +280,9 @@ jobs:
         if: steps.mode.outputs.mode == 'scene'
         env:
           NAV_SCENE: '1'
-          NAV_PART: ${{ steps.mode.outputs.part }}
+          NAV_PART: ${{ matrix.part }}
           NAV_PART_SIZE: ${{ steps.mode.outputs.part_size }}
-          NAV_BUDGET: ${{ steps.mode.outputs.part == '0' && '2700' || '1500' }}
+          NAV_BUDGET: ${{ matrix.part == 0 && '2700' || '1500' }}
         run: |
           set -o pipefail
           cd "$GITHUB_WORKSPACE"
@@ -259,11 +298,15 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A docs/shots
-          git commit -m "CI: снимки стенда Winbox 4, часть ${{ steps.mode.outputs.part }} [skip ci]" || { echo "нечего коммитить"; exit 0; }
-          for i in 1 2 3 4; do
-            if git pull --rebase --autostash origin "${{ github.ref_name }}" && \
+          git commit -m "CI: снимки стенда Winbox 4, часть ${{ matrix.part }} [skip ci]" || { echo "нечего коммитить"; exit 0; }
+          # Части пушат в одну ветку почти одновременно. -X theirs: если то же
+          # окно снял и сосед, берём свои свежие кадры; rebase --abort обязателен,
+          # иначе следующая попытка упадёт на «rebase in progress».
+          for i in 1 2 3 4 5 6; do
+            if git pull --rebase --autostash -X theirs origin "${{ github.ref_name }}" && \
                git push origin "HEAD:${{ github.ref_name }}"; then exit 0; fi
-            echo "попытка $i не удалась"; sleep 10
+            git rebase --abort 2>/dev/null || true
+            echo "попытка $i не удалась"; sleep $((5 + RANDOM % 20))
           done
           echo "push не удался" >&2
           exit 1
@@ -287,7 +330,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: winbox-shots-${{ steps.mode.outputs.part }}
+          name: winbox-shots-${{ matrix.part }}
           path: |
             docs/shots/*.png
             docs/shots/jpg/*.jpg
@@ -310,10 +353,11 @@ jobs:
           git add -A docs/shots
           git commit --allow-empty -m "CI: настоящие скриншоты Winbox 4 [skip ci]" || echo "нечего коммитить"
           ok=0
-          for i in 1 2 3 4; do
-            if git pull --rebase --autostash origin "${{ github.ref_name }}" && \
+          for i in 1 2 3 4 5 6; do
+            if git pull --rebase --autostash -X theirs origin "${{ github.ref_name }}" && \
                git push origin "HEAD:${{ github.ref_name }}"; then ok=1; break; fi
-            echo "попытка $i не удалась, ждём"; sleep 10
+            git rebase --abort 2>/dev/null || true
+            echo "попытка $i не удалась, ждём"; sleep $((5 + RANDOM % 20))
           done
           if [ "$ok" = 1 ]; then
             echo "снимки в ветке"
