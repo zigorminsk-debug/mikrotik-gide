@@ -86,7 +86,17 @@ def log(msg):
 
 
 def run(cmd):
-    return subprocess.run(cmd, capture_output=True, text=True)
+    """Внешняя команда с таймаутом.
+
+    Без него зависший xdotool/import/tesseract держал шаг съёмки вечно:
+    крайний срок проверяется МЕЖДУ командами и до зависшей просто не доходит.
+    Прогон висел до таймаута job и кадры не публиковались вовсе.
+    """
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    except subprocess.TimeoutExpired:
+        log('  !! команда не ответила за 120 с: %s' % ' '.join(map(str, cmd))[:120])
+        return subprocess.CompletedProcess(cmd, 124, '', 'timeout')
 
 
 def clean(t):
