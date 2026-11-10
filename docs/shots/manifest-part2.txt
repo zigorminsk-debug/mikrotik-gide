@@ -4,3 +4,6 @@ vlan|1|Interfaces → VLAN
 ppp-secrets|1|PPP → Secrets
 pppoe-server|1|PPP → PPPoE Servers
 vlan|1|Interfaces → VLAN
+ppp-secrets|1|PPP → Secrets
+pppoe-server|1|PPP → PPPoE Servers
+vlan|1|Interfaces → VLAN
