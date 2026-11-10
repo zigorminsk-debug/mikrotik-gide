@@ -8,3 +8,8 @@ bridge-vlans|1|Bridge → VLANs
 ppp-profiles|1|PPP → Profiles
 queues|1|Queues → Simple Queues
 wireguard|1|WireGuard
+bridge|1|Bridge
+bridge-vlans|1|Bridge → VLANs
+ppp-profiles|1|PPP → Profiles
+queues|1|Queues → Simple Queues
+wireguard|1|WireGuard

@@ -13,17 +13,19 @@ St Switch >
 $7 wpLs > —
 XC Rout © WireGuard + WireGuard Peers o Xx
 ‘outing >
-C5 New > Enable 1! Disable Xx Remove P Comment Q Find ¥ Filter
-{$ System > : Ш & Actions
+Ci New »> Enable |! Disable x Remove P Comment Q Find Y Filter
+{$ System > : О $ АсНоп$
+оке Р (Name = Type М Actual MTU Listen Port Private Key ‘Pubic Key TT impor
 5 rere туннель в офис
-R ©) wg- office WireGuard 1420 1420 13232 ***** EO3Vk57a3TXTSHKxv53M 1z... O bps O bps
+R ©) wg-office WireGuard 1420 1420 13232 *#*** fUaRgQiC6M60 1iHg4hMbtxc... 0 bps 0 bps
 Files VPN
-ё Log R < ма-урп WireGuard 1420 1420 13233 ***** /ZA6YwwvpDvyGIZul8G9GD7... O bps O bps
+R «© wg-vpn WireGuard 1420 1420 13233 ***** 02ISaBiJGOgOzDrumv6xYAKG... 0 bps 0 bps
+Е 159 gpl 9 р р
 road warrior
-(5) меи Terminal R 49 00 WireGuard 1420 1420 13231 ***** AQAPBKzPdSRCQJ2q/NJINCK... O bps O bps
+(5) меи Terminal R 49 00 WireGuard 1420 1420 13231 ***** M/Chzb4kaOlYtQtDYNgyNs7... O bps O bps
 (© RADIUS
 A Tools >
 я Make Supout.rif
-СО
-= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% i 2790.7 MiB / 281.3 MiB / 3072.0 MiB @ 00:06:15 @ 2026-11-09 06:39:32
+EN
+cb office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) {2 2% ЧТ 2790.3 МВ/ 281.7 МВ / 30720 мв © 00:06:44 ©) 2026-11-10 15:05:46
 
