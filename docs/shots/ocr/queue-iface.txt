@@ -41,5 +41,5 @@ wg- office no- queue no- queue
 
 ОО
 
-= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% ЧЕ 2792.8 MiB | 279.2 MiB / 3072.0 MiB @ 00:03:47 @ 2026-11-09 06:56:37
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 0% ЕЕ 2792.6 MiB / 279.4 MiB / 3072.0 MiB @ 00:03:40 6 2026-11-10 15:02:00
 

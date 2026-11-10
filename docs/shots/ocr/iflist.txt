@@ -8,7 +8,7 @@ fa Interfaces
 yt Switch >
 ® Mesh
 У р >
-“2 руб >
+У руб >
 $7 wpLs > —${
 XC Rout fa Interfaces ~ Interface Interface List Ethernet EolP Tunnel IP Tunnel GRETunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE o Xx
 ‘outing >
@@ -20,19 +20,19 @@ $ соих R 3 bridge-clients Bridge 1500 65535 0 bps 0 bps о о 0 bps
 eB Files гостевой сегмент
 ё Log R 3£ bridge-guest Bridge 1500 65535 O bps O bps 0 0 O bps
 LAN офиса
-(5) меи Terminal R = 3 bridge-lan Bridge 1500 65535 0 bps 0 bps о о 0 bps
+(5) меи Terminal R = 3 bridge-lan Bridge 1500 65535 0 bps 768 bps о 1 0 bps
 (© RADIUS офис
 ЕЁ Tools >| R 45 \ап10-0... МАМ 1500 65531 O bps O bps 0 0 O bps
 5. No IPv4 address!
 PalRMGKC SUDO (о « verp-lan VRRP 0 bps 0 bps о о 0 bps
-R & etherl-wan Ethernet 1500 97.6 kbps 6.3 kbps 10 10 O bps
-RS. & ether2 Ethernet 1500 O bps O bps 0 0 O bps
-RS & ether3 Ethernet 1500 480 bps O bps 1 0 O bps
-RS. & ether4 Ethernet 1500 O bps O bps 0 0 O bps
-RS & ether5S Ethernet 1500 480 bps O bps 1 0 O bps
+R & etherl-wan Ethernet 1500 97.3 kbps 6.3 kbps 9 10 O bps
+RS. & ether2 Ethernet 1500 O bps 880 bps 0 1 O bps
+RS & ether3 Ethernet 1500 O bps O bps 0 0 O bps
+RS. & ether4 Ethernet 1500 880 bps O bps 1 0 O bps
+RS & ether5S Ethernet 1500 O bps O bps 0 0 O bps
 R ©) lo Loopback 65536 O bps O bps 0 0 O bps
 R 4) vxlan- 10 VXLAN 1450 65535 O bps O bps 0 0 O bps
 Aliant te an olan intarfann
 16
-A office-gw-01 127.0.0.1/ x86.64 / CHR QEMU Standard PC (i440FX + РИХ, 1996) / 7.24.6 (long-term) {a 0% {LF 2792.6 MiB / 279.4 MiB/ 3072.0 MiB @) 00:04:03 @) 2026-11-09 06:56:53
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% ЕЕ 2792.7 MiB / 279.3 MiB / 3072.0 MiB @ 00:03:52 6 2026-11-10 15:02:12
 
