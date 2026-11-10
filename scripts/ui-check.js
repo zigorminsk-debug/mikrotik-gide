@@ -377,11 +377,14 @@ async function checkWanFailover() {
   if (art) {
     ok('шагов не меньше десяти', (art.steps || []).length >= 10, 'шагов: ' + (art.steps || []).length);
     const shots = (art.steps || []).filter(s => s && s.sc);
-    ok('у большинства шагов своя картинка', shots.length >= 10, 'с картинкой: ' + shots.length);
+    ok('у большинства шагов своя картинка', shots.length >= 8, 'с картинкой: ' + shots.length);
     const body = Array.isArray(art.config) ? art.config.join('\n') : String(art.config || '');
     ok('есть тело скрипта для копирования',
-      /:local ups 6/.test(body) && /:local fails 2/.test(body));
-    ok('в скрипте статьи проба каждого канала', /1\.1\.1\.1/.test(body) && /8\.8\.8\.8/.test(body));
+      /:local ups 6/.test(body) && /:local fails 3/.test(body));
+    ok('проба идёт по шлюзу своего канала, а не по чужому адресу',
+      /ip dhcp-client get \$c1 gateway/.test(body) && !/mark-routing/.test(body));
+    ok('нет правки динамического маршрута', !/\/ip route set/.test(body));
+    ok('нет ":set" без значения (синтаксическая ошибка)', !/:set\s+\$?\w+\s*;/m.test(body.replace(/\r/g, '\n')));
     ok('объяснено про возврат и «качели»',
       /возврат/i.test(art.purpose) && /(качел|дёрга)/i.test(art.purpose));
     // Скрипт вставляют руками, поэтому он должен быть синтаксически целым:
@@ -395,7 +398,9 @@ async function checkWanFailover() {
     ok('есть испытание с выдёргиванием кабеля',
       (art.steps || []).some(s => /выдерните кабель/i.test(s.d || '')));
     ok('есть ошибка про одинаковые адреса проверки',
-      (art.mistakes || []).some(m => /одним адресом/.test(m)));
+      (art.mistakes || []).some(m => /одним адресом|шлюз своего канала/i.test(m)));
+    ok('есть ошибка про динамический маршрут',
+      (art.mistakes || []).some(m => /динамическ/i.test(m)));
   }
 
   const gen = (o) => win.eval('(function(){ const w = window.ConfigWizard;' +
@@ -410,21 +415,28 @@ async function checkWanFailover() {
     wan1Probe: '1.1.1.1', wan2Check: '8.8.8.8', wanDownSecs: 20, wanUpSecs: 60 };
   const conf = gen(base);
 
-  ok('две таблицы маршрутизации для проб',
-    /routing table add name=probe-wan1/.test(conf) && /routing table add name=probe-wan2/.test(conf));
-  ok('mangle: проба основного помечена probe-wan1',
-    /chain=output dst-address=1\.1\.1\.1 action=mark-routing new-routing-mark=probe-wan1/.test(conf));
-  ok('mangle: проба резервного помечена probe-wan2',
-    /chain=output dst-address=8\.8\.8\.8 action=mark-routing new-routing-mark=probe-wan2/.test(conf));
+  ok('нет отдельных таблиц проб (в v7 политика — не VRF)',
+    !/routing table add name=probe-wan/.test(conf) && /routing table remove/.test(conf));
+  ok('нет mangle для проб', !/mark-routing/.test(conf));
   ok('скрипт wan-failover создаётся', /\/system script add name=wan-failover/.test(conf));
+  ok('скрипт обновляется на месте, а не remove + add',
+    /system script set \[find where name="wan-failover"\]/.test(conf) &&
+    !/system script remove/.test(conf));
+  ok('планировщик зовёт скрипт явно (внятная ошибка в логе)',
+    /on-event="\/system script run wan-failover"/.test(conf));
+  ok('проба по шлюзу канала из DHCP', /dhcp-client get \$c1 gateway/.test(conf));
+  ok('нет правки динамического маршрута (static-канал — законное исключение)',
+    !/gateway~/.test(conf) && !/\*[0-9A-F]{8}/.test(conf));
+  ok('нет ":set" без значения', !/(^|[^\\])r\\n:set\s+\$?\w+\s*;/.test(conf) &&
+    !/\n:set\s+\$?\w+\s*;/m.test(conf));
   ok('скрипт хранится многострочным (\r\n)', /\\r\\n/.test(conf));
-  ok('порог падения 2 проверки (20 с)', /:local fails 2/.test(conf));
+  ok('порог падения 2 проверки (20 с при шаге 10 с)', /:local fails 2/.test(conf));
   ok('порог возврата 6 проверок (60 с)', /:local ups 6/.test(conf));
   ok('возврат на основной включён', /default-route-distance=1/.test(conf));
   ok('уход на резерв включён', /default-route-distance=20/.test(conf));
   ok('резерв поднят с distance=2', /default-route-distance=2/.test(conf));
-  ok('планировщик раз в 10 секунд',
-    /system scheduler add name=wan-failover interval=10s start-time=startup on-event=wan-failover/.test(conf));
+  ok('планировщик раз в 10 секунд и запуск явный',
+    /system scheduler add name=wan-failover interval=10s start-time=startup on-event="\/system script run wan-failover"/.test(conf));
 
   // Другие пороги должны попасть в скрипт, а не остаться дефолтными.
   const slow = gen(Object.assign({}, base, { wanDownSecs: 30, wanUpSecs: 120 }));

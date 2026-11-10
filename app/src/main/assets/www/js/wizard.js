@@ -846,25 +846,22 @@
       } else if (w2Kind === 'lte') {
         push('# LTE-интерфейс создаётся сам, когда модем определён: /interface lte print',
           ':do {/interface lte set [find] disabled=no} on-error={}',
-          ':do {/ip route set [find dst-address="0.0.0.0/0" gateway~"' + wan2Port + '"] distance=2} on-error={}',
+          '# distance резерва задаётся в APN-профиле: маршрут от LTE создаётся',
+          '# динамически, и /ip route set к нему не применяется.',
+          ':do {/interface lte apn set [find where name="default"] add-default-route=yes default-route-distance=2} on-error={}',
           ':do {/interface list member add interface=' + wan2Port + ' list=WAN} on-error={}');
       } else {
         push('/ip dhcp-client add interface=' + wan2Port + ' add-default-route=yes default-route-distance=2 use-peer-dns=no disabled=no',
           ':do {/interface list member add interface=' + wan2Port + ' list=WAN} on-error={}');
       }
 
-      // Отдельные таблицы: проба каждого канала идёт своим путём
-      push('# Таблицы маршрутизации для проб: адрес пробы всегда уходит в свой канал',
-        ':if ([:len [/routing table find where name="probe-wan1"]] = 0) do={/routing table add name=probe-wan1 fib}',
-        ':if ([:len [/routing table find where name="probe-wan2"]] = 0) do={/routing table add name=probe-wan2 fib}',
-        ':if ([:len [/ip firewall mangle find where comment="wan-failover probe 1"]] = 0) do={' +
-          '/ip firewall mangle add chain=output dst-address=' + probe1 +
-          ' action=mark-routing new-routing-mark=probe-wan1 passthrough=no comment="wan-failover probe 1"}',
-        ':if ([:len [/ip firewall mangle find where comment="wan-failover probe 2"]] = 0) do={' +
-          '/ip firewall mangle add chain=output dst-address=' + probe2 +
-          ' action=mark-routing new-routing-mark=probe-wan2 passthrough=no comment="wan-failover probe 2"}',
-        '# Шлюз канала (DHCP/PPPoE/LTE) известен только после подключения, поэтому маршруты',
-        '# для проб скрипт создаёт и обновляет сам — вручную их прописывать не нужно.');
+      // Проба каждого канала идёт по шлюзу ЭТОГО канала, отдельные таблицы и mangle
+      // не нужны: в RouterOS 7 policy-таблица не VRF, и пинг через неё не проходит.
+      push('# Таблицы маршрутизации и правила mangle для проб не нужны: пинг идёт по шлюзу',
+        '# своего канала (он on-link, трафик не выходит за интерфейс).',
+        '# Старые таблицы проб, если остались от прежней версии конфига, убираем.',
+        ':foreach t in=[/routing table find where name~"probe-wan"] do={/routing table remove $t}',
+        ':foreach m in=[/ip firewall mangle find where comment~"wan-failover probe"] do={/ip firewall mangle remove $m}');
 
       // Что делать с маршрутом основного канала при падении и возврате
       let offCmd, onCmd;
@@ -876,8 +873,9 @@
         offCmd = '/interface pppoe-client set [find name=wan-pppoe] default-route-distance=20';
         onCmd = '/interface pppoe-client set [find name=wan-pppoe] default-route-distance=1';
       } else if (w1Kind === 'lte') {
-        offCmd = '/ip route set [find dst-address="0.0.0.0/0" gateway~"' + wan1If + '"] distance=20';
-        onCmd = '/ip route set [find dst-address="0.0.0.0/0" gateway~"' + wan1If + '"] distance=1';
+        // Маршрут LTE динамический — правим APN-профиль, RouterOS пересоберёт route сам.
+        offCmd = '/interface lte apn set [find where name~"mti-wan"] add-default-route=yes default-route-distance=20';
+        onCmd = '/interface lte apn set [find where name~"mti-wan"] add-default-route=yes default-route-distance=1';
       } else {
         offCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=20';
         onCmd = '/ip dhcp-client set [find interface=' + wanPort + '] default-route-distance=1';
@@ -885,78 +883,62 @@
 
       // Сам скрипт: многострочный, поэтому в конфиг уходит одной строкой
       // с \r\n — так RouterOS хранит его в /system script (как в .rsc-выгрузке).
+      // ВАЖНО: никаких ":set имя;" без значения и никакой правки динамических
+      // маршрутов — иначе RouterOS отвечает syntax error / cannot modify dynamic route.
       const common = [
         '# wan-failover: переключение на резервный канал по пингу, без «качелей».',
-        '# Проба каждого канала идёт через свою таблицу (mangle + probe-wan1/2),',
-        '# поэтому видно, какой провайдер жив, даже когда трафик идёт через другой.',
-        ':local wan1If "' + wan1If + '"',
-        ':local wan2If "' + wan2If + '"',
-        ':local p1a "' + probe1 + '"',
-        ':local p2a "' + probe2 + '"',
+        '# Проба идёт по ШЛЮЗУ своего канала: трафик до него не выходит за интерфейс,',
+        '# поэтому видно состояние именно этого канала, даже когда трафик уже на резерве.',
+        '# Переключение — default-route-distance у DHCP-клиента: динамический маршрут',
+        '# RouterOS править не даёт, он пересоберёт его сам.',
+        ':local wan1 "' + wan1If + '"',
+        ':local wan2 "' + wan2If + '"',
+        ':local distDown 20',
+        ':local distUp 1',
         '# fails — подряд неудачных проверок до переключения (' + downSecs + ' с),',
         '# ups — подряд удачных проверок до возврата (' + upSecs + ' с)',
         ':local fails ' + failCount,
         ':local ups ' + upCount,
-        ':global wanMode',
         ':global wanBad',
         ':global wanGood',
-        ':if ([:typeof $wanMode] = "nothing") do={:set wanMode "main"}',
-        ':if ([:typeof $wanBad] = "nothing") do={:set wanBad 0}',
-        ':if ([:typeof $wanGood] = "nothing") do={:set wanGood 0}',
+        ':global wanMode',
+        ':if ([:typeof $wanBad] != "num") do={ :set wanBad 0 }',
+        ':if ([:typeof $wanGood] != "num") do={ :set wanGood 0 }',
+        ':if ([:typeof $wanMode] != "str") do={ :set wanMode "main" }',
         '',
-        '# 1. Шлюз канала и служебный маршрут для пробы',
-        ':local gw ""',
-        ':local pz ""',
-        ':do {',
-        '  :foreach r in=[/ip route find where dst-address="0.0.0.0/0" and gateway~$wan1If] do={',
-        '    :set pz [/ip route get $r gateway]',
-        '  }',
-        '} on-error={}',
-        ':if ([:typeof $pz] = "str") do={',
-        '  :local cut [:find $pz "%"]',
-        '  :if ([:typeof $cut] = "num") do={:set gw [:pick $pz 0 $cut]} else={:set gw $pz}',
-        '}',
+        '# 1. Проба основного канала: пингуем его собственный шлюз из DHCP',
         ':local p1 0',
-        ':local p2 0',
-        ':if ($gw != "") do={',
-        '  :local rt [/ip route find where routing-table="probe-wan1"]',
-        '  :if ([:len $rt] = 0) do={',
-        '    /ip route add dst-address=0.0.0.0/0 gateway=$gw routing-table=probe-wan1 distance=1 comment="wan-failover probe-route 1"',
-        '  } else={',
-        '    :if ([/ip route get ($rt->0) gateway] != $gw) do={/ip route set ($rt->0) gateway=$gw}',
-        '  }',
-        '}',
-        ':local gw2 ""',
-        ':local pz2 ""',
-        ':do {',
-        '  :foreach r in=[/ip route find where dst-address="0.0.0.0/0" and gateway~$wan2If] do={',
-        '    :set pz2 [/ip route get $r gateway]',
-        '  }',
-        '} on-error={}',
-        ':if ([:typeof $pz2] = "str") do={',
-        '  :local cut2 [:find $pz2 "%"]',
-        '  :if ([:typeof $cut2] = "num") do={:set gw2 [:pick $pz2 0 $cut2]} else={:set gw2 $pz2}',
-        '}',
-        ':if ($gw2 != "") do={',
-        '  :local rt2 [/ip route find where routing-table="probe-wan2"]',
-        '  :if ([:len $rt2] = 0) do={',
-        '    /ip route add dst-address=0.0.0.0/0 gateway=$gw2 routing-table=probe-wan2 distance=1 comment="wan-failover probe-route 2"',
-        '  } else={',
-        '    :if ([/ip route get ($rt2->0) gateway] != $gw2) do={/ip route set ($rt2->0) gateway=$gw2}',
+        ':local c1 [/ip dhcp-client find where interface=$wan1]',
+        ':if ([:len $c1] > 0) do={',
+        '  :local gw1 [/ip dhcp-client get $c1 gateway]',
+        '  :if ([:typeof $gw1] = "ip") do={',
+        '    :set p1 [/ping $gw1 count=3 interval=200ms]',
         '  }',
         '}',
         '',
-        '# 2. Параллельная проверка: каждый пинг уходит в свой канал',
-        ':if ($gw != "") do={:set p1 [/ping $p1a count=3 interval=200ms]}',
-        ':if ($gw2 != "") do={:set p2 [/ping $p2a count=3 interval=200ms]}',
+        '# 2. Проба резервного канала (-1 = проверить не удалось)',
+        ':local p2 -1',
+        ':local c2 [/ip dhcp-client find where interface=$wan2]',
+        ':if ([:len $c2] > 0) do={',
+        '  :local gw2 [/ip dhcp-client get $c2 gateway]',
+        '  :if ([:typeof $gw2] = "ip") do={',
+        '    :set p2 [/ping $gw2 count=3 interval=200ms]',
+        '  }',
+        '}',
         '',
-        '# 3. Серии: any fail — счётчик возврата обнуляется (защита от «качелей»)',
-        ':if ($p1 > 0) do={:set wanGood ($wanGood + 1); :set wanBad 0} else={:set wanBad ($wanBad + 1); :set wanGood 0}',
+        '# 3. Серии: любой промах обнуляет счётчик возврата (защита от «качелей»)',
+        ':if ($p1 > 0) do={',
+        '  :set wanGood ($wanGood + 1)',
+        '  :set wanBad 0',
+        '} else={',
+        '  :set wanBad ($wanBad + 1)',
+        '  :set wanGood 0',
+        '}',
         '',
         '# 4. Переключение',
         ':if ($wanMode = "main") do={',
         '  :if ($wanBad >= $fails) do={',
-        '    :if ($p2 > 0) do={',
+        '    :if ($p2 != 0) do={',
         '      ' + offCmd,
         '      :set wanMode "backup"',
         '      :log warning "wan-failover: основной канал не отвечает — включён резервный"',
@@ -974,9 +956,18 @@
       ];
       const BS = String.fromCharCode(92), NL = String.fromCharCode(10), Q = String.fromCharCode(34);
       const srcText = common.join(NL).split(BS).join(BS + BS).split(Q).join(BS + Q).split(NL).join(BS + 'r' + BS + 'n');
-      push('/system script add name=wan-failover policy=read,write,test,policy source=' + Q + srcText + Q,
-        ':if ([:len [/system scheduler find where name="wan-failover"]] = 0) do={' +
-          '/system scheduler add name=wan-failover interval=' + step + 's start-time=startup on-event=wan-failover}',
+      // Скрипт обновляем на месте (set), а не remove + add: иначе между
+      // удалением и созданием планировщик успевает позвать несуществующий
+      // скрипт и в лог падает "bad command name wan-failover".
+      push(':if ([:len [/system script find where name="wan-failover"]] = 0) do={',
+        '  /system script add name=wan-failover policy=read,write,test source=' + Q + srcText + Q,
+        '} else={',
+        '  /system script set [find where name="wan-failover"] policy=read,write,test source=' + Q + srcText + Q,
+        '}',
+        '# Планировщик: явный запуск по имени — внятная ошибка вместо "bad command name"',
+        ':if ([:len [/system scheduler find where name="wan-failover"]] = 0) do={',
+        '  /system scheduler add name=wan-failover interval=' + step + 's start-time=startup on-event="/system script run wan-failover"} else={',
+        '  /system scheduler set [find where name="wan-failover"] interval=' + step + 's start-time=startup on-event="/system script run wan-failover"}',
         '# Проверка: /system script run wan-failover; /log print where message~"wan-failover"');
     }
 
