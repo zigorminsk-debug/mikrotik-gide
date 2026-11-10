@@ -9,18 +9,18 @@ yt Switch >
 ® Mesh
 У р >
 У руб >
-Я unis > Files + “File Cloud Backup ох
+Я unis > © Files у “File Cloud Backup o Xx
 x Routing >
 $ system > Ci New * Remove Q Find Y Filter O Actions
-оке Po Nome я м Я
-& dotix B config-2026-11-03.rsc script 10.7KiB 2026-11-09 06:55:56 ео
-г — B first-config.backup backup 35.6 КВ 2026-11-09 06:55:54 Upload...
-B office-2026-11-02.backup backup 35.6KiB 2026-11-09 06:55:54
-E) Log B old-full.rsc script 10.7 KiB 2026-11-09 06:55:57 oO
-C5) New Terminal + ( skins directory 2026-11-09 06:52:36
+Ch omnes Pome pe Seated бе se
+& dotix B config-2026-11-03.rsc script 10.7KiB 2026-11-10 14:59:30 ео
+г — B first-config.backup backup 35.6 КВ 2026-11-10 14:59:28 Upload...
+B office-2026-11-02.backup backup 35.6 ЮВ 2026-11-10 14:59:28
+В 3 B old-full.rsc script 10.7 KiB 2026-11-10 14:59:31 Dae
+C5) New Terminal + ( skins directory 2026-11-10 14:55:47
 (© RADIUS
-ЕЁ Tools >
+A Tools >
 я Make Supout.rif
 aig ot 89.2 Mid se 77 % 00
-A office-gw-01 127.0.0.1/ x86.64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) {a 1%  {F 2792.8 MiB/ 279.2 MiB/ 3072.0 MiB @) 00:05:21 @) 2026-11-09 06:57:51
+A office-gw-01 127.0.0.1/ x86.64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) {a 0% 1 2790.4 МВ / 281.6 МВ / 3072.0 мв @) 00:05:44 @) 2026-11-10 15:01:25
 
