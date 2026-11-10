@@ -29,5 +29,5 @@ A Tools >
 
 en ase packets uve
 
-= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) 8 1% ЧЕ 2793.3 MiB / 278.7 МВ / 3072.0 МВ @ 00:05:16 @ 2026-11-09 06:58:08
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) 8 0% ЧЕ 2790.1 MiB / 281.9 MiB / 3072.0 MiB @ 00:05:01 @ 2026-11-10 15:06:09
 
