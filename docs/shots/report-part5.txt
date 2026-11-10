@@ -1,0 +1,320 @@
+прошло 3 минуты после старта QEMU
+=== порты хоста ===
+LISTEN 0      1          127.0.0.1:8291      0.0.0.0:*    users:(("qemu-system-x86",pid=3755,fd=12))
+LISTEN 0      1          127.0.0.1:8728      0.0.0.0:*    users:(("qemu-system-x86",pid=3755,fd=10))
+    PID     ELAPSED   RSS CMD
+   3755       03:05 145860 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+BIN=/tmp/wb/winbox/WinBox
+Winbox запущен (попытка 1)
+runner      3831  0.1  0.4 223708 80068 ?        S    06:35   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      3858  1.0  0.5 925160 90696 ?        Sl   06:36   0:00 /tmp/wb/winbox/WinBox
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  ввод #1: в поле ''
+    ввод #1: в поле ''
+  ввод #2: в поле ''
+    ввод #2: в поле ''
+  ввод #3: в поле ''
+    ввод #3: в поле ''
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 4)
+  вход через Neighbors (попытка 4)
+  терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+    терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+  перезапуск Winbox
+    перезапуск Winbox
+  !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+    !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+  после перезапуска: 4575 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4576 ./WinBox
+4664 bash -lc pgrep -af WinBox | head -3
+    после перезапуска: 4575 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4576 ./WinBox
+4664 bash -lc pgrep -af WinBox | head -3
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 1)
+  вход через Neighbors (попытка 1)
+  Winbox перезапущен после терминала: ок
+    Winbox перезапущен после терминала: ок
+API готов (попытка 1)
+роутер: 7.24.6 (long-term) CHR QEMU Standard PC (i440FX + PIIX, 1996), плата 3m41s
+!! /interface/pppoe-server/server/set numbers=0 service-name=isp interface=bridge-clients default-profile=pppoe-clients disabled=no authentication=mschap2 → message=no such item
+!! /system/logging/action/add name=syslog-srv target=remote remote=192.168.88.50 remote-port=514 → message=failure: action name can contain only letters and numbers
+!! /system/logging/add topics=firewall,info action=syslog-srv → message=input does not match any value of action
+!! /interface/bridge/filter/add chain=forward in-interface=ether3 mac-protocol=ip ip-protocol=udp dst-port=67,68 action=drop comment="чужой DHCP" → message=invalid value 67,68 for min, an integer required
+стенд: применено 135 строк, отказов 4
+окно 1560x1040+22+60
+  окно 1560x1040+22+60
+вход выполнен (попытка 1)
+  вход выполнен (попытка 1)
+окно после входа: 1560x1040+22+60
+  окно после входа: 1560x1040+22+60
+  часть 5: окна 41–46 списка
+часть 5: окна 41–46 списка
+  задач: 6 (настроенный стенд)
+задач: 6 (настроенный стенд)
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server → Options); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Options); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+!! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  снято queue-tree: Queues → Queue Tree (sd=147)
+снято queue-tree: Queues → Queue Tree (sd=147)
+  «Routing»: дерево не раскрылось, пробую ещё
+    «Routing»: дерево не раскрылось, пробую ещё
+  «Routing»: дерево не раскрылось, пробую ещё
+    «Routing»: дерево не раскрылось, пробую ещё
+  «Routing»: дерево не раскрылось, пробую ещё
+    «Routing»: дерево не раскрылось, пробую ещё
+  «Routing»: дерево не раскрылось, пробую ещё
+    «Routing»: дерево не раскрылось, пробую ещё
+  «Routing»: дерево не раскрылось, пробую ещё
+    «Routing»: дерево не раскрылось, пробую ещё
+  !! раздел «Routing» не открылся
+!! раздел «Routing» не открылся
+  снято interfaces: Interfaces (sd=160)
+снято interfaces: Interfaces (sd=160)
+итого: снято 2, уже было 0, не вышло 4: ip-dhcp-networks, ip-dhcp-options, ip-addrlists, routing-tables
+  итого: снято 2, уже было 0, не вышло 4: ip-dhcp-networks, ip-dhcp-options, ip-addrlists, routing-tables
+=== время ===
+Mon Nov  9 06:42:45 UTC 2026
+=== процессы ===
+runner      3755 90.7  2.7 5093808 454972 ?      Sl   06:32   8:56 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      3831  0.0  0.5 233224 90156 ?        S    06:35   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4575  0.0  0.0  11968  6148 ?        S    06:38   0:00 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+runner      4576  0.2  0.7 902132 122112 ?       Sl   06:38   0:00 ./WinBox
+=== файлы ===
+docs/shots:
+total 444
+-rw-r--r-- 1 runner runner 10790 Nov  9 06:32 README.md
+-rw-r--r-- 1 runner runner 37902 Nov  9 06:36 dbg-attempt-1.jpg
+-rw-r--r-- 1 runner runner 37902 Nov  9 06:36 dbg-attempt-2.jpg
+-rw-r--r-- 1 runner runner 49577 Nov  9 06:37 dbg-field.jpg
+-rw-r--r-- 1 runner runner 55304 Nov  9 06:42 dbg-routing-tables.jpg
+drwxr-xr-x 2 runner runner  4096 Nov  9 06:42 jpg
+-rw-r--r-- 1 runner runner   136 Nov  9 06:32 manifest-part1.txt
+-rw-r--r-- 1 runner runner   139 Nov  9 06:32 manifest-part3.txt
+-rw-r--r-- 1 runner runner   178 Nov  9 06:32 manifest-part4.txt
+-rw-r--r-- 1 runner runner    59 Nov  9 06:42 manifest-part5.txt
+-rw-r--r-- 1 runner runner   245 Nov  9 06:32 manifest.txt
+drwxr-xr-x 2 runner runner  4096 Nov  9 06:42 ocr
+-rw-r--r-- 1 runner runner 12311 Nov  9 06:32 report-part1.txt
+-rw-r--r-- 1 runner runner 12192 Nov  9 06:42 report-part2.txt
+-rw-r--r-- 1 runner runner 13073 Nov  9 06:32 report-part3.txt
+-rw-r--r-- 1 runner runner 10990 Nov  9 06:32 report-part4.txt
+-rw-r--r-- 1 runner runner  9409 Nov  9 06:42 report-part5.txt
+-rw-r--r-- 1 runner runner 78815 Nov  9 06:42 report.txt
+-rw-r--r-- 1 runner runner 66350 Nov  9 06:32 step-audit.json
+
+docs/shots/jpg:
+total 3420
+-rw-r--r-- 1 runner runner  26448 Nov  9 06:32 00-login.jpg
+-rw-r--r-- 1 runner runner  19888 Nov  9 06:32 03-desktop.jpg
+-rw-r--r-- 1 runner runner  45498 Nov  9 06:32 backup.jpg
+-rw-r--r-- 1 runner runner  44750 Nov  9 06:32 bonding.jpg
+-rw-r--r-- 1 runner runner 104141 Nov  9 06:32 bridge-filters.jpg
+-rw-r--r-- 1 runner runner  43039 Nov  9 06:32 bridge-hosts.jpg
+-rw-r--r-- 1 runner runner  56524 Nov  9 06:32 bridge-new.jpg
+-rw-r--r-- 1 runner runner 133018 Nov  9 06:32 bridge-ports.jpg
+-rw-r--r-- 1 runner runner 105357 Nov  9 06:32 bridge-vlans.jpg
+-rw-r--r-- 1 runner runner 127324 Nov  9 06:32 bridge.jpg
+-rw-r--r-- 1 runner runner  39016 Nov  9 06:32 dot1x.jpg
+-rw-r--r-- 1 runner runner 134103 Nov  9 06:32 eth.jpg
+-rw-r--r-- 1 runner runner 109091 Nov  9 06:32 files.jpg
+-rw-r--r-- 1 runner runner 177934 Nov  9 06:32 iflist.jpg
+-rw-r--r-- 1 runner runner 179600 Nov  9 06:42 interfaces.jpg
+-rw-r--r-- 1 runner runner  31387 Nov  9 06:32 ipv6.jpg
+-rw-r--r-- 1 runner runner  40151 Nov  9 06:32 l2tp-server.jpg
+-rw-r--r-- 1 runner runner  52117 Nov  9 06:32 log.jpg
+-rw-r--r-- 1 runner runner  46148 Nov  9 06:32 lte.jpg
+-rw-r--r-- 1 runner runner  40560 Nov  9 06:32 mesh.jpg
+-rw-r--r-- 1 runner runner  41067 Nov  9 06:32 ovpn-server.jpg
+-rw-r--r-- 1 runner runner  41686 Nov  9 06:32 ppp-active.jpg
+-rw-r--r-- 1 runner runner 124012 Nov  9 06:32 ppp-profiles.jpg
+-rw-r--r-- 1 runner runner  43471 Nov  9 06:32 ppp-secrets.jpg
+-rw-r--r-- 1 runner runner  46707 Nov  9 06:32 ppp.jpg
+-rw-r--r-- 1 runner runner  42802 Nov  9 06:32 pppoe-server.jpg
+-rw-r--r-- 1 runner runner 139281 Nov  9 06:32 queue-iface.jpg
+-rw-r--r-- 1 runner runner 116637 Nov  9 06:42 queue-tree.jpg
+-rw-r--r-- 1 runner runner 103499 Nov  9 06:32 queue-types.jpg
+-rw-r--r-- 1 runner runner 109593 Nov  9 06:32 queues.jpg
+-rw-r--r-- 1 runner runner  55648 Nov  9 06:32 quickset.jpg
+-rw-r--r-- 1 runner runner  41630 Nov  9 06:32 radius.jpg
+-rw-r--r-- 1 runner runner  31042 Nov  9 06:32 routing.jpg
+-rw-r--r-- 1 runner runner  56813 Nov  9 06:32 simple-new.jpg
+-rw-r--r-- 1 runner runner  35683 Nov  9 06:32 system.jpg
+-rw-r--r-- 1 runner runner  46037 Nov  9 06:32 terminal.jpg
+-rw-r--r-- 1 runner runner  44135 Nov  9 06:32 vlan.jpg
+-rw-r--r-- 1 runner runner 114575 Nov  9 06:32 vrrp.jpg
+-rw-r--r-- 1 runner runner 112898 Nov  9 06:32 vxlan.jpg
+-rw-r--r-- 1 runner runner  55339 Nov  9 06:32 wg-new.jpg
+-rw-r--r-- 1 runner runner 116877 Nov  9 06:32 wg-peers.jpg
+-rw-r--r-- 1 runner runner  43140 Nov  9 06:32 wifi-access-list.jpg
+-rw-r--r-- 1 runner runner  63071 Nov  9 06:32 wifi-new.jpg
+-rw-r--r-- 1 runner runner  64118 Nov  9 06:32 wifi-security.jpg
+-rw-r--r-- 1 runner runner  46912 Nov  9 06:32 wifi.jpg
+-rw-r--r-- 1 runner runner 122087 Nov  9 06:32 wireguard.jpg
+прошло 3 минуты после старта QEMU
+=== порты хоста ===
+LISTEN 0      1          127.0.0.1:8728      0.0.0.0:*    users:(("qemu-system-x86",pid=3977,fd=10))
+LISTEN 0      1          127.0.0.1:8291      0.0.0.0:*    users:(("qemu-system-x86",pid=3977,fd=12))
+    PID     ELAPSED   RSS CMD
+   3977       03:06 145836 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+BIN=/tmp/wb/winbox/WinBox
+Winbox запущен (попытка 1)
+runner      4034  0.6  0.4 223700 77764 ?        S    06:55   0:00 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4067  2.2  0.5 925160 90340 ?        Sl   06:55   0:00 /tmp/wb/winbox/WinBox
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+  Neighbors: роутера в списке ещё нет (yw Acti MAC Address « IP Address Version Board Board's Port = = =)
+    ввод #1: в поле ''
+  ввод #1: в поле ''
+    ввод #2: в поле ''
+  ввод #2: в поле ''
+  ввод #3: в поле ''
+    ввод #3: в поле ''
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+вход через Neighbors (попытка 4)
+  вход через Neighbors (попытка 4)
+  терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+    терминал после включения API: 2 Terminal x MMMM KKK KKK MMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM III KKKKK RRR RRR 000 000 TIT III KKKKK MMM MMM III KKK KKK RRRRRR 000 000 TIT III KKK KKK MMM MMM III KKK KKK RRR 000000 TIT III KKK KKK MikroTik 7.24.6 (c) 1999-2026 https: //www.mikrotik.com/ Do you want to see the so
+  перезапуск Winbox
+    перезапуск Winbox
+  !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+    !! команда не ответила за 120 с: bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 n
+  после перезапуска: 4720 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4721 ./WinBox
+4750 bash -lc pgrep -af WinBox | head -3
+    после перезапуска: 4720 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+4721 ./WinBox
+4750 bash -lc pgrep -af WinBox | head -3
+  Neighbors: нашёл '127.0.0.1', двойной щелчок
+    Neighbors: нашёл '127.0.0.1', двойной щелчок
+  вход через Neighbors (попытка 1)
+вход через Neighbors (попытка 1)
+  Winbox перезапущен после терминала: ок
+    Winbox перезапущен после терминала: ок
+API готов (попытка 1)
+роутер: 7.24.6 (long-term) CHR QEMU Standard PC (i440FX + PIIX, 1996), плата 3m33s
+стенд: применено 139 строк, отказов 0
+окно 1560x1040+22+60
+  окно 1560x1040+22+60
+вход выполнен (попытка 1)
+  вход выполнен (попытка 1)
+окно после входа: 1560x1040+22+60
+  окно после входа: 1560x1040+22+60
+часть 5: окна 41–46 списка
+  часть 5: окна 41–46 списка
+  задач: 6 (настроенный стенд)
+задач: 6 (настроенный стенд)
+  «IP»: раскрыт (надпись), слов в дереве 24→24
+    «IP»: раскрыт (надпись), слов в дереве 24→24
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Networks); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  «IP»: раскрыт (надпись), слов в дереве 24→24
+    «IP»: раскрыт (надпись), слов в дереве 24→24
+!! не нашёл «DHCP Server» (путь: IP → DHCP Server → Options); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «DHCP Server» (путь: IP → DHCP Server → Options); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  «IP»: раскрыт (надпись), слов в дереве 24→24
+    «IP»: раскрыт (надпись), слов в дереве 24→24
+!! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Firewall» (путь: IP → Firewall → Address Lists); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  снято queue-tree: Queues → Queue Tree (sd=147)
+снято queue-tree: Queues → Queue Tree (sd=147)
+  «Routing»: раскрыт (надпись), слов в дереве 24→24
+    «Routing»: раскрыт (надпись), слов в дереве 24→24
+!! не нашёл «Tables» (путь: Routing → Tables); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  !! не нашёл «Tables» (путь: Routing → Tables); OCR: (5) Terminal x MMM MMM KKK KKK MMMM MMMM KKK KKK MMM MMMM MMM III KKK KKK RRRRRR 000000 TIT III KKK KKK MMM MMM III KKKKK RRR RRR 000
+  снято interfaces: Interfaces (sd=160)
+снято interfaces: Interfaces (sd=160)
+итого: снято 2, уже было 0, не вышло 4: ip-dhcp-networks, ip-dhcp-options, ip-addrlists, routing-tables
+  итого: снято 2, уже было 0, не вышло 4: ip-dhcp-networks, ip-dhcp-options, ip-addrlists, routing-tables
+=== время ===
+Mon Nov  9 07:03:16 UTC 2026
+=== процессы ===
+runner      3977 95.7  2.7 5098948 454660 ?      Sl   06:52  10:01 qemu-system-x86_64 -m 3072 -smp 4 -machine pc -cpu max -accel tcg,thread=multi -drive file=chr.qcow2,format=qcow2,if=ide,index=0 -netdev user,id=n0,hostfwd=tcp:127.0.0.1:8291-:8291,hostfwd=tcp:127.0.0.1:8728-:8728 -device e1000,netdev=n0 -netdev user,id=n1 -device e1000,netdev=n1 -netdev user,id=n2 -device e1000,netdev=n2 -netdev user,id=n3 -device e1000,netdev=n3 -netdev user,id=n4 -device e1000,netdev=n4 -serial file:/tmp/wb/serial.log -display none -monitor unix:/tmp/wb/mon.sock,server,nowait -daemonize -pidfile /tmp/wb/qemu.pid
+runner      4034  0.2  0.5 233216 87440 ?        S    06:55   0:01 Xvfb :99 -screen 0 1600x1100x24 -nolisten tcp
+runner      4720  0.0  0.0  11968  6016 ?        S    06:58   0:00 bash -lc cd /tmp/wb/winbox && QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software LIBGL_ALWAYS_SOFTWARE=1 nohup ./WinBox >> /tmp/wb/winbox.log 2>&1 &
+runner      4721  0.4  0.7 898444 122180 ?       Sl   06:58   0:01 ./WinBox
+=== файлы ===
+docs/shots:
+total 440
+-rw-r--r-- 1 runner runner 10790 Nov  9 06:51 README.md
+-rw-r--r-- 1 runner runner 37883 Nov  9 06:56 dbg-attempt-1.jpg
+-rw-r--r-- 1 runner runner 37883 Nov  9 06:56 dbg-attempt-2.jpg
+-rw-r--r-- 1 runner runner 38139 Nov  9 06:57 dbg-field.jpg
+drwxr-xr-x 2 runner runner  4096 Nov  9 06:51 jpg
+-rw-r--r-- 1 runner runner   272 Nov  9 06:51 manifest-part1.txt
+-rw-r--r-- 1 runner runner    94 Nov  9 06:51 manifest-part2.txt
+-rw-r--r-- 1 runner runner   278 Nov  9 06:51 manifest-part3.txt
+-rw-r--r-- 1 runner runner   356 Nov  9 06:51 manifest-part4.txt
+-rw-r--r-- 1 runner runner   118 Nov  9 07:03 manifest-part5.txt
+-rw-r--r-- 1 runner runner   245 Nov  9 06:51 manifest.txt
+drwxr-xr-x 2 runner runner  4096 Nov  9 06:51 ocr
+-rw-r--r-- 1 runner runner 26183 Nov  9 06:51 report-part1.txt
+-rw-r--r-- 1 runner runner 16936 Nov  9 06:51 report-part2.txt
+-rw-r--r-- 1 runner runner 28313 Nov  9 06:51 report-part3.txt
+-rw-r--r-- 1 runner runner 26343 Nov  9 06:51 report-part4.txt
+-rw-r--r-- 1 runner runner 22290 Nov  9 07:03 report-part5.txt
+-rw-r--r-- 1 runner runner 78815 Nov  9 06:51 report.txt
+-rw-r--r-- 1 runner runner 66350 Nov  9 06:51 step-audit.json
+
+docs/shots/jpg:
+total 3668
+-rw-r--r-- 1 runner runner  26448 Nov  9 06:51 00-login.jpg
+-rw-r--r-- 1 runner runner  19888 Nov  9 06:51 03-desktop.jpg
+-rw-r--r-- 1 runner runner  45498 Nov  9 06:51 backup.jpg
+-rw-r--r-- 1 runner runner  44750 Nov  9 06:51 bonding.jpg
+-rw-r--r-- 1 runner runner 109370 Nov  9 06:51 bridge-filters.jpg
+-rw-r--r-- 1 runner runner  43039 Nov  9 06:51 bridge-hosts.jpg
+-rw-r--r-- 1 runner runner  56524 Nov  9 06:51 bridge-new.jpg
+-rw-r--r-- 1 runner runner 132867 Nov  9 06:51 bridge-ports.jpg
+-rw-r--r-- 1 runner runner 105320 Nov  9 06:51 bridge-vlans.jpg
+-rw-r--r-- 1 runner runner 127307 Nov  9 06:51 bridge.jpg
+-rw-r--r-- 1 runner runner  39016 Nov  9 06:51 dot1x.jpg
+-rw-r--r-- 1 runner runner 134598 Nov  9 06:51 eth.jpg
+-rw-r--r-- 1 runner runner 120043 Nov  9 06:51 files.jpg
+-rw-r--r-- 1 runner runner 179133 Nov  9 06:51 iflist.jpg
+-rw-r--r-- 1 runner runner 179289 Nov  9 07:03 interfaces.jpg
+-rw-r--r-- 1 runner runner  31387 Nov  9 06:51 ipv6.jpg
+-rw-r--r-- 1 runner runner  40151 Nov  9 06:51 l2tp-server.jpg
+-rw-r--r-- 1 runner runner  52117 Nov  9 06:51 log.jpg
+-rw-r--r-- 1 runner runner  46148 Nov  9 06:51 lte.jpg
+-rw-r--r-- 1 runner runner  40560 Nov  9 06:51 mesh.jpg
+-rw-r--r-- 1 runner runner  41067 Nov  9 06:51 ovpn-server.jpg
+-rw-r--r-- 1 runner runner  41686 Nov  9 06:51 ppp-active.jpg
+-rw-r--r-- 1 runner runner 124088 Nov  9 06:51 ppp-profiles.jpg
+-rw-r--r-- 1 runner runner 117138 Nov  9 06:51 ppp-secrets.jpg
+-rw-r--r-- 1 runner runner  46707 Nov  9 06:51 ppp.jpg
+-rw-r--r-- 1 runner runner 117902 Nov  9 06:51 pppoe-server.jpg
+-rw-r--r-- 1 runner runner 141975 Nov  9 06:51 queue-iface.jpg
+-rw-r--r-- 1 runner runner 116723 Nov  9 07:02 queue-tree.jpg
+-rw-r--r-- 1 runner runner 116622 Nov  9 06:51 queue-types.jpg
+-rw-r--r-- 1 runner runner 117320 Nov  9 06:51 queues.jpg
+-rw-r--r-- 1 runner runner  55648 Nov  9 06:51 quickset.jpg
+-rw-r--r-- 1 runner runner  41630 Nov  9 06:51 radius.jpg
+-rw-r--r-- 1 runner runner  31042 Nov  9 06:51 routing.jpg
+-rw-r--r-- 1 runner runner  56813 Nov  9 06:51 simple-new.jpg
+-rw-r--r-- 1 runner runner  35683 Nov  9 06:51 system.jpg
+-rw-r--r-- 1 runner runner  46037 Nov  9 06:51 terminal.jpg
+-rw-r--r-- 1 runner runner 113502 Nov  9 06:51 vlan.jpg
+-rw-r--r-- 1 runner runner 114537 Nov  9 06:51 vrrp.jpg
+-rw-r--r-- 1 runner runner 112927 Nov  9 06:51 vxlan.jpg
+-rw-r--r-- 1 runner runner  55339 Nov  9 06:51 wg-new.jpg
+-rw-r--r-- 1 runner runner 116934 Nov  9 06:51 wg-peers.jpg
+-rw-r--r-- 1 runner runner  43140 Nov  9 06:51 wifi-access-list.jpg
+-rw-r--r-- 1 runner runner  63071 Nov  9 06:51 wifi-new.jpg
+-rw-r--r-- 1 runner runner  64118 Nov  9 06:51 wifi-security.jpg
+-rw-r--r-- 1 runner runner  46912 Nov  9 06:51 wifi.jpg
+-rw-r--r-- 1 runner runner 122470 Nov  9 06:51 wireguard.jpg

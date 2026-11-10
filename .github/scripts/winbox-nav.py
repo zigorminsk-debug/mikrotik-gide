@@ -27,12 +27,21 @@ SCENE = os.environ.get('NAV_SCENE', '') == '1'
 # проходу достаётся меньший бюджет, чтобы job не убил таймаут GitHub.
 BUDGET = int(os.environ.get('NAV_BUDGET', '5400'))
 OCR_SCALE = 1.7
+# Съёмка частями: список окон режется на куски по NAV_PART_SIZE, прогон
+# снимает только свою часть. Части идут параллельно, поэтому у каждой свой
+# отчёт и манифест — иначе соседние прогоны конфликтуют при rebase.
+PART = int(os.environ.get('NAV_PART', '0') or 0)
+PART_SIZE = int(os.environ.get('NAV_PART_SIZE', '10') or 10)
+SUFFIX = ('-part%d' % PART) if PART else ''
+# Крайний срок: проверяется перед каждым распознаванием, чтобы одно медленное
+# окно не съело весь бюджет и прогон успел опубликовать снятое.
+DEADLINE = 0
 JPG = os.path.join(OUT, 'jpg')
 TMP = '/tmp/wb/nav'
 for _d in (JPG, TMP, OUT):
     os.makedirs(_d, exist_ok=True)
-REPORT = os.path.join(OUT, 'report.txt')
-MANIFEST = os.path.join(OUT, 'manifest.txt')
+REPORT = os.path.join(OUT, 'report%s.txt' % SUFFIX)
+MANIFEST = os.path.join(OUT, 'manifest%s.txt' % SUFFIX)
 
 # Что реально видно на кадрах: имя → {app: путь в приложении, text: OCR}.
 # Прошлые прогоны тоже учитываем — иначе добор одного окна стёр бы
@@ -53,12 +62,22 @@ QT_ENV = ('QT_QPA_PLATFORM=xcb QT_QUICK_BACKEND=software QT_OPENGL=software '
 
 # Высоты пунктов дерева относительно окна — на случай, если OCR не разобрал
 # дерево. Измерены по снимкам прошлых прогонов.
+# Левая колонка дерева: ширина и положение стрелки раскрытия. Узел со
+# стрелкой (IP, System, Tools…) окна не открывает — он раскрывает список
+# детей в той же колонке, поэтому успех проверяется по росту дерева.
+TREE_W = 145
+CHEVRON_DX = 133
+PARENT_NODES = {'ip', 'ipv6', 'system', 'tools', 'routing', 'mpls', 'switch'}
+
+# Центры строк измерены по настоящему кадру стенда (окно 1560x1040).
+# Прежняя таблица была смещена на 26–39 px: клик по «IP» попадал в IPv6,
+# клик по «System» — в Queues, и раздел не открывался.
 TREE_Y = {
-    'quick set': 62, 'wifi': 87, 'interfaces': 111, 'wireguard': 135,
-    'bridge': 160, 'ppp': 185, 'switch': 209, 'mesh': 236, 'ip': 260,
-    'ipv6': 285, 'mpls': 310, 'routing': 333, 'system': 358, 'queues': 383,
-    'dot1x': 407, 'files': 432, 'log': 458, 'new terminal': 483,
-    'radius': 508, 'tools': 531,
+    'quick set': 36, 'wifi': 59, 'interfaces': 83, 'wireguard': 106,
+    'bridge': 132, 'ppp': 155, 'switch': 179, 'mesh': 202, 'ip': 226,
+    'ipv6': 249, 'mpls': 273, 'routing': 297, 'system': 320, 'queues': 344,
+    'dot1x': 371, 'files': 398, 'log': 421, 'new terminal': 445,
+    'radius': 469, 'tools': 492,
 }
 
 
@@ -70,7 +89,17 @@ def log(msg):
 
 
 def run(cmd):
-    return subprocess.run(cmd, capture_output=True, text=True)
+    """Внешняя команда с таймаутом.
+
+    Без него зависший xdotool/import/tesseract держал шаг съёмки вечно:
+    крайний срок проверяется МЕЖДУ командами и до зависшей просто не доходит.
+    Прогон висел до таймаута job и кадры не публиковались вовсе.
+    """
+    try:
+        return subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+    except subprocess.TimeoutExpired:
+        log('  !! команда не ответила за 120 с: %s' % ' '.join(map(str, cmd))[:120])
+        return subprocess.CompletedProcess(cmd, 124, '', 'timeout')
 
 
 def clean(t):
@@ -139,6 +168,8 @@ def click(x, y, repeat=1):
 # --------------------------------------------------------------- картинки ----
 def ocr(x, y, w, h, tag='ocr'):
     """Слова в области экрана: [(текст, центр_x, центр_y)] в координатах экрана."""
+    if DEADLINE and time.time() > DEADLINE:
+        raise TimeoutError('бюджет съёмки исчерпан')
     full = os.path.join(TMP, 'full.png')
     run(['import', '-window', 'root', full])
     crop = os.path.join(TMP, tag + '.png')
@@ -185,6 +216,18 @@ def dbg(name):
          os.path.join(OUT, 'dbg-%s.jpg' % name)])
 
 
+def diag(name, X, Y, W, H):
+    """Кадр для разбора навигации — попадает в ветку (dbg-* игнорируется).
+    Один кадр на имя за прогон: разобраться, что видно после клика."""
+    path = os.path.join(OUT, 'diag-%s%s.jpg' % (name, SUFFIX))
+    if os.path.exists(path):
+        return
+    full = os.path.join(TMP, 'diag.png')
+    run(['import', '-window', 'root', full])
+    run(['convert', full, '-crop', '%dx%d+%d+%d' % (int(W), int(H), int(X), int(Y)),
+         '+repage', '-resize', '1200x', '-quality', '80', path])
+
+
 def ocr_text(image, tag='evidence'):
     """Текст кадра целиком — доказательство того, что видно на снимке.
 
@@ -224,7 +267,13 @@ def shoot(name, X, Y, W, H, app=''):
 
 def save_evidence():
     """verified.json пишется после каждого кадра: таймаут прогона не должен
-    уносить с собой уже добытые доказательства."""
+    уносить с собой уже добытые доказательства.
+
+    В режиме частей общий файл не пишем: параллельные прогоны конфликтовали
+    бы при rebase. Импортёр читает текст прямо из docs/shots/ocr/*.txt.
+    """
+    if PART:
+        return
     import json
     with open(os.path.join(OUT, 'verified.json'), 'w', encoding='utf-8') as f:
         json.dump(EVIDENCE, f, ensure_ascii=False, indent=1)
@@ -274,7 +323,21 @@ def find(words, needle, near=None, xmin=None):
 
 # ------------------------------------------------------------------ вход -----
 def tree_words(X, Y, H):
-    return ocr(X, Y + 16, 210, H - 120, 'tree')
+    """Подписи пунктов дерева. Полоса x+30…x+148 — без иконок: иконки
+    сбивали OCR, и «IP» читалось как «У р», а «System» — как «Я mers»."""
+    return ocr(X + 30, Y + 16, 118, H - 120, 'tree')
+
+
+def tree_scroll(X, Y, H, steps=3, down=True):
+    """Прокрутить левую колонку дерева.
+
+    У раскрытого узла (Tools, System) дети уходят за нижний край окна, и
+    последних пунктов в OCR просто нет — раньше такие окна терялись.
+    """
+    run(['xdotool', 'mousemove', str(int(X + 70)), str(int(Y + H // 2))])
+    run(['xdotool', 'click', '--repeat', str(steps), '--delay', '120',
+         '5' if down else '4'])
+    time.sleep(0.8)
 
 
 def logged_in(X, Y, H):
@@ -437,7 +500,15 @@ def menu_area_words(X, Y, W, H, tag='menu'):
 
 
 def click_root(root, X, Y, W, H):
-    """Открыть раздел из дерева: по OCR, затем по таблице высот."""
+    """Открыть раздел из дерева: по OCR, затем по таблице высот.
+
+    Узел со стрелкой (IP, System, Tools, IPv6…) не открывает окно: он
+    раскрывает детей в левой колонке. Раньше успех проверялся по области
+    содержимого — там оставалось окно Terminal от включения API, проверка
+    проходила сразу, дети не раскрывались и всё «IP → …» терялось.
+    """
+    parent = clean(root) in PARENT_NODES
+    before = len(tree_words(X, Y, H)) if parent else 0
     cands = []
     hit = find(tree_words(X, Y, H), root)
     if hit:
@@ -447,11 +518,30 @@ def click_root(root, X, Y, W, H):
         for dy in (0, -7, 7, -14, 14):
             cands.append((X + 60, Y + base + dy))
     for cx, cy in cands[:5]:
+        if parent:
+            # Узел раскрывается по-разному в зависимости от того, куда попал
+            # клик: надпись, стрелка, двойной клик. Пробуем все и проверяем
+            # результат по дереву И по области содержимого.
+            for how, px, py, rep in (('надпись', cx, cy, 1),
+                                     ('стрелка', X + CHEVRON_DX, cy, 1),
+                                     ('двойной', cx, cy, 2)):
+                click(px, py, repeat=rep)
+                tw = tree_words(X, Y, H)
+                cw = menu_area_words(X, Y, W, H)
+                if len(tw) > before + 2 or len(cw) >= 8:
+                    log('  «%s»: раскрыт (%s), слов в дереве %d→%d'
+                        % (root, how, before, len(tw)))
+                    return cx, cy
+            log('  «%s»: не раскрылся; дерево: %s'
+                % (root, ' '.join(w[0] for w in tree_words(X, Y, H))[:200]))
+            continue
         click(cx, cy)
         words = menu_area_words(X, Y, W, H)
         if len(words) >= 6 or sd_now(X, Y, W, H) > 5:
             return cx, cy
         log('  «%s»: после клика пусто, пробую ещё' % root)
+    if parent:
+        diag('tree-%s' % clean(root).replace(' ', ''), X, Y, W, H)
     return None
 
 
@@ -476,6 +566,24 @@ def open_window(parts, want_new, X, Y, W, H):
             if cand and cand[2] > cur[1] - 6:
                 hit = cand
                 log('  подменю дерева: «%s» найден в левой колонке' % part)
+            else:
+                # узел мог не раскрыться с первого клика — жмём стрелку
+                click(X + CHEVRON_DX, cur[1])
+                time.sleep(1.0)
+                tw = tree_words(X, Y, H)
+                cand = find(tw, part, near=(X + 70, cur[1] + 24))
+                if cand and cand[2] > cur[1] - 6:
+                    hit = cand
+                    log('  подменю дерева: «%s» найден после стрелки' % part)
+                else:
+                    # дети могли не влезть в окно — прокручиваем колонку
+                    for _ in range(4):
+                        tree_scroll(X, Y, H)
+                        cand = find(tree_words(X, Y, H), part)
+                        if cand:
+                            hit = cand
+                            log('  подменю дерева: «%s» найден прокруткой' % part)
+                            break
         if not hit and W < 1300:
             # узкое окно: вкладки не помещаются в полосу — открываем список
             # пунктов из заголовка окна (рядом с названием есть «▾»)
@@ -536,6 +644,14 @@ def enable_api(X, Y, W, H):
     text = ' '.join(w[0] for w in words)
     log('  терминал после включения API: %s' % text[:300])
     escape(2)
+    # Окно Terminal не закрывается по Escape и перекрывает содержимое: из-за
+    # него съёмка видела «Terminal» вместо окон роутера. Перезапуск даёт
+    # чистый стол; служба API на роутере уже включена и переживёт его.
+    try:
+        good, _, _, _, _ = restart_winbox(X, Y, W, H)
+        log('  Winbox перезапущен после терминала: %s' % ('ок' if good else 'не вошёл'))
+    except Exception as exc:                             # noqa: BLE001
+        log('  !! перезапуск после терминала не удался: %s' % exc)
     return True
 
 
@@ -562,7 +678,8 @@ def main():
     except Exception as exc:                             # noqa: BLE001
         log('  растяжка окна не удалась: %s' % exc)
     log('окно %dx%d+%d+%d' % (W, H, X, Y))
-    shoot('00-login', X, Y, W, H)
+    if not PART:
+        shoot('00-login', X, Y, W, H)
     if not connect(X, Y, W, H):
         log('!! войти в RouterOS не удалось — снимать нечего')
         return 2
@@ -574,10 +691,18 @@ def main():
         log('  растяжка окна не удалась: %s' % exc)
         X, Y, W, H = geom()
     log('окно после входа: %dx%d+%d+%d' % (W, H, X, Y))
-    shoot('03-desktop', X, Y, W, H)
+    if not PART:
+        shoot('03-desktop', X, Y, W, H)
 
     with open(TASKS, encoding='utf-8') as f:
         tasks = [l.strip() for l in f if l.strip() and not l.startswith('#')]
+    if PART:
+        start = (PART - 1) * PART_SIZE
+        tasks = tasks[start:start + PART_SIZE]
+        log('часть %d: окна %d–%d списка' % (PART, start + 1, start + len(tasks)))
+        if not tasks:
+            log('!! часть пуста — список короче, чем номер части')
+            return 0
     log('задач: %d%s' % (len(tasks), ' (настроенный стенд)' if SCENE else ''))
 
     # Продолжение съёмки: уже снятые кадры лежат в docs/shots/jpg из прошлых
@@ -591,6 +716,8 @@ def main():
     # в свой бюджет и последние окна списка не снимаются вовсе.
     restart_every = 20 if SCENE else 40
     ok, fail, skipped, started, streak = 0, [], 0, time.time(), 0
+    global DEADLINE
+    DEADLINE = started + BUDGET
     for i, line in enumerate(tasks):
         if time.time() - started > BUDGET:
             log('!! стоп по времени: снято %d, пропущено %d из %d' % (ok, skipped, len(tasks)))
@@ -621,6 +748,10 @@ def main():
 
         try:
             opened = open_window(parts, want_new, X, Y, W, H)
+        except TimeoutError:
+            log('!! бюджет исчерпан на «%s» — останавливаюсь, чтобы кадры успели '
+                'опубликоваться (снято %d)' % (name, ok))
+            break
         except SystemExit:
             log('!! %s: окно Winbox пропало' % name)
             opened = False

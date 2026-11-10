@@ -259,6 +259,8 @@ module.exports = {
     'Сертификаты: имена, срок действия и пометки KR (key + trusted). Нужны для SSTP, IPsec и API по TLS.'],
   logging: ['System → Logging', 'Система',
     'Логирование: какие топики куда писать — в память, диск или на удалённый сервер.'],
+  'logging-actions': ['System → Logging → Actions', 'Система',
+    'Действия журнала: куда отправлять записи — память, диск, удалённый syslog-сервер.'],
   packages: ['System → Packages', 'Система',
     'Пакеты: установленные модули (system, ipv6, wireless, container) и версия RouterOS.'],
   routerboot: ['System → RouterBOOT', 'Система',

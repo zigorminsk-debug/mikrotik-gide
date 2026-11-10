@@ -1,0 +1,23 @@
+МАЛА 95 — = — TEU aE — a
+PY auick set
+& WiFi
+fa Interfaces
+© WireGuard
+НЫ Bridge
+‘© ppp
+St Switch >
+® Mesh
+У р >
+У руб >
+Я р > fa Interfaces ~ Interface Interface List Ethernet EolP Tunnel IP Tunnel GRE Tunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE o Xx
+$ system : C5 New > Enable 1! Disable Xx Remove P Comment Q Find Y Filter © Configuration
+GZ cueues P Names Type М Actua TU смо м TR Tx Packat ips) Rx Packet pls) FTE
+$ Dot1x R 4) vxlan-10 VXLAN 1450 1450 65535 10 O bps O bps 0 0 ao
+Files
+Ё 5
+© New Terminal
+(© RADIUS
+A Tools >
+я Make Supout.rif
+Er
+

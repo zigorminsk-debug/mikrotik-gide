@@ -1,0 +1,34 @@
+Ww ~ м
+PY auick set
+& WiFi
+fa Interfaces
+© WireGuard
+НЫ Bridge
+‘© ppp
+yt Switch >
+® Mesh
+У р >
+“2 руб >
+$7 wpLs > —
+x мт ре} PPP + Interface PPPoE Servers OVPNServers Secrets Profiles Active Connections L2TP Ethernet L2TP Secrets o Xx
+‘outing >
+
+CS New > Enable !! Disable x Remove P Comment Q Find Y Filter @
+{$ System > © Configuration
+
+Р Name > Password = ‘смею Profle = Local Address Remote Address “Routes | Last Logged Out Last Caller ID Last Disco...
+G@ Queues “Service g05 В PPP Authentication&Accounting
+
+кабинет 1
+> Dot1x ® сИеп{01 ***=* рррое pppoe-clie...
+Files Иванов
+а Log ° ivanov ***=* l2tp vpn-staff
+9 New Terminal
+(© RADIUS
+A Tools >
+я Make Supout.rif
+
+О ОО
+
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) 8 0% ЕЕ 2790.4 MiB / 281.6 MiB / 3072.0 MiB @ 00:09:07 6 2026-11-09 07:01:42
+

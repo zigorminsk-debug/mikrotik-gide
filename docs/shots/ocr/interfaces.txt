@@ -1,0 +1,38 @@
+“LY ~ м
+PY auick set
+2 мя
+Fl interfaces
+© WireGuard
+НЫ Bridge
+‘© ppp
+yt Switch >
+® Mesh
+Яр >
+“2 руб >
+$7 wpLs > —${
+XC Rout fa Interfaces ~ Interface Interface List Ethernet EolP Tunnel IP Tunnel GRETunnel VLAN VXLAN VRRP MACsec MACVLAN Bonding LTE o Xx
+‘outing >
+C5 New > Enable 1! Disable Xx Remove P Comment Q Find Y Filter
+{$ System > ‘ : ™ ' О © Configuration
+@ Queues ve р Е ‚вх Detect Internet
+клиенты РРРоЕ
+$ соих R 3 bridge-clients Bridge 1500 65535 0 bps 0 bps о о 0 bps
+eB Files гостевой сегмент
+ё Log R 3£ bridge-guest Bridge 1500 65535 O bps O bps 0 0 O bps
+LAN офиса
+(5) меи Terminal R = 3 bridge-lan Bridge 1500 65535 0 bps 0 bps о о 0 bps
+(© RADIUS офис
+ЕЁ Tools >| R 45 \ап10-0... МАМ 1500 65531 O bps O bps 0 0 O bps
+5. No IPv4 address!
+PalRMGKC SUDO (о « verp-lan VRRP 0 bps 0 bps о о 0 bps
+R & etherl-wan Ethernet 1500 97.5 kbps 6.3 kbps 9 10 O bps
+RS. & ether2 Ethernet 1500 O bps O bps 0 0 O bps
+RS & ether3 Ethernet 1500 480 bps O bps 1 0 O bps
+RS. & ether4 Ethernet 1500 O bps O bps 0 0 O bps
+RS & ether5S Ethernet 1500 480 bps O bps 1 0 O bps
+R ©) lo Loopback 65536 O bps O bps 0 0 O bps
+R 4) vxlan- 10 VXLAN 1450 65535 O bps O bps 0 0 O bps
+Aliant te an olan intarfann
+16
+= office-gw-01 127.0.0.1/ x86_64 / CHR QEMU Standard PC (i440FX + PIIX, 1996) / 7.24.6 (long-term) @ 1% i 2793.2 MiB / 278.8 MiB / 3072.0 MiB @ 00:05:55. @ 2026-11-09 06:58:47
+

@@ -1,0 +1,23 @@
+МАЛА 95 — = — id — a ИВьЯ
+PY auick set
+& WiFi
+fa Interfaces
+© WireGuard
+НЫ Bridge
+‘© ppp
+St Switch >
+® Mesh
+У р >
+У руб >
+Я р > + Bridge - Bridge Ports VLANs MSTIs_ PortMST Overrides Filters NAT Hosts MDB o Xx
+$ system : C5 New > Enable 1! Disable Xx Remove P Comment Q Find Y Filter ¥% aly O Actions
+гостевой мост изолирован
+$? сонх во drop — forward OB о Reset All Counters
+Files чужой ОНСР
+ё Log а 1 © drop forward ether3 800 (ip) ов 0
+© New Terminal
+(© RADIUS
+A Tools >
+я Make Supout.rif
+ET
+

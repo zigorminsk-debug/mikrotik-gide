@@ -20,16 +20,30 @@ const ROOT = path.resolve(__dirname, '..');
 const SRC = path.join(ROOT, 'docs/shots/jpg');
 const DST = path.join(ROOT, 'app/src/main/assets/www/img/shots');
 const LIST = path.join(ROOT, '.github/scripts/shot-list.txt');
+/* Окна стенда снимаются по отдельному списку: часть имён есть только в нём
+   (например logging-actions). Читаем оба, иначе снятый кадр не импортируется. */
+const SCENE_LIST = path.join(ROOT, '.github/scripts/scene-list.txt');
 const WWW = path.join(ROOT, 'app/src/main/assets/www');
 const TITLES = require('./win4-titles.js');
 const REVIEW = require('./win4-review.js');
 /* Доказательства со съёмки: что реально распознано на каждом кадре.
    Файл пишет .github/scripts/winbox-nav.py (docs/shots/verified.json). */
 const EVIDENCE_PATH = path.join(ROOT, 'docs/shots/verified.json');
+const OCR_DIR = path.join(ROOT, 'docs/shots/ocr');
 let EVIDENCE = {};
 if (fs.existsSync(EVIDENCE_PATH)) {
   try { EVIDENCE = JSON.parse(fs.readFileSync(EVIDENCE_PATH, 'utf8')); }
   catch (e) { console.error('verified.json испорчен: ' + e.message); }
+}
+/* Съёмка идёт частями, и части не пишут общий verified.json (конфликт при
+   rebase). Текст кадра лежит в docs/shots/ocr/<имя>.txt — читаем оттуда. */
+if (fs.existsSync(OCR_DIR)) {
+  for (const f of fs.readdirSync(OCR_DIR)) {
+    if (!/\.txt$/i.test(f)) continue;
+    const name = f.replace(/\.txt$/i, '');
+    const text = fs.readFileSync(path.join(OCR_DIR, f), 'utf8');
+    if (text.trim()) EVIDENCE[name] = Object.assign({}, EVIDENCE[name], { text });
+  }
 }
 const RULES = require('./win4-step-rules.js');
 const DRY = process.argv.indexOf('--dry') >= 0;
@@ -76,8 +90,9 @@ function readShots() {
       quarantineReason: q || ''
     });
   };
-  if (fs.existsSync(LIST)) {
-    for (const line of fs.readFileSync(LIST, 'utf8').split('\n')) {
+  for (const list of [LIST, SCENE_LIST]) {
+    if (!fs.existsSync(list)) continue;
+    for (const line of fs.readFileSync(list, 'utf8').split('\n')) {
       if (!line.trim() || line.trim().startsWith('#')) continue;
       const f = line.split('|');
       add(f[0].trim(), (f[3] || '').trim());
